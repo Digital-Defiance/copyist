@@ -8,12 +8,13 @@ Tools like Suno and Mozart AI generate audio first. Their notes don't exist as d
 
 ## Status
 
-Early. Milestone 0 (song file → validated lead sheet, MIDI and demo audio) is being built. See [ROADMAP.md](ROADMAP.md).
+Early. Milestone 0 works: a song file becomes a validated lead sheet, a band arrangement (voice, piano, bass) with full score and parts, MIDI, and a demo recording. See [ROADMAP.md](ROADMAP.md).
 
 ## Quick start
 
 ```
 pip install -e .
+pip install --no-deps tinysoundfont      # for audio; skips an optional playback library
 copyist build songs/amazing-grace.yaml
 ```
 

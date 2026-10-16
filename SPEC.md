@@ -64,7 +64,7 @@ Internally every song is a `music21` `Score`. On disk the source of truth is the
 2. **Melody.** Written by a person, or proposed by a model, in ABC notation. Models trained on ABC exist (e.g. MuPT), and LLMs write it reasonably well. Every proposal must pass the validators. (Hand-written at M0; generation at M3.)
 3. **Validators.** Deterministic checks (section 5). Failing checks block "finished" status and, during generation, trigger regeneration of the failing section.
 4. **Arrangement.** From the lead sheet to an instrumentation template (piano-vocal, rock/pop band, country band, pit orchestra, string quartet, choir). Rule-based first (M1), model-assisted later (M4). Every instrument stays in range and is written in its own transposition.
-5. **Engraving.** music21 exports MusicXML; Verovio engraves it to SVG; PyMuPDF assembles PDF. Lead sheet, full score and one PDF per part.
+5. **Engraving.** music21 exports MusicXML; Verovio engraves it to SVG; PyMuPDF assembles PDF. Lead sheet, full score and one PDF per part. Verovio's SVG relies on CSS and an embedded music font that MuPDF ignores, so each page is rewritten into plain SVG first (`engrave.printable_svg`). The page header (title, subtitle, words and music credits) is written into Verovio's MEI directly.
 6. **Rendering.** MIDI → audio. M0: sampled instruments via a SoundFont (GeneralUser GS) with TinySoundFont. Later: an expressive-performance layer (timing, dynamics, articulation as MIDI), better sample libraries, a MIDI-conditioned neural renderer, and singing (section 6).
 7. **Verification.** For neural renders: transcribe each rendered stem, compare it to the score within tolerances, and regenerate sections that drift. (M5)
 
@@ -120,7 +120,7 @@ Each check reports `pass`, `warn` or `fail`, with bar and beat. A song is **fini
 
 | ID | Check | Severity |
 |---|---|---|
-| `bars` | Every bar's notes and rests add up to the meter (pickup and final bar may be partial, and should add up to one bar together) | fail |
+| `bars` | Every bar, as written between bar lines in the song file, adds up to the meter (pickup and final bar may be partial, and should add up to one bar together). Checked on the source text because music21 silently re-bars overfull bars | fail |
 | `lyrics-fit` | Each verse has exactly one syllable per available note (after ties, rests, `_` and `*`) | fail |
 | `range` | Melody stays within the voice's range | fail outside by more than a whole step, else warn |
 | `chord-tones` | Melody notes on strong beats are chord tones, or are listed as non-chord tones (suspensions and appoggiaturas are allowed but listed) | warn |
@@ -143,12 +143,67 @@ Arrangement templates are data, not code: a list of instruments with ranges, cle
 M1 template **band**:
 
 - **Voice**: the melody and lyrics.
-- **Piano**: right hand plays chords voiced in the octave above middle C, left hand plays the chord root; pattern by style (`waltz`: bass on 1, chords on 2 and 3; `ballad`: whole-bar chords; `straight`: chords on every beat).
+- **Piano**: right hand plays close-position chords between G3 and D5, choosing each voicing to move as little as possible from the last (for chords bigger than a triad: root, 3rd and 7th, dropping the 5th); left hand plays the root between E2 and D♯3. Pattern by style (`waltz`: bass on 1, chords on 2 and 3; `ballad`: whole-bar chords; `straight`: chords on every beat). A chord change inside a pattern note splits it.
 - **Bass**: root on each chord change and on beat 1; adds the fifth on beat 3 in 4/4. Written an octave above sounding pitch, as bass parts are.
 
 Later templates: piano-vocal score, country band (adds acoustic guitar and fiddle), pit orchestra (reeds, brass, strings, keys, percussion), string quartet, SATB choir.
 
-## 8. Quality bar for scores
+## 8. Following directions
+
+A prompt like "slow outlaw-country ballad, no drums, pedal steel and fiddle, for a low alto" must be obeyed, and Copyist must be able to show that it was. Audio-first tools treat instructions as hints to a black box. Copyist turns each one into something it builds and then checks.
+
+### 8.1 The brief
+
+The prompt is turned (by an LLM, M2) into a **brief**: a short YAML file the person can read and edit before anything is generated.
+
+```yaml
+format: copyist-brief/0
+prompt: slow outlaw-country ballad, no drums, pedal steel and fiddle, for a low alto
+style: outlaw-country
+feel: ballad            # a pattern within the style
+tempo: [66, 76]         # allowed range, quarter notes per minute
+meter: 4/4
+voice: { type: alto, range: [F3, C5] }
+instruments:
+  include: [voice, acoustic-guitar, pedal-steel, fiddle, bass]
+  exclude: [drums]
+form: [verse, verse, chorus, verse, chorus, bridge, chorus]
+directions:             # free-text asks, each mapped to a check where possible
+  - the chorus should lift
+  - end quietly
+```
+
+Rules:
+
+- **Exclusions are absolute.** An excluded instrument never gets a part, so it can't be heard. Inclusions always get a part.
+- **Ambiguity is resolved in the brief, not silently.** If the prompt doesn't say, the brief records the default it chose, so the person can change it.
+- **The brief is versioned with the song.** Regenerating from the same brief and seed gives the same song.
+
+### 8.2 Style profiles
+
+A style is a data file in `styles/`, not an adjective in a prompt. Each profile defines:
+
+- harmony: typical chord vocabulary and progressions, how often chords change, cadences;
+- rhythm feel: straight, swing, shuffle, two-beat, train beat; tempo range;
+- melody habits: range and tessitura, rhythmic density, syncopation, typical intervals, how phrases end;
+- instrument palette: default instruments, optional ones, and what each one plays (patterns, voicings, fills);
+- form conventions: intro and outro shapes, typical section lengths.
+
+The arranger only plays what the profile and brief allow. New profiles can be drafted by an LLM from a description and reference notes, then reviewed by a person before use. Profiles describe conventions; they never copy specific songs.
+
+### 8.3 Writing melody to directions
+
+Melody candidates are generated under hard constraints (the lyrics' syllables and stresses, the chord chart, the singer's range, the style's rhythm habits), then:
+
+1. **Validators** (section 5) reject anything that breaks a hard rule.
+2. **Scorers** rank the rest against the style and the brief: rhythmic density and syncopation against the profile, contour, repetition and motif strength (does it have a hook), the chorus sitting higher or denser than the verse when asked to "lift".
+3. **A person picks and edits.** Several candidates per section, each rendered so it can be heard.
+
+### 8.4 Direction checks
+
+Every item in the brief becomes a line in the report: checked and passed, checked and failed, or *not verified* when no automatic check exists yet. For example: "Excluded drums: no drum part ✓", "Tempo 66–76: 72 ✓", "Chorus lifts: chorus average pitch is a 4th above the verse ✓", "End quietly: not verified". Nothing is silently ignored.
+
+## 9. Quality bar for scores
 
 A score is "good" when a professional player could sight-read it:
 
@@ -160,19 +215,19 @@ A score is "good" when a professional player could sight-read it:
 - Parts transposed and in a readable clef and range for the instrument; multi-bar rests consolidated.
 - Nothing collides; pages turn at rests where possible.
 
-## 9. Data and licensing
+## 10. Data and licensing
 
 - Test songs in `songs/` must be public domain or written for this project. Never commit copyrighted lyrics or melodies.
 - Training data (later milestones): public-domain scores, licensed or commissioned recordings, synthetic data, and contributions with explicit opt-in. Keep a manifest of every source and its license.
-- Sound assets: GeneralUser GS SoundFont (free license, downloaded at first use into `.cache/`, not committed).
+- Sound assets: GeneralUser GS SoundFont (free for any music creation, including commercial; downloaded at first use into `.cache/`, not committed). Its author can't vouch for the origin of every sample, so a product release should switch to a SoundFont or sample library with documented provenance.
 
-## 10. Milestones
+## 11. Milestones
 
 See ROADMAP.md for status and the task-level checklist.
 
 | Milestone | Delivers | Done when |
 |---|---|---|
-| M0 Walking skeleton | Song file → validated lead sheet PDF, MusicXML, MIDI, demo WAV, report | `copyist build songs/amazing-grace.yaml` produces all outputs and the lead sheet passes the section 8 checklist by eye |
+| M0 Walking skeleton | Song file → validated lead sheet PDF, MusicXML, MIDI, demo WAV, report | `copyist build songs/amazing-grace.yaml` produces all outputs and the lead sheet passes the section 9 checklist by eye |
 | M1 Band arrangement | Full score and parts for the `band` template | Parts are in range, correctly transposed, and readable |
 | M2 Song planning | LLM drafts a song plan from a brief and lyrics; syllables and stresses marked | Plans validate; a person can edit them as YAML |
 | M3 Melody proposals | Model proposes melodies for sections; validators gate; person picks and edits | Proposals pass validators; a songwriter finds at least one usable per section |
@@ -180,7 +235,7 @@ See ROADMAP.md for status and the task-level checklist.
 | M5 Better sound | Expressive performance layer, better instruments, guide vocals | A listener prefers it to M0 audio in blind tests |
 | M6 Neural rendering | MIDI-conditioned neural renderer with transcription check | Passes both the note check and listening tests |
 
-## 11. Open questions
+## 12. Open questions
 
 - License for the code (MIT, Apache-2.0, or GPL to match tools like Seed-VC).
 - Which local LLM or API drafts song plans (M2), and how prompts are versioned.

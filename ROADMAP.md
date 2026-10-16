@@ -2,32 +2,40 @@
 
 Take the first unchecked item in the current milestone. Tick items when they're done and tested. Milestone definitions are in SPEC.md section 10.
 
-## M0: Walking skeleton (current)
+## M0: Walking skeleton (done 2026-10-16)
 
 - [x] Project docs: README, SPEC, AGENTS, ROADMAP, DECISIONS
-- [ ] Packaging: pyproject.toml with the `copyist` command
-- [ ] Song file loader: YAML + ABC melody + chord symbols → music21 score
-- [ ] Lyric parsing and alignment (hyphens, `_` melisma, `*` skip, ties and rests skipped, multiple verses)
-- [ ] Validators: `bars`, `lyrics-fit`, `range`, `chord-tones`, `prosody`, `key`
-- [ ] Validation report (Markdown) with bar and beat for every finding
-- [ ] Engraving: lead sheet MusicXML → SVG (Verovio) → PDF (PyMuPDF), title and credits on page 1
-- [ ] MIDI export
-- [ ] Demo audio: MIDI → WAV with TinySoundFont and GeneralUser GS (auto-download to .cache/)
-- [ ] Test song: Amazing Grace (public domain), all verses
-- [ ] Tests for loader, lyrics, every validator (pass and fail cases)
-- [ ] Look at the lead sheet against the SPEC section 8 checklist and fix what's wrong
+- [x] Packaging: pyproject.toml with the `copyist` command
+- [x] Song file loader: YAML + ABC melody + chord symbols → music21 score
+- [x] Lyric parsing and alignment (hyphens, `_` melisma, `*` skip, ties and rests skipped, multiple verses)
+- [x] Validators: `bars`, `lyrics-fit`, `range`, `chord-tones`, `prosody`, `key`
+- [x] Validation report (Markdown) with bar and beat for every finding
+- [x] Engraving: lead sheet MusicXML → SVG (Verovio) → PDF (PyMuPDF), title and credits on page 1
+- [x] MIDI export
+- [x] Demo audio: MIDI → WAV with TinySoundFont and GeneralUser GS (auto-download to .cache/)
+- [x] Test song: Amazing Grace (public domain), all verses
+- [x] Tests for loader, lyrics, every validator (pass and fail cases)
+- [x] Look at the lead sheet against the SPEC section 9 checklist and fix what's wrong
 
-## M1: Band arrangement
+## M1: Band arrangement (current)
 
-- [ ] Arrangement template format (instruments, ranges, clefs, transpositions, patterns per style)
-- [ ] `band` template: voice, piano, bass, with `waltz`, `ballad` and `straight` patterns
-- [ ] Full score PDF and one PDF per part, parts transposed
+- [x] Arrangement patterns as data (`arrange.STYLES`); move them to `styles/*.yaml` files with instruments, ranges, clefs and transpositions (SPEC 8.2)
+- [x] `band` template: voice, piano, bass, with `waltz`, `ballad` and `straight` patterns
+- [x] Full score PDF and one PDF per part, parts transposed
 - [ ] Range and playability check per instrument
-- [ ] Multi-track MIDI and demo WAV for the arrangement
+- [ ] Melisma extender lines under held syllables (MusicXML `<extend>`; music21's Lyric doesn't write it)
+- [ ] Verses as repeats in the audio (the demo WAV currently plays the tune once)
+- [ ] Rehearsal marks and section names from the song file
+- [ ] Concert-pitch vs transposed full score option
+- [x] Multi-track MIDI and demo WAV for the arrangement
 - [ ] Drum kit part (percussion staff) for `straight` and `ballad`
 - [ ] A second test song in 4/4 with a different form (verse/chorus)
 
-## M2: Song planning
+## M2: Song planning and following directions
+
+- [ ] Brief schema `copyist-brief/0` (SPEC 8.1) with loader and validation
+- [ ] Style profiles in `styles/` (SPEC 8.2): start with `hymn`, `pop-ballad`, `outlaw-country`, `western-swing`, `broadway-uptempo`
+- [ ] Direction checks in the report (SPEC 8.4): instruments included/excluded, tempo, meter, range, form
 
 - [ ] Song plan schema (form, key, meter, tempo, chord chart, syllabified lyrics with stress)
 - [ ] LLM drafting from a brief and lyrics; prompts versioned in `prompts/`

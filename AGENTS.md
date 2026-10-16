@@ -18,7 +18,9 @@ Copyist makes songs score-first: a song file (YAML with an ABC melody, chord sym
 
 ```
 pip install -e .                          # install (Python 3.10+)
+pip install --no-deps tinysoundfont       # audio (its PyAudio dependency is only for live playback)
 copyist build songs/amazing-grace.yaml    # build every output into out/amazing-grace/
+copyist build songs/amazing-grace.yaml --images   # also PNGs of every PDF page, for checking by eye
 copyist check songs/amazing-grace.yaml    # run validators only
 python -m unittest discover -s tests      # tests
 ```
