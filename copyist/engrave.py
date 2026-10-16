@@ -14,6 +14,8 @@ import pymupdf
 import verovio
 from music21 import stream
 
+from .lyrics import EXTEND_MARK
+
 # US Letter. Verovio measures pages in tenths of a millimetre; PDF in points.
 LETTER_MM10 = (2159, 2794)
 LETTER_PT = (612, 792)
@@ -61,9 +63,23 @@ def write_musicxml(score: stream.Score, path: Path, credits: dict | None = None)
     """Write MusicXML, adding page-one credits (title, words, music) that engravers print."""
     path.parent.mkdir(parents=True, exist_ok=True)
     score.write("musicxml", fp=str(path))
+    add_extenders(path)
     if credits:
         add_credits(path, credits)
     return path
+
+
+def add_extenders(path: Path) -> None:
+    """Turn lyrics marked by lyrics.align into MusicXML extender lines.
+
+    music21 can't write <extend>, so marked lyrics are exported with a name
+    attribute and rewritten here.
+    """
+    xml = path.read_text(encoding="utf-8")
+    pattern = re.compile(r'<lyric([^>]*?)\sname="' + EXTEND_MARK + r'"([^>]*)>(.*?</text>)', re.S)
+    new = pattern.sub(lambda m: f"<lyric{m.group(1)}{m.group(2)}>{m.group(3)}\n          <extend type=\"start\" />", xml)
+    if new != xml:
+        path.write_text(new, encoding="utf-8")
 
 
 def add_credits(path: Path, credits: dict) -> None:

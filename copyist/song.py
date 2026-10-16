@@ -169,6 +169,7 @@ def load_song(path: str | Path) -> Song:
     if isinstance(verses, str):
         verses = [verses]
     fits = lyr.align(part, [str(v) for v in verses])
+    lyr.melisma_slurs(part, fits)
 
     return Song(
         path=path,

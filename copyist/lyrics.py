@@ -17,9 +17,13 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass, field
 
-from music21 import note, stream
+from music21 import note, spanner, stream
 
 SYL, HOLD, SKIP = "syl", "hold", "skip"
+
+# Marks a lyric whose word ends on a held syllable, so the engraver draws an
+# extender line under the held notes (MusicXML <extend>; see engrave.py).
+EXTEND_MARK = "copyist-extend"
 
 
 @dataclass
@@ -32,11 +36,13 @@ class Token:
 
 @dataclass
 class Placed:
-    """One syllable placed on one note."""
+    """One syllable placed on one note, plus the notes it's held over (a melisma)."""
     text: str
     syllabic: str
     word: int
     note: note.Note
+    held: list[note.Note] = field(default_factory=list)
+    slot: int = -1
 
 
 @dataclass
@@ -117,11 +123,41 @@ def align(part: stream.Stream, verses: list[str]) -> list[VerseFit]:
     for number, text in enumerate(verses, start=1):
         tokens = tokenize(text)
         fit = VerseFit(number, sum(t.kind == SYL for t in tokens), len(tokens), len(slots))
-        for token, n in zip(tokens, slots):
-            if token.kind != SYL:
-                continue
-            lyric = note.Lyric(text=token.text, number=number, syllabic=token.syllabic)
-            n.lyrics.append(lyric)
-            fit.placed.append(Placed(token.text, token.syllabic, token.word, n))
+        last: Placed | None = None
+        for i, (token, n) in enumerate(zip(tokens, slots)):
+            if token.kind == SYL:
+                lyric = note.Lyric(text=token.text, number=number, syllabic=token.syllabic)
+                n.lyrics.append(lyric)
+                last = Placed(token.text, token.syllabic, token.word, n, slot=i)
+                fit.placed.append(last)
+            elif token.kind == HOLD and last is not None:
+                last.held.append(n)
+            else:
+                last = None
+        for placed in fit.placed:
+            if placed.held and placed.syllabic in ("single", "end"):
+                placed.note.lyrics[-1].identifier = EXTEND_MARK
         fits.append(fit)
     return fits
+
+
+def melisma_slurs(part: stream.Part, fits: list[VerseFit]) -> list[spanner.Slur]:
+    """Slur the notes of each held syllable, where every verse holds there.
+
+    Singers read a slur as "one syllable across these notes". If verses
+    disagree (one holds, another sings a new syllable), no slur is drawn.
+    """
+    if not fits:
+        return []
+    def groups(fit: VerseFit) -> dict[int, tuple]:
+        return {p.slot: tuple(id(n) for n in p.held) for p in fit.placed if p.held}
+    first, rest = groups(fits[0]), [groups(f) for f in fits[1:]]
+    slurs = []
+    for placed in fits[0].placed:
+        if not placed.held:
+            continue
+        if all(g.get(placed.slot) == first[placed.slot] for g in rest):
+            slur = spanner.Slur([placed.note] + placed.held)
+            part.insert(0, slur)
+            slurs.append(slur)
+    return slurs

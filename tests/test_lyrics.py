@@ -1,6 +1,6 @@
 import unittest
 
-from copyist.lyrics import HOLD, SKIP, SYL, tokenize
+from copyist.lyrics import EXTEND_MARK, HOLD, SKIP, SYL, tokenize
 from helpers import song_from
 
 
@@ -31,6 +31,22 @@ class AlignTests(unittest.TestCase):
         song = song_from(melody="C D E F |", lyrics=["a b c d", "e f g h"])
         first = song.lyric_fits[0].placed[0].note
         self.assertEqual([(l.number, l.text) for l in first.lyrics], [(1, "a"), (2, "e")])
+
+
+class HeldSyllableTests(unittest.TestCase):
+    def test_word_final_hold_gets_an_extender_mid_word_hold_does_not(self):
+        song = song_from(melody='"C"C D E F | G4 |', lyrics=["grace_ al-_ read-y"])
+        placed = {p.text: p for p in song.lyric_fits[0].placed}
+        self.assertEqual(len(placed["grace"].held), 1)
+        self.assertEqual(placed["grace"].note.lyrics[0].identifier, EXTEND_MARK)
+        self.assertEqual(len(placed["al"].held), 1)
+        self.assertNotEqual(placed["al"].note.lyrics[0].identifier, EXTEND_MARK)
+
+    def test_slur_only_where_every_verse_holds(self):
+        both = song_from(melody='"C"C D E F |', lyrics=["one_ two three", "four_ five six"])
+        self.assertEqual(len(both.melody.getElementsByClass("Slur")), 1)
+        one = song_from(melody='"C"C D E F |', lyrics=["one_ two three", "four five six sev"])
+        self.assertEqual(len(one.melody.getElementsByClass("Slur")), 0)
 
 
 if __name__ == "__main__":

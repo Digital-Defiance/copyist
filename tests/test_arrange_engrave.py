@@ -58,6 +58,9 @@ class EngraveTests(unittest.TestCase):
         text = doc[0].get_text()
         for expected in ("Amazing Grace", "John Newton", "maz", "♩"):
             self.assertIn(expected, text)
+        xml = paths["musicxml"].read_text(encoding="utf-8")
+        self.assertEqual(xml.count("<extend"), 15)   # held word endings across the 4 verses
+        self.assertNotIn("copyist-extend", xml)
         pix = doc[0].get_pixmap(dpi=30)
         dark = sum(1 for i in range(0, len(pix.samples), pix.n) if pix.samples[i] < 128)
         self.assertGreater(dark, 500)  # the page isn't blank
