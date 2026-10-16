@@ -1,0 +1,13 @@
+# Build outputs and downloaded assets
+out/
+.cache/
+
+# Python
+__pycache__/
+*.egg-info/
+.venv/
+build/
+dist/
+
+# macOS
+.DS_Store
