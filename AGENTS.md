@@ -1,5 +1,7 @@
 # Working on Copyist
 
+**Start with [TASKS.md](TASKS.md)**: the checklist of what is done and what comes next.
+
 Instructions for AI coding agents and people picking up this project. Read this first, then SPEC.md, then ROADMAP.md.
 
 ## The project in one paragraph

@@ -130,6 +130,19 @@ def cmd_sing(args) -> int:
     return 0
 
 
+def cmd_voice(args) -> int:
+    """Make a SoulX-Singer voice from a recording of one person singing."""
+    from . import voiceprompt
+    hint = Path(args.lyrics).read_text(encoding="utf-8")[:800] if args.lyrics else None
+    wav, js, info = voiceprompt.make_voice(Path(args.recording), Path(args.out), args.name,
+                                          args.start, args.end, hint)
+    print(f"Voice “{args.name}”: {info['end'] - info['start']:.1f} s from {info['start']} s, "
+          f"median pitch {info['median_hz']} Hz.")
+    print(f"Words heard: {info['words']}")
+    print(f"Wrote {wav} and {js}")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="copyist", description="The song, the score, the sound.")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -159,6 +172,15 @@ def main(argv: list[str] | None = None) -> int:
     g.add_argument("--cache", default=".cache")
     g.add_argument("--no-mix", action="store_true", help="don't mix the vocal with the band")
     g.set_defaults(func=cmd_sing)
+
+    v = sub.add_parser("voice", help="make a singer voice for `copyist sing` from a recording")
+    v.add_argument("recording", help="a recording of one person singing (a vocal stem works)")
+    v.add_argument("--name", required=True, help="what to call the voice")
+    v.add_argument("--start", type=float, help="clip start in seconds (default: found automatically)")
+    v.add_argument("--end", type=float, help="clip end in seconds")
+    v.add_argument("--lyrics", help="a text file with the song's lyrics, to help the transcription")
+    v.add_argument("--out", default="voices", help="where voices live (default: voices/, never committed)")
+    v.set_defaults(func=cmd_voice)
 
     args = parser.parse_args(argv)
     try:
