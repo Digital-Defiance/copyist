@@ -31,6 +31,17 @@ Take the first unchecked item in the current milestone. Tick items when they're 
 - [ ] Drum kit part (percussion staff) for `straight` and `ballad`
 - [ ] A second test song in 4/4 with a different form (verse/chorus)
 
+## MT: Transcription from recordings (SPEC section 12)
+
+- [ ] Stem separation with Demucs; cache stems per song
+- [ ] Beat, tempo map, key and chord detection
+- [ ] Vocal melody: pitch contour → notes on the beat grid; lyrics aligned with Whisper word timings and the person's own lyric text
+- [ ] Bass line and drum groove extraction
+- [ ] Draft song file + arrangement parts from the measurements
+- [ ] Analysis-by-synthesis fitting loop: render, compare per stem, keep edits that improve closeness + simplicity
+- [ ] A/B listening page: original vs fitted render, mark bars that sound wrong
+- [ ] Accuracy report per stem against a few hand-checked songs
+
 ## M2: Song planning and following directions
 
 - [ ] Brief schema `copyist-brief/0` (SPEC 8.1) with loader and validation
@@ -44,6 +55,7 @@ Take the first unchecked item in the current milestone. Tick items when they're 
 ## M3: Melody proposals
 
 - [ ] Melody proposal interface: plan + section → ABC
+- [ ] Audition by ear only: render candidates, keep / change / try again; Copyist can also pick on its own (no singing, playing or notation required)
 - [ ] Validate-and-retry loop
 - [ ] Side-by-side audition: several proposals per section, rendered
 - [ ] Evaluate open symbolic models (MuPT, Amadeus) against an LLM baseline

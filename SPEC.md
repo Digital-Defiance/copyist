@@ -18,14 +18,15 @@ Audio-first generators (Suno, Mozart AI, Udio) create sound directly. The notes 
 
 - **Notes first.** Every output is derived from one canonical score. Nothing is guessed back from audio.
 - **Correct, then beautiful.** Deterministic validators gate every stage. A score that fails validation is never presented as finished.
-- **People write the heart.** The best melodies, hooks and lyrics come from people. Copyist helps write, smooth, harmonize, arrange, engrave and perform; it can also propose melodies, but a human can always see, edit and own every note.
+- **People direct; no musical skills required.** The words and the intent come from people. Nobody should need to sing, play an instrument or read notation to use Copyist: every choice can be made by reading plain language and listening, then saying keep, change or try again. A person who does read music can always see and edit every note.
+- **Melodies are earned, not assumed.** A melody comes from one of three places: transcribed from a recording the person already has (section 12), proposed by Copyist and auditioned by ear, or written as notation by someone who reads music. Whatever the source, it passes the same validators.
 - **Real musicians can use it.** Parts must be playable and readable: correct transpositions, ranges, clefs, beaming, spelling, page turns.
 - **Clean data, real consent.** No training on scraped copyrighted scores or recordings. Public domain, licensed, synthetic and opt-in material only. No voice is cloned without its owner's consent.
 - **Open and private.** Runs locally where possible. No telemetry.
 
 ### Who it's for
 
-- Songwriters who think in lyrics and melodies and want finished arrangements and charts.
+- Songwriters who write words and know what they want to hear, whether or not they sing, play or read music, and want finished arrangements and charts.
 - Musical theater: lead sheets in each singer's key, piano-vocal scores, pit parts, rehearsal tracks with changeable key and tempo.
 - Bands and church or school ensembles that need parts for their actual instrumentation.
 
@@ -61,7 +62,7 @@ Internally every song is a `music21` `Score`. On disk the source of truth is the
 ### 3.2 Stages
 
 1. **Song plan.** Form (verse/chorus/bridge), key, meter, tempo, chord chart, lyrics broken into syllables with stress marks. Can be written by hand or drafted by an LLM. (M2)
-2. **Melody.** Written by a person, or proposed by a model, in ABC notation. Models trained on ABC exist (e.g. MuPT), and LLMs write it reasonably well. Every proposal must pass the validators. (Hand-written at M0; generation at M3.)
+2. **Melody.** In ABC notation, from one of three sources: transcribed from an existing recording (section 12, milestone MT), proposed by a model (models trained on ABC exist, e.g. MuPT, and LLMs write it reasonably well; M3), or written by someone who reads music. Auditioning is by ear: candidates are rendered so the person listens and chooses, and Copyist can choose on its own when asked. Every melody must pass the validators.
 3. **Validators.** Deterministic checks (section 5). Failing checks block "finished" status and, during generation, trigger regeneration of the failing section.
 4. **Arrangement.** From the lead sheet to an instrumentation template (piano-vocal, rock/pop band, country band, pit orchestra, string quartet, choir). Rule-based first (M1), model-assisted later (M4). Every instrument stays in range and is written in its own transposition.
 5. **Engraving.** music21 exports MusicXML; Verovio engraves it to SVG; PyMuPDF assembles PDF. Lead sheet, full score and one PDF per part. Verovio's SVG relies on CSS and an embedded music font that MuPDF ignores, so each page is rewritten into plain SVG first (`engrave.printable_svg`). The page header (title, subtitle, words and music credits) is written into Verovio's MEI directly.
@@ -234,8 +235,44 @@ See ROADMAP.md for status and the task-level checklist.
 | M4 More arrangements | Piano-vocal, country band, pit orchestra templates; voice-leading checks | A music director would accept the charts |
 | M5 Better sound | Expressive performance layer, better instruments, guide vocals | A listener prefers it to M0 audio in blind tests |
 | M6 Neural rendering | MIDI-conditioned neural renderer with transcription check | Passes both the note check and listening tests |
+| MT Transcription | A recording becomes a song file and charts by fitting (section 12) | For the owner's own AI-generated songs: lead sheet, bass and drum groove close enough that a band could play it and it sounds like the song |
 
-## 12. Open questions
+## 12. Transcribing recordings (fit to audio)
+
+Many songs already exist as recordings (for example, songs made with Suno or Mozart AI) and have no sheet music. Milestone MT turns a recording into a song file and charts. It also produces paired recordings and scores, which are training data for M6, but only for audio we have the rights to.
+
+### 12.1 Goal
+
+**The simplest readable score that sounds like the recording.** Not every vibrato wobble written as 32nd notes: what a professional chart would contain. Lead sheet (melody, lyrics, chords), a written bass line, a drum groove with fills, and comping written as chord symbols with rhythm slashes, plus written lines only where a part is distinctive.
+
+### 12.2 Pipeline
+
+1. **Separate** the mix into stems with Demucs (vocals, drums, bass, piano, guitar, other).
+2. **Measure:** beats and downbeats, tempo map, key, chord labels, vocal pitch contour, bass notes, drum hits (kick, snare, hi-hat, cymbals), note onsets for other stems, and word timings from Whisper on the vocal stem.
+3. **Draft a score:** quantize to the beat grid, choose straight or swing, spell notes in the key, align the lyrics' syllables to vocal notes (held syllables become `_`), write the result as a `copyist-song` file plus arrangement parts.
+4. **Fit by analysis by synthesis:** render the draft with Copyist's own renderer and compare it to the original stem by stem: pitch contour for voice and bass, onset timing for drums, harmony (chroma) for chords. Make small edits (fix an octave, move a note to the beat, merge or split notes, relabel a chord, switch the feel) and keep an edit when it improves *closeness to the recording* plus *simplicity of notation*. Validators stay on throughout, so the score is always singable and correct.
+5. **Review by ear:** the person A/B-switches between the original and the fitted render and marks anything that sounds wrong; marked bars get refitted.
+
+### 12.3 Expected accuracy (to be measured)
+
+| Part | Expectation | Main risk |
+|---|---|---|
+| Vocal melody | high | slides, vibrato, loose rhythm |
+| Lyrics on notes | high | Whisper mishearing; fixed by the person's own lyric text |
+| Bass | high | octave errors (range priors fix most) |
+| Chord symbols | good | unusual chords |
+| Drums | medium | toms and cymbals |
+| Piano, guitar, strings (exact notes) | low | many notes at once in a mix; charts use chord symbols and slashes instead |
+
+### 12.4 Tools to evaluate
+
+Demucs (separation), Basic Pitch (notes), torchcrepe or pYIN (vocal pitch), Beat This! or madmom (beats), a chord recognizer, a drum transcriber, Whisper (word timings). Check every license before adding a dependency; some audio libraries are AGPL.
+
+### 12.5 Rights
+
+Only transcribe recordings the user owns or has rights to. The fitted score of someone else's song is still their song.
+
+## 13. Open questions
 
 - License for the code (MIT, Apache-2.0, or GPL to match tools like Seed-VC).
 - Which local LLM or API drafts song plans (M2), and how prompts are versioned.
