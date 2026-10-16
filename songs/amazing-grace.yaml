@@ -1,0 +1,21 @@
+format: copyist-song/0
+title: Amazing Grace
+credits:
+  words: John Newton (1779)
+  music: Traditional, tune "New Britain" (1829)
+key: G
+meter: 3/4
+tempo: 80
+voice:
+  name: Melody
+  range: [C4, E5]
+style: waltz
+# Public domain: words 1779, tune first published 1829.
+melody: |
+  D | "G"G2 B/G/ | B2 A | "C"G2 E | "G"D2 D | G2 B/G/ | B2 A | "D"d3- | "D7"d2 B |
+  "G"d2 B/G/ | "G7"B2 A | "C"G2 E | "G"D2 D | G2 B/G/ | B2 "D7"A | "G"G3- | G2 |]
+lyrics:
+  - A-maz-ing_ grace, how sweet the sound that saved a_ wretch like me! I once was_ lost, but now am found, was blind but_ now I see.
+  - "'Twas grace that_ taught my heart to fear, and grace my_ fears re-lieved; how pre-cious_ did that grace ap-pear the hour I_ first be-lieved!"
+  - Through man-y_ dan-gers, toils and snares, I have al-_ read-y come; 'tis grace hath_ brought me safe thus far, and grace will_ lead me home.
+  - The Lord has_ prom-ised good to me, his word my_ hope se-cures; he will my_ shield and por-tion be, as long as_ life en-dures.
