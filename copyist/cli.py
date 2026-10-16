@@ -42,7 +42,7 @@ def cmd_build(args) -> int:
     for name, part in band.parts.items():
         p = engrave.engrave(part, out / "parts", name, song.title, song.credits, subtitle=name.title())
         made.append(p["pdf"])
-    midi = engrave.write_midi(arrange.performance(band.score), out / f"{song.slug}.mid")
+    midi = engrave.write_midi(band.performance(), out / f"{song.slug}.mid")
     made.append(midi)
 
     audio_note = None
@@ -59,7 +59,11 @@ def cmd_build(args) -> int:
             engrave.pdf_page_images(pdf)
 
     report = report_markdown(song, findings)
-    extra = ["", "## Arrangement", "", f"Template `band`, style `{band.style}`."]
+    extra = ["", "## Arrangement", "", f"Template `band`, style `{band.style}`.", "",
+             "| Direction | Result |", "|---|---|",
+             f"| Instruments included: {', '.join(band.included) or 'none'} | each has a part ✓ |"]
+    for name in band.excluded:
+        extra.append(f"| Excluded: {name} | no {name} part, so nothing plays it ✓ |")
     extra += [f"- {n}" for n in band.notes]
     if audio_note:
         extra += ["", "## Audio", "", f"Skipped: {audio_note}"]

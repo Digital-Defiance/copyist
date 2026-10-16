@@ -14,7 +14,8 @@ from dataclasses import dataclass
 from music21 import (chord, clef, harmony, instrument, interval, key, layout, meter, note,
                      pitch, stream, tempo)
 
-from .song import Song
+from . import drums
+from .song import INSTRUMENTS, Song
 
 # Each pattern: role -> list of (start, length, tone). Starts and lengths are
 # in quarter notes from the start of a full bar. Tones: "chord", "root", "fifth".
@@ -52,9 +53,22 @@ PROGRAM = {"voice": 53, "piano": 0, "bass": 33}  # GM: Voice Oohs, Acoustic Gran
 @dataclass
 class Arrangement:
     style: str
-    score: stream.Score            # full score, written pitch
+    score: stream.Score             # full score, written pitch
     parts: dict[str, stream.Score]  # one score per player, for part PDFs
-    notes: list[str]               # anything the arranger had to decide or skip
+    notes: list[str]                # anything the arranger had to decide or skip
+    included: list[str]
+    excluded: list[str]
+    perf_extra: list[stream.Part]   # performance-only parts (the drum kit at GM drum notes)
+
+    def performance(self) -> stream.Score:
+        """The arrangement as it should sound: for MIDI and audio."""
+        perf = performance(self.score)
+        for part in list(perf.parts):
+            if part.partName == "Drums":
+                perf.remove(part)
+        for part in self.perf_extra:
+            perf.insert(0, copy.deepcopy(part))
+        return perf
 
 
 def pattern_for(song: Song) -> tuple[str, dict, list[str]]:
@@ -257,43 +271,14 @@ def add_chord_symbols(part: stream.Part, timeline) -> None:
 
 
 def arrange_band(song: Song) -> Arrangement:
+    """Arrange the song for the instruments the song file asks for (default: all of them)."""
     style, pat, notes = pattern_for(song)
     timeline = chord_timeline(song.melody)
     if not timeline:
-        notes.append("No chord symbols, so the band has nothing to play; only the voice part was written.")
+        notes.append("No chord symbols, so piano and bass have nothing to play.")
+    wanted = song.instruments
 
-    voice = copy.deepcopy(song.melody)
-    voice.partName = "Voice"
-    voice.partAbbreviation = ABBREVIATIONS["Voice"]
-    v_inst = instrument.Vocalist()
-    v_inst.midiProgram = PROGRAM["voice"]
-    v_inst.partName, v_inst.partAbbreviation = "Voice", ABBREVIATIONS["Voice"]
-    voice.insert(0, v_inst)
-    for n in voice.recurse().notes:
-        n.volume.velocity = VELOCITY["voice"]
-
-    rh = new_part(stream.PartStaff, "Piano", instrument.Piano(), PROGRAM["piano"])
-    lh = new_part(stream.PartStaff, "Piano", instrument.Piano(), PROGRAM["piano"])
-    bass = new_part(stream.Part, "Bass", instrument.ElectricBass(), PROGRAM["bass"])
-    bass.getElementsByClass(instrument.Instrument).first().transposition = interval.Interval("-P8")
-    bass.atSoundingPitch = False
-
-    for part, role, the_clef in ((rh, "rh", clef.TrebleClef()), (lh, "lh", clef.BassClef()),
-                                 (bass, "bass", clef.BassClef())):
-        bars = build_role(song, role, pat[role], timeline, VELOCITY[role])
-        start_bar(bars[0], song, the_clef)
-        for m in bars:
-            part.append(m)
-
-    piano_group = layout.StaffGroup([rh, lh], name="Piano", abbreviation="Pno.", symbol="brace",
-                                    barTogether=True)
-    full = stream.Score()
-    full.metadata = copy.deepcopy(song.score.metadata)
-    for part in (voice, rh, lh, bass):
-        full.insert(0, part)
-    full.insert(0, piano_group)
-
-    def single(*parts, group=None, chords=False):
+    def single(*parts, group=False, chords=False):
         s = stream.Score()
         s.metadata = copy.deepcopy(song.score.metadata)
         for p in parts:
@@ -305,19 +290,67 @@ def arrange_band(song: Song) -> Arrangement:
             for inst in p.getElementsByClass(instrument.Instrument):
                 inst.partName = inst.partAbbreviation = inst.instrumentName = inst.instrumentAbbreviation = None
             s.insert(0, p)
-        if group is not None:
+        if group:
             s.insert(0, layout.StaffGroup(list(s.parts), symbol="brace", barTogether=True))
         add_tempo(s, song)
         return s
 
-    parts = {
-        "voice": single(voice),
-        "piano": single(rh, lh, group=True, chords=False),
-        "bass": single(bass, chords=True),
-    }
-    # Chord symbols above the piano right hand in the piano part.
-    add_chord_symbols(parts["piano"].parts[0], timeline)
-    return Arrangement(style, full, parts, notes)
+    full = stream.Score()
+    full.metadata = copy.deepcopy(song.score.metadata)
+    perf_extra: list[stream.Part] = []
+    parts: dict[str, stream.Score] = {}
+    order: list[stream.Part] = []
+
+    if "voice" in wanted:
+        voice = copy.deepcopy(song.melody)
+        voice.partName = "Voice"
+        voice.partAbbreviation = ABBREVIATIONS["Voice"]
+        v_inst = instrument.Vocalist()
+        v_inst.midiProgram = PROGRAM["voice"]
+        v_inst.partName, v_inst.partAbbreviation = "Voice", ABBREVIATIONS["Voice"]
+        voice.insert(0, v_inst)
+        for n in voice.recurse().notes:
+            n.volume.velocity = VELOCITY["voice"]
+        order.append(voice)
+        parts["voice"] = single(voice)
+
+    if "piano" in wanted:
+        rh = new_part(stream.PartStaff, "Piano", instrument.Piano(), PROGRAM["piano"])
+        lh = new_part(stream.PartStaff, "Piano", instrument.Piano(), PROGRAM["piano"])
+        for part, role, the_clef in ((rh, "rh", clef.TrebleClef()), (lh, "lh", clef.BassClef())):
+            bars = build_role(song, role, pat[role], timeline, VELOCITY[role])
+            start_bar(bars[0], song, the_clef)
+            for m in bars:
+                part.append(m)
+        order += [rh, lh]
+        full.insert(0, layout.StaffGroup([rh, lh], name="Piano", abbreviation="Pno.", symbol="brace",
+                                         barTogether=True))
+        parts["piano"] = single(rh, lh, group=True)
+        add_chord_symbols(parts["piano"].parts[0], timeline)  # chords above the right hand
+
+    if "bass" in wanted:
+        bass = new_part(stream.Part, "Bass", instrument.ElectricBass(), PROGRAM["bass"])
+        bass.getElementsByClass(instrument.Instrument).first().transposition = interval.Interval("-P8")
+        bass.atSoundingPitch = False
+        bars = build_role(song, "bass", pat["bass"], timeline, VELOCITY["bass"])
+        start_bar(bars[0], song, clef.BassClef())
+        for m in bars:
+            bass.append(m)
+        order.append(bass)
+        parts["bass"] = single(bass, chords=True)
+
+    if "drums" in wanted:
+        kit, kit_perf = drums.build(song, style, bar_window)
+        order.append(kit)
+        perf_extra.append(kit_perf)
+        parts["drums"] = single(kit)
+
+    for part in order:
+        full.insert(0, part)
+    if order:
+        add_tempo(full, song)
+    excluded = [i for i in INSTRUMENTS if i not in wanted]
+    return Arrangement(style, full, parts, notes, list(wanted), excluded, perf_extra)
 
 
 def add_tempo(s: stream.Score, song: Song) -> None:

@@ -87,6 +87,7 @@ voice:
   name: Melody
   range: [D4, E5]      # optional; the range check uses it
 style: waltz           # optional; picks the arrangement pattern (see section 7)
+instruments: [voice, piano, bass, drums]   # optional; default all four. Left out = no part at all
 melody: |
   D | "G"G2 B/G/ | B2 A | "C"G2 E | "G"D2 D |
 lyrics:                # one entry per verse
@@ -135,17 +136,25 @@ Planned: `breath` (singers get a breath at least every N bars), `tessitura` (whe
 1. **Sampled render (M0).** SoundFont via TinySoundFont. Exact and predictable; sounds like a demo.
 2. **Expressive performance (M5).** Turn the plain score into a humanized performance (timing, dynamics, pedaling, articulation) while keeping the same notes. Output is still MIDI.
 3. **Neural MIDI-to-audio (M6).** A MIDI-conditioned adapter on an open model (ACE-Step 1.5, Apache-2.0, is the leading candidate). Trained on paired score/audio data built by transcribing licensed audio and keeping only confident passages. Verified by transcribing the output and comparing it to the score, plus a realism metric and human listening: both must pass.
-4. **Vocals.** Short term: a guide vocal (singing synthesis such as DiffSinger, or a person's scratch take) plus consented singing voice conversion (e.g. Seed-VC). Long term: a note-conditioned singing model. Pitch is checked per phrase and nudged or regenerated.
+4. **Vocals.** Copyist already knows which syllable sits on which note, which is exactly what singing synthesis needs. Candidates, as of October 2026:
+   - **SoulX-Singer** (Apache-2.0, February 2026): zero-shot singing voice synthesis conditioned on a score; English, Mandarin, Cantonese. The cleanest path for vocals sung from Copyist's own notes and syllables.
+   - **YuE2** (HKUST / M-A-P, September 2026): open song generator that itself plans in ABC notation and accepts a ready-made ABC score to perform. In the authors' blind expert test it roughly tied Suno v5 (best of 8). Weights are CC BY-NC 4.0, with an added permission for individual creators to sell songs; companies need a separate license. Strong candidate for full-band-plus-vocal rendering of Copyist scores, licence permitting.
+   - **ACE-Step 1.5** (Apache-2.0): the most permissive full-song model.
+   - Fallbacks: DiffSinger guide vocal plus consented voice conversion (e.g. Seed-VC).
+   Whatever renders the voice, its pitch is checked per phrase against the score (pYIN or CREPE) and drifting phrases are nudged or regenerated.
 
 ## 7. Arrangement (M1 and later)
 
 Arrangement templates are data, not code: a list of instruments with ranges, clefs, transpositions and patterns per `style`.
 
-M1 template **band**:
+M1 template **band** (instruments chosen by the song file's `instruments`; anything left out gets no part and is never heard):
 
 - **Voice**: the melody and lyrics.
 - **Piano**: right hand plays close-position chords between G3 and D5, choosing each voicing to move as little as possible from the last (for chords bigger than a triad: root, 3rd and 7th, dropping the 5th); left hand plays the root between E2 and D♯3. Pattern by style (`waltz`: bass on 1, chords on 2 and 3; `ballad`: whole-bar chords; `straight`: chords on every beat). A chord change inside a pattern note splits it.
 - **Bass**: root on each chord change and on beat 1; adds the fifth on beat 3 in 4/4. Written an octave above sounding pitch, as bass parts are.
+- **Drums**: a groove per style (`waltz`: kick on 1, hi-hat with side-stick on 2 and 3; `ballad`: hi-hat eighths, side-stick on 2 and 4, kick on 1 and 3; `straight`: hi-hat eighths, snare on 2 and 4, kick on 1, the "and" of 2, and 3). A fill every 8 bars, a crash on bar 1 and after each fill, crash and kick on the last bar. Written on a percussion staff in two voices (hands stems up, feet stems down): kick F4, snare and side-stick C5, hi-hat G5 (x), crash A5 (x). The same list of hits builds the MIDI on the General MIDI drum channel, so what's written and what's heard can't differ.
+
+Lyrics with held syllables (`_`) get an extender line when a word ends on the held syllable, and the held notes are slurred when every verse holds there.
 
 Later templates: piano-vocal score, country band (adds acoustic guitar and fiddle), pit orchestra (reeds, brass, strings, keys, percussion), string quartet, SATB choir.
 

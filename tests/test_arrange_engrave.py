@@ -24,11 +24,13 @@ class ArrangeTests(unittest.TestCase):
 
     def test_style_and_parts(self):
         self.assertEqual(self.band.style, "waltz")
-        self.assertEqual(set(self.band.parts), {"voice", "piano", "bass"})
+        self.assertEqual(set(self.band.parts), {"voice", "piano", "bass", "drums"})
 
     def test_every_part_lines_up_with_the_melody(self):
         expected = bar_lengths(self.song.melody)
         for part in self.band.score.parts:
+            if part.partName == "Drums":
+                continue  # written in two voices; checked in test_drums
             self.assertEqual(bar_lengths(part), expected, part.partName)
 
     def test_piano_plays_the_written_chords(self):
@@ -42,7 +44,7 @@ class ArrangeTests(unittest.TestCase):
                             f"{ch} doesn't fit {cs.figure}")
 
     def test_bass_sounds_an_octave_below_written(self):
-        perf = arrange.performance(self.band.score)
+        perf = self.band.performance()
         bass = [p for p in perf.parts if p.partName == "Bass"][0]
         pitches = [n.pitch.midi for n in bass.recurse().notes]
         self.assertTrue(28 <= min(pitches) and max(pitches) <= 50)  # E1 to D3

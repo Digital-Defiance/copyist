@@ -35,6 +35,7 @@ copyist/          the package
   lyrics.py       syllable parsing and alignment
   validate.py     validators (SPEC section 5)
   arrange.py      arrangement templates (SPEC section 7)
+  drums.py        drum grooves, fills and crashes; notation and MIDI from one list of hits
   engrave.py      MusicXML, SVG and PDF output via Verovio and PyMuPDF
   render.py       MIDI to WAV via TinySoundFont
   cli.py          the `copyist` command

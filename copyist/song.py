@@ -13,6 +13,7 @@ from . import lyrics as lyr
 
 FORMAT = "copyist-song/0"
 REQUIRED = ("title", "key", "meter", "melody")
+INSTRUMENTS = ("voice", "piano", "bass", "drums")  # the band template, in score order
 
 
 class SongError(ValueError):
@@ -31,6 +32,7 @@ class Song:
     voice_name: str
     voice_range: tuple[pitch.Pitch, pitch.Pitch] | None
     style: str | None
+    instruments: list[str]
     melody_abc: str
     verses: list[str]
     score: stream.Score = field(repr=False)
@@ -165,6 +167,16 @@ def load_song(path: str | Path) -> Song:
     part.partName = None
     number_bars(part)
 
+    instruments = data.get("instruments") or list(INSTRUMENTS)
+    if isinstance(instruments, str):
+        instruments = [instruments]
+    instruments = [str(i).strip().lower() for i in instruments]
+    unknown = [i for i in instruments if i not in INSTRUMENTS]
+    if unknown:
+        raise SongError(f"{path.name}: unknown instrument(s) {', '.join(unknown)}. "
+                        f"This version knows: {', '.join(INSTRUMENTS)}.")
+    instruments = [i for i in INSTRUMENTS if i in instruments]
+
     verses = data.get("lyrics") or []
     if isinstance(verses, str):
         verses = [verses]
@@ -182,6 +194,7 @@ def load_song(path: str | Path) -> Song:
         voice_name=voice_name,
         voice_range=voice_range,
         style=data.get("style"),
+        instruments=instruments,
         melody_abc=data["melody"],
         verses=verses,
         score=score,

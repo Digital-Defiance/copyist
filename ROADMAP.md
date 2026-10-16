@@ -23,12 +23,15 @@ Take the first unchecked item in the current milestone. Tick items when they're 
 - [x] `band` template: voice, piano, bass, with `waltz`, `ballad` and `straight` patterns
 - [x] Full score PDF and one PDF per part, parts transposed
 - [ ] Range and playability check per instrument
-- [ ] Melisma extender lines under held syllables (MusicXML `<extend>`; music21's Lyric doesn't write it)
+- [x] Melisma extender lines under held syllables (MusicXML `<extend>`; music21's Lyric doesn't write it)
 - [ ] Verses as repeats in the audio (the demo WAV currently plays the tune once)
 - [ ] Rehearsal marks and section names from the song file
 - [ ] Concert-pitch vs transposed full score option
 - [x] Multi-track MIDI and demo WAV for the arrangement
-- [ ] Drum kit part (percussion staff) for `straight` and `ballad`
+- [x] Drum kit part (percussion staff) for `waltz`, `ballad` and `straight`, with fills and crashes
+- [x] `instruments:` in the song file; left-out instruments get no part (first direction check in the report)
+- [ ] Drum key (which line is which piece) on the first page of the drum part
+- [ ] Repeated grooves written with repeat (simile) marks instead of every bar in full
 - [ ] A second test song in 4/4 with a different form (verse/chorus)
 
 ## MT: Transcription from recordings (SPEC section 12)
@@ -59,6 +62,13 @@ Take the first unchecked item in the current milestone. Tick items when they're 
 - [ ] Validate-and-retry loop
 - [ ] Side-by-side audition: several proposals per section, rendered
 - [ ] Evaluate open symbolic models (MuPT, Amadeus) against an LLM baseline
+
+## M5: Better sound (vocals first)
+
+- [ ] Evaluate SoulX-Singer: sing a Copyist voice part from its notes and syllables; check pitch per phrase
+- [ ] Evaluate YuE2: feed it a Copyist ABC score; transcribe the result and compare to the score; confirm licence terms for Digital Defiance
+- [ ] Evaluate ACE-Step 1.5 as the fully open fallback
+- [ ] Pitch check: per-phrase f0 (pYIN/CREPE) vs score, with tolerances (SPEC 6)
 
 ## M4 and later
 
