@@ -95,3 +95,53 @@ def apply(synth, event) -> None:
 def wav_seconds(path: Path) -> float:
     with wave.open(str(path), "rb") as w:
         return w.getnframes() / w.getframerate()
+
+
+def read_wav(path: Path):
+    """(float32 samples shaped [frames, channels], sample rate)."""
+    import numpy as np
+    with wave.open(str(path), "rb") as w:
+        sr, ch, n = w.getframerate(), w.getnchannels(), w.getnframes()
+        data = np.frombuffer(w.readframes(n), dtype="<i2").astype(np.float32) / 32768.0
+    return data.reshape(-1, ch), sr
+
+
+def write_wav(path: Path, audio, sr: int) -> Path:
+    import numpy as np
+    peak = float(np.max(np.abs(audio))) or 1.0
+    pcm = (np.clip(audio * (0.89 / peak), -1, 1) * 32767).astype("<i2")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with wave.open(str(path), "wb") as w:
+        w.setnchannels(audio.shape[1])
+        w.setsampwidth(2)
+        w.setframerate(sr)
+        w.writeframes(pcm.tobytes())
+    return path
+
+
+def mix_vocal(band_wav: Path, vocal_wav: Path, out: Path, band_start: float, lead: float,
+              length: float, vocal_db: float = 0.0, band_db: float = -5.0) -> Path:
+    """Lay a sung vocal over the band.
+
+    `band_start` is where the excerpt starts in the band recording (seconds);
+    the vocal recording starts `lead` seconds before that point.
+    """
+    import numpy as np
+    import soundfile as sf
+    import librosa
+    band, sr = read_wav(band_wav)
+    voc, vsr = sf.read(str(vocal_wav), dtype="float32", always_2d=True)
+    voc = voc.mean(axis=1)
+    if vsr != sr:
+        voc = librosa.resample(voc, orig_sr=vsr, target_sr=sr)
+    voc = voc / (float(np.max(np.abs(voc))) or 1.0)
+    band = band / (float(np.max(np.abs(band))) or 1.0)
+    first = int(round((band_start - lead) * sr))
+    total = int(round((lead + length + 1.5) * sr))
+    seg = np.zeros((total, 2), dtype=np.float32)
+    src_a, dst_a = max(first, 0), max(-first, 0)
+    take = max(0, min(total - dst_a, band.shape[0] - src_a))
+    seg[dst_a:dst_a + take] = band[src_a:src_a + take, :2] if band.shape[1] >= 2 else band[src_a:src_a + take]
+    v = voc[:total]
+    seg[:len(v)] = seg[:len(v)] * 10 ** (band_db / 20) + (v * 10 ** (vocal_db / 20))[:, None]
+    return write_wav(out, seg, sr)

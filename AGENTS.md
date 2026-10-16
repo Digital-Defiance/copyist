@@ -22,6 +22,7 @@ pip install --no-deps tinysoundfont       # audio (its PyAudio dependency is onl
 copyist build songs/amazing-grace.yaml    # build every output into out/amazing-grace/
 copyist build songs/amazing-grace.yaml --images   # also PNGs of every PDF page, for checking by eye
 copyist check songs/amazing-grace.yaml    # run validators only
+copyist sing songs/amazing-grace.yaml --bars 0-4   # sung vocal (needs SoulX-Singer; docs/singing.md)
 python -m unittest discover -s tests      # tests
 ```
 
@@ -37,11 +38,15 @@ copyist/          the package
   arrange.py      arrangement templates (SPEC section 7)
   drums.py        drum grooves, fills and crashes; notation and MIDI from one list of hits
   engrave.py      MusicXML, SVG and PDF output via Verovio and PyMuPDF
-  render.py       MIDI to WAV via TinySoundFont
+  render.py       MIDI to WAV via TinySoundFont; mixing a sung vocal over the band
+  sing.py         voice part → SoulX-Singer input; runs the model (docs/singing.md)
+  pitch.py        sung pitch vs the score, note by note
+  hear.py         Whisper transcription of a vocal vs the lyrics
   cli.py          the `copyist` command
 songs/            song files (public domain or original only)
 tests/            unittest tests
-docs/             longer design notes
+docs/             longer design notes; docs/singing.md for vocals
+scripts/          setup helpers (setup-soulx.sh)
 out/              build output (ignored)
 .cache/           downloaded assets (ignored)
 ```

@@ -19,6 +19,11 @@ dependencies = [
 # playback dependency (PyAudio needs the PortAudio system library):
 #     pip install --no-deps tinysoundfont
 
+[project.optional-dependencies]
+# Singing (copyist sing): pitch checking and mixing. SoulX-Singer itself runs
+# in its own environment; see docs/singing.md.
+sing = ["librosa>=0.10", "soundfile>=0.12", "faster-whisper>=1.0"]
+
 [project.scripts]
 copyist = "copyist.cli:main"
 

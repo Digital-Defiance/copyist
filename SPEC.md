@@ -141,7 +141,11 @@ Planned: `breath` (singers get a breath at least every N bars), `tessitura` (whe
    - **YuE2** (HKUST / M-A-P, September 2026): open song generator that itself plans in ABC notation and accepts a ready-made ABC score to perform. In the authors' blind expert test it roughly tied Suno v5 (best of 8). Weights are CC BY-NC 4.0, with an added permission for individual creators to sell songs; companies need a separate license. Strong candidate for full-band-plus-vocal rendering of Copyist scores, licence permitting.
    - **ACE-Step 1.5** (Apache-2.0): the most permissive full-song model.
    - Fallbacks: DiffSinger guide vocal plus consented voice conversion (e.g. Seed-VC).
-   Whatever renders the voice, its pitch is checked per phrase against the score (pYIN or CREPE) and drifting phrases are nudged or regenerated.
+   Whatever renders the voice, every sung note's pitch is checked against the score (pYIN; the middle of each note, ±50 cents) and the words are checked by transcribing the vocal with Whisper. Drifting phrases are nudged or regenerated.
+
+   **Status (2026-10-16): SoulX-Singer is integrated** (`copyist sing`, `copyist/sing.py`, docs/singing.md). First test, Amazing Grace bars 0–4 with SoulX-Singer's example voice on a 2-core CPU: 10 of 10 notes within ±50 cents, and Whisper heard every word in order. Speed on that machine: about 25 seconds of computing per second of singing.
+
+   **Voices come from consenting people, never from other AI generators.** A voice is a 10–30 second reference recording, not a training run. Suno's terms (September 2026) forbid using its output to "power, enable or train other artificial intelligence and machine learning models" or to build competing products.
 
 ## 7. Arrangement (M1 and later)
 

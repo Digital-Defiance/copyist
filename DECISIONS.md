@@ -2,6 +2,14 @@
 
 Newest first. One entry per decision: what, why, and what we gave up.
 
+## 2026-10-16 (singing)
+
+- **SoulX-Singer runs as a subprocess in its own Python 3.10 environment.** Its pinned PyTorch 2.2 and Transformers 4.41 shouldn't constrain Copyist, and Copyist stays installable without PyTorch.
+- **Score control, no auto-shift.** The model follows the written notes, at written pitch, so the pitch check can hold it to the score.
+- **Phrases of about 8 seconds, split at word starts;** a short last phrase folds into the one before. Each phrase is sung separately and placed on one timeline.
+- **Voices are reference recordings from consenting people.** No training is needed for a new voice. Output from Suno (and, until checked, any other generator) is never used as a voice or as training data: Suno's terms forbid it, and Copyist competes with it.
+- **The sung vocal is checked twice:** pitch per note (pYIN, ±50 cents, judged on the middle of the note so scoops and slides are allowed) and words (Whisper, base.en). Both are optional dependencies (`pip install -e ".[sing]"`).
+
 ## 2026-10-16 (drums, held syllables, vocals)
 
 - **Drums are built from one list of hits** that produces both the notation (percussion staff, two voices) and the MIDI (GM drum notes on channel 10). music21's MIDI export of unpitched notation is unreliable, and one source keeps written and heard identical.

@@ -37,6 +37,7 @@ class Song:
     verses: list[str]
     score: stream.Score = field(repr=False)
     lyric_fits: list[lyr.VerseFit] = field(default_factory=list, repr=False)
+    pronunciations: dict = field(default_factory=dict)
 
     @property
     def slug(self) -> str:
@@ -199,4 +200,5 @@ def load_song(path: str | Path) -> Song:
         verses=verses,
         score=score,
         lyric_fits=fits,
+        pronunciations={str(k): str(v) for k, v in (data.get("pronunciations") or {}).items()},
     )

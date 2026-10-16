@@ -63,12 +63,18 @@ Take the first unchecked item in the current milestone. Tick items when they're 
 - [ ] Side-by-side audition: several proposals per section, rendered
 - [ ] Evaluate open symbolic models (MuPT, Amadeus) against an LLM baseline
 
-## M5: Better sound (vocals first)
+## M5: Better sound (vocals first; current)
 
-- [ ] Evaluate SoulX-Singer: sing a Copyist voice part from its notes and syllables; check pitch per phrase
+- [x] Integrate SoulX-Singer: `copyist sing` exports the voice part (per-word phonemes, held notes, phrases), runs the model, checks pitch per note and words with Whisper, mixes with the band (docs/singing.md)
+- [ ] Run `copyist sing` on the Mac (M4 Max): confirm `mps` works or fall back to CPU; record the speed
+- [ ] Record consented reference voices (a few singers, different ranges) and make their metadata with SoulX-Singer's preprocessing
+- [ ] Auto-retry phrases that fail the pitch or lyric check (new seed), keep the best take
+- [ ] Sing every verse and stitch them with the band playing the tune once per verse
+- [ ] Duets and choruses: one voice part per singer, each with its own reference voice
 - [ ] Evaluate YuE2: feed it a Copyist ABC score; transcribe the result and compare to the score; confirm licence terms for Digital Defiance
 - [ ] Evaluate ACE-Step 1.5 as the fully open fallback
-- [ ] Pitch check: per-phrase f0 (pYIN/CREPE) vs score, with tolerances (SPEC 6)
+- [x] Pitch check: per-note f0 (pYIN) vs score, ±50 cents on the middle of each note (SPEC 6)
+- [x] Lyric check: Whisper transcription compared with the sung words
 
 ## M4 and later
 
