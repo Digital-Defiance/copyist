@@ -140,7 +140,11 @@ def cmd_produce(args) -> int:
                       octave=octave)
     req["output_format"] = "wav16"
     out = Path(args.out) / song.slug / "production"
-    audio = yue.run_yue2cpp(req, out, device=args.device)
+    extra = []
+    if args.lora:
+        req["adapters"], folder = yue.lora_adapters(args.lora)
+        extra = ["--adapters", folder]
+    audio = yue.run_yue2cpp(req, out, device=args.device, extra=extra)
     offset = yue.vocal_offset(song, args.intro_bars)
     print(f"Wrote {audio}")
     print(f"Verse 1's first note is {offset:.2f} seconds into the recording.")
@@ -172,6 +176,17 @@ def cmd_follow(args) -> int:
     out.write_text("\n".join(lines), encoding="utf-8")
     print(f"Wrote {out}")
     return 0 if total and good / total >= args.pass_share else 1
+
+
+def cmd_lora_songs(args) -> int:
+    """List a song collection for LoRA training: style caption and YuE2 lyrics per song, paired with its audio."""
+    from . import lora
+    songs = lora.build_songs([Path(d) for d in args.sheets], Path(args.audio), args.trigger, use=args.style)
+    out = Path(args.out)
+    lora.write_songs(songs, out)
+    print(f"{len(songs)} songs, trigger “{args.trigger}”. Wrote {out}")
+    print(f"Audio comes from {Path(args.audio).resolve()} (give the same folder to scripts/yue-lora/prepare.py).")
+    return 0
 
 
 def cmd_voice(args) -> int:
@@ -224,6 +239,9 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--seed", type=int, default=831001, help="seed for the render (default 831001)")
     p.add_argument("--style", help="style tags; default comes from the song")
     p.add_argument("--device", help="yue-synth device, e.g. MTL0 (or set COPYIST_YUE_DEVICE)")
+    p.add_argument("--lora", action="append", metavar="FILE[:SCALE]",
+                   help="a YuE2 LoRA (.safetensors) to render with, e.g. a voice trained with scripts/yue-lora; "
+                        "repeat for more. Put its trigger word in --style")
     p.add_argument("--octave", type=int, help="octaves to write the melody above where it should sound "
                    "(default 1: YuE2 sings an octave below what it's given)")
     p.add_argument("--out", default="out")
@@ -238,6 +256,14 @@ def main(argv: list[str] | None = None) -> int:
     f.add_argument("--written-octave", action="store_true", help="count only notes in the written octave")
     f.add_argument("--pass-share", type=float, default=0.8, help="share of notes that must match (default 0.8)")
     f.set_defaults(func=cmd_follow)
+
+    ls = sub.add_parser("lora-songs", help="list songs for training a YuE2 LoRA (docs/voice-lora.md)")
+    ls.add_argument("sheets", nargs="+", help="folders of prompt sheets (one .md per song, numbered)")
+    ls.add_argument("--audio", required=True, help="folder of the songs' audio, numbered like the sheets")
+    ls.add_argument("--trigger", required=True, help="a made-up word that will call up the LoRA, e.g. lightson")
+    ls.add_argument("--style", choices=("demo", "production"), default="demo", help="which style on each sheet (default demo)")
+    ls.add_argument("--out", required=True, help="where to write songs.jsonl")
+    ls.set_defaults(func=cmd_lora_songs)
 
     v = sub.add_parser("voice", help="make a singer voice for `copyist sing` from a recording")
     v.add_argument("recording", help="a recording of one person singing (a vocal stem works)")

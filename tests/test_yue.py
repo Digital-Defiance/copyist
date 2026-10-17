@@ -148,3 +148,21 @@ class RuntimeTests(unittest.TestCase):
         request = json.loads((out / "amazing-grace" / "production" / "yue-request.json").read_text(encoding="utf-8"))
         self.assertIn('"G"z12|"G"z12|"C"z12|"G"z12|', request["abc"])
         self.assertEqual(request["output_format"], "wav16")
+        self.assertNotIn("--adapters", args)
+
+        loras = tmp / "loras"
+        loras.mkdir()
+        (loras / "voice.safetensors").write_bytes(b"x")
+        with mock.patch.dict(os.environ, env):
+            code = main(["produce", str(ROOT / "songs" / "amazing-grace.yaml"), "--out", str(out),
+                         "--lora", str(loras / "voice.safetensors") + ":0.8", "--style", "lightson, a waltz"])
+        self.assertEqual(code, 0)
+        args = (tmp / "args.txt").read_text(encoding="utf-8").splitlines()
+        self.assertEqual(args[args.index("--adapters") + 1], str(loras.resolve()))
+        request = json.loads((out / "amazing-grace" / "production" / "yue-request.json").read_text(encoding="utf-8"))
+        self.assertEqual(request["adapters"], [{"name": "voice.safetensors", "scale": 0.8}])
+        self.assertEqual(request["style"], "lightson, a waltz")
+
+    def test_a_missing_lora_is_refused(self):
+        with self.assertRaises(SongError):
+            yue.lora_adapters(["/nowhere/voice.safetensors"])

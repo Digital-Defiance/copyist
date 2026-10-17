@@ -2,6 +2,14 @@
 
 Newest first. One entry per decision: what, why, and what we gave up.
 
+## 2026-10-17 (voice LoRA)
+
+- **A voice comes from a YuE2 LoRA, not from SoulX over the SoundFont band.** The SoundFont band and a SoulX vocal stay as checking tools; she found the band "terrible" and the singer "a little glitchy". Gave up: SoulX's note-exact control of the vocal line.
+- **The LoRA trainer is Copyist's own code** (scripts/yue-lora), following the published recipe (AR-half LoRA, 50% artist and 50% YuE2 songs, stop well before memorizing) without copying its scripts, which are CC BY-NC. It imports the YuE2 package at run time and doesn't vendor it.
+- **It trains on a 64 GB Apple Silicon Mac (PyTorch mps)**, because that's the hardware there is. The YuE2 package already supports mps; the trainer runs attention in query blocks as YuE2 does there. Checked here on a tiny model: the training forward matches the model's own forward exactly, a fresh LoRA changes nothing, and a real-sized adapter merges in yue2.cpp (196 AR tensors).
+- **Spoken passages are kept as `[spoken]` sections** in training lyrics, because the recordings contain them; voice tags and staging cues are dropped.
+- **LoRAs are local, like voices.** They live in `.cache/` and are never committed or published, and the YuE2 terms (non-commercial) carry over to them.
+
 ## 2026-10-16 (YuE2)
 
 - **The vocal goes to YuE2 an octave above where it should sound.** YuE2 sang an octave below the ABC both times we measured (docs/production.md). Gave up: an ABC that matches the lead sheet note for note; the lead sheet and MusicXML still show the real octave.

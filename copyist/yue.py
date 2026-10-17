@@ -293,6 +293,25 @@ def request(song: Song, verses: int | None = None, style: str | None = None, see
             "duration": score_seconds(song, verses, intro_bars)}
 
 
+def lora_adapters(specs: list[str]) -> tuple[list[dict], str]:
+    """`path/to/name.safetensors[:scale]` for each LoRA -> (request adapters, the folder for --adapters).
+
+    yue-synth reads adapters from one folder, so every LoRA given must sit in the same one.
+    """
+    adapters, folders = [], set()
+    for spec in specs:
+        path, _, scale = spec.rpartition(":") if ":" in spec and spec.rsplit(":", 1)[1].replace(".", "", 1).isdigit() \
+            else (spec, "", "")
+        p = Path(path)
+        if not p.is_file():
+            raise SongError(f"No LoRA at {p}.")
+        adapters.append({"name": p.name, "scale": float(scale) if scale else 1.0})
+        folders.add(str(p.resolve().parent))
+    if len(folders) > 1:
+        raise SongError("Put every LoRA for one render in the same folder (yue-synth reads one adapters folder).")
+    return adapters, folders.pop()
+
+
 def song_production_style(song: Song) -> str | None:
     return getattr(song, "production", None)
 
