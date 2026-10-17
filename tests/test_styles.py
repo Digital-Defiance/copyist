@@ -44,8 +44,6 @@ class CatalogTests(unittest.TestCase):
 
     def test_every_meter_has_a_default_style_that_plays_it(self):
         for meter, style_id in styles.DEFAULT_FOR_METER.items():
-            if meter == "12/8":
-                continue                      # no 12/8 style yet: the arranger falls back to whole-bar chords
             self.assertIn(meter, styles.get(style_id).meters, meter)
 
     def test_mistakes_in_a_style_file_are_named(self):

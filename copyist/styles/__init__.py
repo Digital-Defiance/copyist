@@ -40,7 +40,7 @@ RH_TONES = {"chord", "shell", "arp1", "arp2", "arp3", "arp4"}
 BASS_TONES = {"root", "third", "fifth", "sixth", "seventh", "octave", "approach"}
 LINE_TONES = {"root", "third", "fifth", "sixth", "seventh", "octave"}
 PARTS = ("melody", "piano", "bass", "drums")
-DEFAULT_FOR_METER = {"3/4": "waltz", "4/4": "ballad", "6/8": "lullaby", "12/8": "gospel"}
+DEFAULT_FOR_METER = {"3/4": "waltz", "4/4": "ballad", "6/8": "lullaby"}
 FAMILIES = ["Pop and rock", "Country and folk", "Musical theatre", "Jazz and blues", "Soul and gospel",
             "Latin and Caribbean", "Hymns and classical", "Children's", "Electronic"]
 
