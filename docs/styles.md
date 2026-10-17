@@ -73,11 +73,19 @@ The arranger reads these files (`copyist/arrange.py`, `copyist/drums.py`). Every
 
 ## Choosing by ear: the gallery
 
-`copyist gallery SONG` plays the song in every style that fits its meter:
-- each style at a tempo inside its usual range;
-- performed, and played on the band.
+There are two ways to hear a song in every style that fits its meter. Each plays every style at a tempo inside its usual range.
 
-The results go into `out/<song>/gallery/`, one WAV per style plus `gallery.json`. On the page, the Sound tab's **Styles** section groups them by family, with a player for each and a "Use this style" button. `copyist use-style SONG STYLE --tempo N` does the same from the command line: it changes only the `style:` and `tempo:` lines of the song file, then writes the score again. `copyist styles` lists every style.
+- **`copyist gallery SONG`: the band preview.** Each style is arranged, performed and played on the sampled band. It takes a few seconds a style and runs anywhere. It's exact, but it sounds like what it is: piano, bass and drums, with a clarinet carrying the tune. Styles whose signature instruments aren't in the band yet (fiddle, steel guitar, organ, horns) are only sketched.
+- **`copyist gallery SONG --takes`: finished takes.** YuE2 performs the song in each style, singer and whole band together. The style's own words go into its style line ("swing jazz, walking upright bass, ride cymbal, ... clarinet, horn section"), so each style gets its real instruments.
+  - It takes about 45 seconds a style on an M4 Max and needs the singer installed.
+  - `--lora` and `--prefix` sing it in a trained voice.
+  - Takes go into `out/<song>/gallery/takes/<style>/`, and the song file isn't touched.
+
+Everything goes into `out/<song>/gallery/`, with `gallery.json` as the index.
+
+On the page, the Sound tab's **Styles** section groups the styles by family. Each one has a "Finished take" player and a "Band preview" player when those exist, and a "Use this style" button. The section has buttons for both kinds of gallery; the finished takes use the voice chosen in "Make a take".
+
+`copyist use-style SONG STYLE --tempo N` switches a song from the command line. It changes only the `style:` and `tempo:` lines of the song file, then writes the score again. `copyist styles` lists every style.
 
 ## The styles (23 so far)
 

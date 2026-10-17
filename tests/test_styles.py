@@ -202,5 +202,36 @@ class GalleryTests(unittest.TestCase):
         self.assertEqual([e["style"] for e in index["styles"]], ["ballad", "rock", "march"])
 
 
+class TakesGalleryTests(unittest.TestCase):
+    def test_a_finished_take_in_each_style_uses_its_words_and_tempo(self):
+        import os
+        import stat
+        from copyist.cli import main
+        tmp = Path(tempfile.mkdtemp(prefix="copyist-takes-"))
+        binary = tmp / "yue-synth"
+        binary.write_text("#!/usr/bin/env python3\nimport sys\nfrom pathlib import Path\n"
+                          "args = sys.argv[1:]\nPath(args[args.index('--out') + 1]).write_bytes(b'RIFF')\n")
+        binary.chmod(binary.stat().st_mode | stat.S_IEXEC)
+        (tmp / "m.gguf").write_bytes(b"m")
+        (tmp / "v.gguf").write_bytes(b"v")
+        env = {"COPYIST_YUE_SYNTH": str(binary), "COPYIST_YUE_MODEL": str(tmp / "m.gguf"),
+               "COPYIST_YUE_VAE": str(tmp / "v.gguf")}
+        out = tmp / "out"
+        with mock.patch.dict(os.environ, env):
+            code = main(["gallery", str(SONGS["4/4"]), "--takes", "--styles", "swing,ballad", "--out", str(out),
+                         "--prefix", "lightson, in the style of lightson."])
+        self.assertEqual(code, 0)
+        folder = out / "when-the-saints" / "gallery"
+        index = {e["style"]: e for e in json.loads((folder / gallery.INDEX).read_text())["styles"]}
+        self.assertEqual(set(index), {"ballad", "swing"})
+        swing = json.loads((folder / "takes" / "swing" / "yue-request.json").read_text())
+        self.assertTrue(swing["style"].startswith("lightson, in the style of lightson. English, swing jazz"))
+        self.assertIn("112 BPM", swing["style"])
+        ballad = json.loads((folder / "takes" / "ballad" / "yue-request.json").read_text())
+        self.assertIn("92 BPM", ballad["style"])                   # slowed into the ballad's range
+        self.assertEqual(index["ballad"]["take"], "takes/ballad/production.wav")
+        self.assertEqual(load_song(SONGS["4/4"]).style, "straight")   # the song file itself is untouched
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -174,9 +174,10 @@ class Project:
         folder = self.out / slug / "gallery"
         out = []
         for e in read(folder):
-            wav = folder / str(e.get("file", ""))
-            if wav.is_file():
-                out.append({**e, "path": self.rel(wav)})
+            wav, take = folder / str(e.get("file", "-")), folder / str(e.get("take", "-"))
+            if wav.is_file() or take.is_file():
+                out.append({**e, "path": self.rel(wav) if wav.is_file() else None,
+                            "take_path": self.rel(take) if take.is_file() else None})
         return out
 
     def voices(self) -> list[dict]:
@@ -391,6 +392,23 @@ def start_download(jobs: Jobs, body: dict) -> dict:
     return jobs.start_task(label, task)
 
 
+def voice_args(project: Project, body: dict, prefix: bool = False) -> list[str]:
+    """--lora for the trained voice the page chose (and, for a gallery, its trigger line as --prefix)."""
+    voice = body.get("voice")
+    if not voice:
+        return []
+    found = next((v for v in project.voices() if v["id"] == voice), None)
+    if not found:
+        raise ValueError("No such voice.")
+    strength = float(body.get("strength") or 1.0)
+    if not 0 < strength <= 2:
+        raise ValueError("Voice strength is between 0 and 2.")
+    args = ["--lora", f"{voice}:{strength:g}"]
+    if prefix and found.get("style"):
+        args += ["--prefix", found["style"]]
+    return args
+
+
 def default_style_for(meter) -> str | None:
     from .. import styles
     return styles.default_for(str(meter)) if meter else None
@@ -414,6 +432,10 @@ def job_args(project: Project, body: dict) -> tuple[str, str | None, list[str]]:
         return "Writing the score", slug, ["build", song]
     if action == "gallery":
         return "Playing it in every style", slug, ["gallery", song]
+    if action == "gallery-takes":
+        args = ["gallery", song, "--takes"]
+        args += voice_args(project, body, prefix=True)
+        return "Making a finished take in every style", slug, args
     if action == "use-style":
         from .. import styles
         style = styles.get(body.get("style"))
@@ -437,15 +459,7 @@ def job_args(project: Project, body: dict) -> tuple[str, str | None, list[str]]:
         style = (body.get("style") or "").strip()
         if style:
             args += ["--style", style[:1500]]
-        voice = body.get("voice")
-        if voice:
-            ids = {v["id"] for v in project.voices()}
-            if voice not in ids:
-                raise ValueError("No such voice.")
-            strength = float(body.get("strength") or 1.0)
-            if not 0 < strength <= 2:
-                raise ValueError("Voice strength is between 0 and 2.")
-            args += ["--lora", f"{voice}:{strength:g}"]
+        args += voice_args(project, body)
         return "Making a take", slug, args
     if action == "follow":
         take = body.get("take")

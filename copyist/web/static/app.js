@@ -237,17 +237,23 @@ function stylesSection(song) {
     const feel = s.feel !== "straight" ? `, ${s.feel}` : "";
     const action = current ? '<span class="tag">This song\'s style</span>'
       : g ? `<button class="small" data-use="${esc(s.id)}" data-tempo="${g.tempo}">Use this style</button>` : "";
+    const player = (label, path) => path
+      ? `<div class="player"><span class="player-label">${label}</span><audio controls preload="none" src="${fileUrl(path)}"></audio></div>` : "";
     return `<li class="${current ? "current" : ""}"><div class="style-head"><h4>${esc(s.name)}</h4>
         ${g ? `<span class="meta">${g.tempo} beats a minute${esc(feel)}</span>` : ""}${action}</div>
       <p class="hint">${esc(s.about)}</p>
-      ${g ? `<audio controls preload="none" src="${fileUrl(g.path)}"></audio>` : ""}</li>`;
+      ${g ? player("Finished take", g.take_path) + player("Band preview", g.path) : ""}</li>`;
   };
+  const takes = singerReady() ? `<div class="actions"><button data-job="gallery-takes" data-panel="styles">Make a finished
+      take in every style</button><span class="hint">YuE2 sings each style with its own band, in the voice chosen
+      above. About 45 seconds a style on this Mac.</span></div>` : "";
   return `<section class="section-gap"><h2>Styles</h2>
     <p class="hint">The same song in every style that fits its ${esc(song.meter)} time, each at a tempo that suits
       it, played by the band. Listen, and use the one you like: the score and parts are written again in that style.</p>
     <div class="actions"><button class="go" data-job="gallery" data-panel="styles">${song.gallery.length
       ? "Play them all again" : `Hear it in all ${n} styles`}</button>
-      <span class="hint">A few seconds a style.</span></div>
+      <span class="hint">The band preview: a few seconds a style.</span></div>
+    ${takes}
     <div class="job" data-job-panel="styles"></div>
     ${families.map((f) => `<h3 class="family">${esc(f)}</h3>
       <ul class="styles">${song.styles.filter((s) => s.family === f).map(item).join("")}</ul>`).join("")}
@@ -341,7 +347,14 @@ function wireSound(song) {
 
 function wireJobButtons(song) {
   for (const b of document.querySelectorAll("button[data-job]")) {
-    b.addEventListener("click", () => start({ action: b.dataset.job, song: song.slug, take: b.dataset.take }, b.dataset.panel));
+    b.addEventListener("click", () => {
+      const body = { action: b.dataset.job, song: song.slug, take: b.dataset.take };
+      if (b.dataset.job === "gallery-takes" && $("#voice") && $("#voice").value) {
+        body.voice = $("#voice").value;
+        body.strength = Number($("#strength").value);
+      }
+      start(body, b.dataset.panel);
+    });
   }
 }
 

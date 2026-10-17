@@ -3,8 +3,10 @@
 Choosing a style should take listening, not reading. `copyist gallery SONG`
 arranges the song in each style, performs it, and plays it on the band, at a
 tempo inside the style's usual range (a pop take of a hymn at hymn tempo would
-be misleading). Everything lands in out/<song>/gallery/: one WAV per style and
-gallery.json, which the page reads.
+be misleading). `copyist gallery SONG --takes` makes a finished YuE2 take in
+each style instead: the singer and the whole band, the style's own instruments
+included. Everything lands in out/<song>/gallery/: one WAV per style, the takes
+in takes/<style>/, and gallery.json, which the page reads.
 """
 from __future__ import annotations
 
@@ -70,14 +72,65 @@ def build(song: Song, out_root: Path, cache: Path = Path(".cache"), seed: int = 
                         "engine": audio.engine, "parts": sorted(band.parts), "notes": band.notes})
     if progress:
         progress(len(chosen), len(chosen), "")
-    old = {e["style"]: e for e in read(folder)}
-    old.update({e["style"]: e for e in entries})
-    order = {s.id: i for i, s in enumerate(styles.for_meter(song.meter))}
-    merged = sorted((e for e in old.values() if (folder / e["file"]).is_file()),
-                    key=lambda e: order.get(e["style"], 999))
-    (folder / INDEX).write_text(json.dumps({"song": song.slug, "meter": song.meter, "styles": merged},
-                                           indent=1) + "\n", encoding="utf-8")
+    index = {e["style"]: e for e in read(folder)}
+    for e in entries:
+        index.setdefault(e["style"], {}).update(e)
+    write(folder, song, list(index.values()))
     return entries
+
+
+def build_takes(song_path: Path, out_root: Path, seed: int = 831001, verses: int = 1, only: list[str] | None = None,
+                lora: list[str] | None = None, prefix: str = "", device: str | None = None,
+                progress: Callable[[int, int, str], None] | None = None) -> list[dict]:
+    """A finished YuE2 take of the song in every style for its meter (or just `only`): the singer
+    and the band together, each style at a tempo inside its range, with the style's own words.
+
+    Each take lands in out/<song>/gallery/takes/<style>/; gallery.json gets its path.
+    """
+    import shutil
+    from . import yue
+    from .song import load_song, set_style
+    song = load_song(song_path)
+    folder = out_root / song.slug / "gallery"
+    chosen = [s for s in styles.for_meter(song.meter) if not only or s.id in only]
+    made = []
+    for k, style in enumerate(chosen):
+        if progress:
+            progress(k, len(chosen), style.name)
+        with tempfile.TemporaryDirectory(prefix="copyist-take-") as tmp:
+            copy = Path(tmp) / song_path.name                   # same name, so the same song
+            shutil.copy(song_path, copy)
+            set_style(copy, style.id, tempo_for(song, style))
+            styled = load_song(copy)
+        req = yue.request(styled, verses=verses, seed=seed)
+        if prefix:
+            req["style"] = f"{prefix.strip().rstrip(',.')}. {req['style']}"
+        req["output_format"] = "wav16"
+        extra = []
+        if lora:
+            req["adapters"], adapters = yue.lora_adapters(lora)
+            extra = ["--adapters", adapters]
+        audio = yue.run_yue2cpp(req, folder / "takes" / style.id, device=device, extra=extra)
+        entry = {"style": style.id, "take": audio.relative_to(folder).as_posix(), "take_style": req["style"],
+                 "take_seed": seed}
+        made.append(entry)
+        index = {e["style"]: e for e in read(folder)}         # written after every take, so a stop keeps them
+        index.setdefault(style.id, {"style": style.id, "name": style.name, "family": style.family,
+                                    "about": style.about, "feel": style.feel,
+                                    "tempo": round(tempo_for(song, style))}).update(entry)
+        write(folder, song, list(index.values()))
+    if progress:
+        progress(len(chosen), len(chosen), "")
+    return made
+
+
+def write(folder: Path, song: Song, entries: list[dict]) -> None:
+    order = {s.id: i for i, s in enumerate(styles.for_meter(song.meter))}
+    keep = [e for e in entries if (folder / e.get("file", "-")).is_file() or (folder / e.get("take", "-")).is_file()]
+    folder.mkdir(parents=True, exist_ok=True)
+    (folder / INDEX).write_text(json.dumps({"song": song.slug, "meter": song.meter,
+                                            "styles": sorted(keep, key=lambda e: order.get(e["style"], 999))},
+                                           indent=1) + "\n", encoding="utf-8")
 
 
 def read(folder: Path) -> list[dict]:

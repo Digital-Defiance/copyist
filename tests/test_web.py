@@ -186,6 +186,11 @@ class WebTests(unittest.TestCase):
         self.assertEqual(job_args(project, {"action": "use-style", "song": "amazing-grace", "style": "hymn",
                                             "tempo": 72})[2],
                          ["use-style", "songs/amazing-grace.yaml", "hymn", "--tempo", "72"])
+        self.assertEqual(job_args(project, {"action": "gallery-takes", "song": "amazing-grace",
+                                            "voice": ".cache/lora/lights-on/lora/step-300.safetensors"})[2],
+                         ["gallery", "songs/amazing-grace.yaml", "--takes",
+                          "--lora", ".cache/lora/lights-on/lora/step-300.safetensors:1",
+                          "--prefix", "lightson, in the style of lightson. Female lead."])
         for bad in ({"style": "rock"}, {"style": "no-such-style"}, {"style": "hymn", "tempo": 900}):
             with self.assertRaises(ValueError):
                 job_args(project, {"action": "use-style", "song": "amazing-grace", **bad})

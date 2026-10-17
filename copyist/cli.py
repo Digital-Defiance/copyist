@@ -279,6 +279,14 @@ def cmd_gallery(args) -> int:
     def progress(done, total, name):
         if name:
             print(f"[{done + 1}/{total}] {name}", flush=True)
+    if args.takes:
+        made = gallery.build_takes(Path(args.song), Path(args.out), seed=args.take_seed, verses=args.verses,
+                                   only=only, lora=args.lora, prefix=args.prefix or "", device=args.device,
+                                   progress=progress)
+        folder = Path(args.out) / song.slug / "gallery"
+        for m in made:
+            print(f"  {m['style']}: {folder / m['take']}")
+        return 0
     entries = gallery.build(song, Path(args.out), Path(args.cache), seed=args.seed, only=only, progress=progress)
     folder = Path(args.out) / song.slug / "gallery"
     for e in entries:
@@ -410,6 +418,13 @@ def main(argv: list[str] | None = None) -> int:
     ga.add_argument("--out", default="out", help="output folder (default: out)")
     ga.add_argument("--cache", default=".cache")
     ga.add_argument("--seed", type=int, default=1, help="seed for the performance (default 1)")
+    ga.add_argument("--takes", action="store_true",
+                    help="make a finished YuE2 take in each style (singer and band; needs the singer, a GPU helps)")
+    ga.add_argument("--verses", type=int, default=1, help="with --takes: verses to sing (default 1)")
+    ga.add_argument("--take-seed", type=int, default=831001, help="with --takes: the seed (default 831001)")
+    ga.add_argument("--lora", action="append", metavar="FILE[:SCALE]", help="with --takes: a trained voice")
+    ga.add_argument("--prefix", help="with --takes: words before every style line (a voice's trigger line)")
+    ga.add_argument("--device", help="with --takes: yue2.cpp device (default COPYIST_YUE_DEVICE)")
     ga.set_defaults(func=cmd_gallery)
 
     us = sub.add_parser("use-style", help="set a song's style (and tempo) and write the score again")

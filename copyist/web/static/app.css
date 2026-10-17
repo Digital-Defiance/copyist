@@ -180,7 +180,9 @@ progress { accent-color: var(--blue); width: min(100%, 24rem); height: 0.9rem; v
 .style-head .meta { color: var(--ink-soft); font-size: 0.9rem; }
 .style-head button, .style-head .tag { margin-left: auto; }
 .tag { font-family: var(--pencil); color: var(--red); font-size: 0.95rem; }
-.styles audio { width: 100%; max-width: 36rem; display: block; margin-top: 0.4rem; }
+.styles .player { display: grid; gap: 0.15rem; margin-top: 0.45rem; max-width: 36rem; }
+.player-label { font-size: 0.85rem; color: var(--ink-soft); }
+.styles audio { width: 100%; display: block; }
 
 /* -------------------------------------------------------- training drawer */
 .run { margin-top: 0.75rem; }
