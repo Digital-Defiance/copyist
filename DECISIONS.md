@@ -2,6 +2,17 @@
 
 Newest first. One entry per decision: what, why, and what we gave up.
 
+## 2026-10-17 (melody writing and the open singer)
+
+- **Melody writing starts with YuE2's own planner** (`yue-plan`), not a melody model of Copyist's own. YuE2 writes melodies learned from real songs, and its planning stage runs alone, text in and text out, so Copyist gets the score without rendering audio. Copyist's part is everything around it: the right octave and range, lyrics fitted by stress and phrasing, validation, ranking, and choosing by ear. Gave up: a melody source free of YuE2's licence, for now. A rule-based writer and the open singer's planner come later.
+- **Plan B for the singer: train our own lead-sheet conditioning onto HeartMuLa-oss-3B** (Apache-2.0), using MuLaCover's published method and code (Apache-2.0), not its non-commercial weights. Considered:
+  - using ACE-Step 1.5 or HeartMuLa as they are: they can't sing a given melody, which breaks the product;
+  - guide-and-restyle, re-performing a SoulX-plus-band guide through ACE-Step's cover mode: quick, but it only approximates the melody.
+
+  The owner chose B.
+- **Training data has clean rights only:** HeartMuLa's own outputs, public-domain and original lyrics, and Creative Commons recordings, each logged in a manifest. Never: YuE2, MuLaCover, MiniMax, Suno or Mozart outputs, copyrighted recordings, or the owner's own songs.
+- **The handoff is written down** (AGENTS.md "Start here", TASKS.md 3g and 3h, the two specs, `.cursor/rules`), so another agent (Cursor) can continue if this session stops.
+
 ## 2026-10-17 (open source)
 
 - **MIT licence, open to contributors now.** The copyright line reads "Digital Defiance and Copyist contributors". MIT is the most permissive choice and the easiest for anyone to build on. Gave up: GPL's guarantee that forks stay open.

@@ -1,6 +1,6 @@
 # Roadmap
 
-Take the first unchecked item in the current milestone. Tick items when they're done and tested. Milestone definitions are in SPEC.md section 11. The current milestone is M5 (better sound); TASKS.md has the day-to-day list.
+Take the first unchecked item in the current milestone. Tick items when they're done and tested. Milestone definitions are in SPEC.md section 11. The current milestones are MW (melody writing) and OS (the open singer); TASKS.md has the day-to-day list.
 
 ## M0: Walking skeleton (done 2026-10-16)
 
@@ -142,6 +142,28 @@ Copyist arranges in as many styles as can be written as correct scores: everyone
 - [ ] A melody voice per style for previews (flute, sax, violin, synth lead)
 - [ ] Harmony, melody habits and form conventions in each profile (for melody proposals, M3)
 - [ ] The prosody check reads compound meters (6/8) by dotted-quarter beats
+
+## MW: Melody writing (docs/melody-writing.md)
+
+Lyrics and a style in; several finished songs out to choose between by ear, each with a correct score.
+
+- [x] Spike: YuE2's planner (`yue-plan`) writes melody, chords and sections from lyrics and a style
+- [ ] Syllables and stress; the planner's ABC into Copyist song files; lyrics fitted to the notes
+- [ ] `copyist write` with ranked candidates, band previews and optional takes; `--keep`
+- [ ] The page's "Write a song"
+- [ ] Section-level rewriting ("again", "higher", "simpler")
+- [ ] A rule-based writer of Copyist's own (MIT), for use without YuE2
+
+## OS: The open singer (docs/open-singer.md)
+
+A singer anyone may use commercially that follows the score: HeartMuLa-oss-3B plus MuLaCover-style lead-sheet conditioning, trained by Copyist on data with clean rights.
+
+- [x] Research and plan
+- [ ] B0 Feasibility on the Mac; the adaptor bolted on with zero effect at the start
+- [ ] B1 Data: generated songs, transcribed lead sheets, quality gate, tokens
+- [ ] B2 Training: the real lead sheet clearly beats a shuffled one on held-out songs
+- [ ] B3 Following: 90% of notes on the three test songs
+- [ ] B4 In Copyist: `produce --singer open`, the page, the download
 
 ## M4 and later
 

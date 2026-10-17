@@ -153,6 +153,8 @@ Planned: `breath` (singers get a breath at least every N bars), `tessitura` (whe
    - **A voice for YuE2 comes from a LoRA** (docs/voice-lora.md): a small add-on trained on one artist's recordings, called up by a trigger word in the style. `copyist lora-songs` turns prompt sheets (a style and tagged lyrics per song) into training data; `scripts/yue-lora/` tokenizes the audio and trains on Apple Silicon, CUDA or CPU; `copyist produce --lora` renders with it. The first one trained on the 41 songs of *I Left the Lights On* (trigger word `lightson`; 800 steps on the M4 Max, finished 17 October). Loss on two held-out songs was lowest at steps 300 to 500 (4.77 at the start, 3.83 at 300, 4.01 by 800, while the training songs kept falling: it starts memorizing them), and the general singing it was guarded with didn't drift, so steps 300 and 500 are the ones to compare by ear.
    - **Continuation** (opening a render with a few seconds of a real recording) carried a singer's sound into the score, but the melody followed only 14 of 32 notes when the opening's tempo differed. Not reliable yet.
 
+   - **The open singer (plan B, docs/open-singer.md):** no open model that anyone may use commercially follows a given melody yet. HeartMuLa-oss-3B (Apache-2.0) and ACE-Step 1.5 (MIT) write their own; MuLaCover and MiniMax Music 3 follow one but are non-commercial. So Copyist will train its own conditioning onto HeartMuLa-oss-3B, using MuLaCover's Apache-2.0 method (a sixteenth-note lead sheet through gated cross-attention) and data with clean rights. YuE2 stays the singer until the open one follows Copyist's scores at least 90% of the time.
+
    **Copyist ships no voices.** A voice is a reference recording in the git-ignored `voices/` folder (SoulX), or a LoRA in `.cache/` (YuE2); neither is committed or published. A voice Copyist ever ships or sells must come from a consenting person, never from another AI generator. Suno's terms (September 2026) forbid using its output to "power, enable or train other artificial intelligence and machine learning models" or to build competing products. The YuE2 weights are CC BY-NC 4.0 with an individual-creator permission; a company needs its own licence before commercial use, and LoRAs trained on them carry the same terms.
 
 ## 7. Arrangement (M1 and later)
@@ -217,6 +219,8 @@ A style is a data file in `copyist/styles/` (format `copyist-style/0`, docs/styl
 The arranger only plays what the profile and brief allow. New profiles can be drafted by an LLM from a description and reference notes, then reviewed by a person before use. Profiles describe conventions; they never copy specific songs.
 
 ### 8.3 Writing melody to directions
+
+**First version (docs/melody-writing.md):** YuE2's planner (`yue-plan`) writes several whole-song scores from the lyrics and the style. Copyist reads each one, lowers it into the singer's range, fits the lyrics to the notes by stress and phrasing, validates it, ranks the candidates, and plays them so the person picks by ear. The general approach below still holds; the planner is the first generator, and a rule-based writer of Copyist's own comes later.
 
 Melody candidates are generated under hard constraints (the lyrics' syllables and stresses, the chord chart, the singer's range, the style's rhythm habits), then:
 

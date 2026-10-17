@@ -2,7 +2,38 @@
 
 **Start with [TASKS.md](TASKS.md)**: the checklist of what is done and what comes next.
 
-Instructions for AI coding agents and people picking up this project. Read this first, then SPEC.md, then ROADMAP.md.
+Instructions for AI coding agents (Claude, Cursor, anything else) and people picking up this project. Read this first, then SPEC.md, then ROADMAP.md.
+
+## Start here (handoff, 17 October 2026)
+
+The work moved fast and may change hands at any moment. Here is where things stand.
+
+**Done and working** (tests pass: `python -m unittest discover -s tests`, 136 tests):
+- Song files become a lead sheet, band score and parts, MIDI, and a validation report.
+- 23 styles as data files, with a style gallery.
+- Expressive performance.
+- The sampled band through sfizz, with stems and a gentle master.
+- YuE2 takes that follow the score, checked by `copyist follow`.
+- Voice LoRA training on the Mac.
+- The local web page (`copyist serve`).
+- The Tauri desktop shell.
+- MIT licence and GitHub Actions.
+
+**Next, in this order:**
+1. **Melody writing:** TASKS.md section 3g, spec in [docs/melody-writing.md](docs/melody-writing.md). Lyrics and a style go in; YuE2's planner (`yue-plan`) writes several melodies; Copyist turns each into a correct song file and the person picks by ear. Nothing is written yet; the spec covers the file format, the algorithm and the tests.
+2. **The open singer (plan B):** TASKS.md section 3h, spec in [docs/open-singer.md](docs/open-singer.md). Teach HeartMuLa-oss-3B (Apache-2.0) to follow Copyist's score, using MuLaCover's Apache-2.0 conditioning code and our own training. Start with phase B0 (feasibility).
+3. The less-cheesy band preview, the organ and guitar parts, and the music box: TASKS.md section 3f.
+
+**The owner's machine:**
+- An M4 Max Mac with 64 GB, the repository at `/Volumes/Code/copyist`, a `.venv` there.
+- yue2.cpp built with Metal in `.cache/yue2.cpp/build/` (`yue-synth`, `yue-plan`, `yue-transcribe`, `yue-tokenize`).
+- YuE2 weights in `.cache/yue/`.
+- Instruments install with `scripts/setup-sfizz.sh --instruments`.
+- Run YuE2 with `--device MTL0`.
+- GPU work (takes, planning, training) runs there, started by the owner in Terminal or from the page.
+- An agent in a cloud container can't use the Mac's GPU. Write scripts and commands for her to run, and say how long they take.
+
+**Never commit:** `voices/`, `.cache/` (weights, LoRAs, instruments), `out/`, or anything from the owner's musical *I Left the Lights On* (`lights-on*` folders). The `lightson` LoRA is private and never ships.
 
 ## The project in one paragraph
 
@@ -10,7 +41,7 @@ Copyist makes songs score-first: a song file (YAML with an ABC melody, chord sym
 
 ## How to pick up work
 
-1. Read ROADMAP.md. Take the first unchecked item in the current milestone, unless the owner (Jessica) has said otherwise.
+1. Read TASKS.md and ROADMAP.md. Take the first unchecked item in the section the owner (Jessica) last asked for (see "Start here"), or the first unchecked item in the current milestone.
 2. If the item is unclear, write your interpretation into the item before starting.
 3. Do the work in a small, reviewable change. Add or update tests.
 4. Run the checks below. Open and look at any PDF you changed; a score that builds but looks wrong is not done.

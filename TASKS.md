@@ -27,7 +27,7 @@ Last updated: 2026-10-17.
 ## 1. Push
 
 - [x] `git push`: everything through the expressive performance is pushed (2026-10-17)
-- [ ] `git push` the sound-set commit (sampled band, instruments download, mixdown, docs)
+- [ ] `git push`: six commits are waiting (the sampled band, styles, the 12/8 default, the takes gallery, the MIT licence, and the handoff plans for melody writing and the open singer)
 
 ## 1b. Open source
 
@@ -120,6 +120,35 @@ The SoundFont band plus a SoulX vocal will never sound like Suno: they're checki
 - [ ] Guitar part (strum and fingerpick patterns, chord shapes), once an acoustic guitar library is found
 - [ ] Music box style and instruments (the musical)
 - [ ] The prosody check misreads 6/8 (it treats quarter notes as beats); fix it for compound meters
+
+## 3g. Melody writing (ROADMAP milestone MW, spec: docs/melody-writing.md)
+
+The owner's goal is "really good melodies and solid themes", for people who can't write music. Take these in order; each has its test for "done".
+
+- [x] Spike: `yue-plan` writes a full score (melody, chords, sections) from lyrics and a style, with no audio. Tested on "Hope is the thing with feathers": 3/4 in D, and 4/4 in B-flat with a different style line; 2 min 42 s on a 2-core CPU. Format notes in the spec
+- [ ] `copyist/syllables.py`: English syllables and stress (CMU dictionary through `pronouncing`, plus spelling rules). Done when a 40-word table in tests passes (feathers, extremity, alleluia, being, every, heaven, fire, hour...)
+- [ ] `copyist/abcplan.py`: read yue-plan's dialect (sections, Vocal and Ins voices, `Zn`, ties, chords on rests; refuse tuplets), trim to the sung bars, lower an octave and fit the voice preset, rescale units. Done when hand-written plans in `tests/data/plans/` round-trip into ABC that `load_song` reads with the right bars, key, meter and tempo
+- [ ] `copyist/fit.py`: align syllables to notes (the cost table in the spec), splitting notes when there are more syllables. Done when exact, melisma, split and line-end cases pass and every result passes `lyrics.align` with `fits`
+- [ ] Song format: optional `sections:` and `written_with:` fields (SPEC section 4, `song.py`), and `yue.lyrics_text` using `sections` for [verse] and [chorus] tags. Done when existing songs build unchanged and a song with sections gets matching tags in its YuE2 request
+- [ ] `copyist write LYRICS --title --style --voice --candidates --seed [--takes]`: planner requests, candidates folder, song files, reports, band previews, `candidates.json` ranked by the spec's scores; `--keep k`. Done when a fake `yue-plan` (as tests/test_yue.py fakes yue-synth) drives an end-to-end test
+- [ ] On the Mac: `copyist write` on a few lyrics (public-domain poems first) with 4 candidates each; time it; the owner listens and picks. Note what goes wrong
+- [ ] The page: "Write a song" (lyrics box, style, voice, number of candidates), candidates as they land with players and scores, "Keep this one", "Write more"
+- [ ] Docs: README, SPEC 8.3, docs/web.md, and the spec's status line
+
+## 3h. The open singer, plan B (ROADMAP milestone OS, spec: docs/open-singer.md)
+
+A singer anyone may use commercially that follows Copyist's score: HeartMuLa-oss-3B (Apache-2.0) plus MuLaCover's lead-sheet conditioning (Apache-2.0 code), trained by us on data with clean rights.
+
+- [x] Research and plan: open models compared (HeartMuLa, ACE-Step 1.5, MuLaCover, MiniMax Music 3, SongGeneration 2); MuLaCover's conditioning read from its source (a sixteenth-note lead sheet, an adaptor, gated cross-attention on the last 8 layers, zero-init gate)
+- [ ] B0: HeartMuLa-oss-3B running on the Mac (mps): a 30 s song, the speed and memory measured. In the container on CPU: a short clip, to check the setup. Write `scripts/setup-open-singer.sh`
+- [ ] B0: MuLaCover's adaptor bolted onto the HeartMuLa backbone (`copyist_open/` or `scripts/open-singer/model.py`, importing MuLaCover's Apache code with attribution). Done when a test shows identical outputs to the base model while the gate is zero
+- [ ] B1: `scripts/open-singer/generate.py`: songs from HeartMuLa across Copyist's style words and public-domain or original lyrics, with a manifest (source, licence, seed, tags, lyrics)
+- [ ] B1: `scripts/open-singer/transcribe.py`: song to lead sheet on a sixteenth grid (Demucs, then pYIN, beats, the Music X Lab chord model), plus the quality gate (`copyist follow` at 90% or more). Done when a deliberately shifted label is rejected
+- [ ] B1: `scripts/open-singer/tokenize.py`: HeartCodec tokens per song. 50 songs end to end first, then 1,000
+- [ ] B2: `scripts/open-singer/train.py`: frozen base, adaptors trained, 10% condition dropout, resumable, mps/CUDA/CPU, evals of loss with the real against a shuffled lead sheet on held-out songs. Done when the real condition's loss is clearly lower
+- [ ] B3: Copyist scores (Amazing Grace, the Saints, Silent Night) in several styles; `copyist follow` at 90% or more on all three
+- [ ] B4: `copyist produce --singer open`, the page's singer choice, the weights as a pinned download, docs. Done when the owner makes a take with it from the page
+- [ ] Decide with the owner: the Mac only (a week or two) or rented GPU time (about a day, a few hundred dollars) for B1 and B2
 
 ## 4. Singing that sounds performed
 

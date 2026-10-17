@@ -1,0 +1,13 @@
+---
+description: How to work on Copyist (read before any change)
+alwaysApply: true
+---
+
+Read AGENTS.md first: its "Start here" section says what's done, what's next and in which order, and what never to commit. Then follow TASKS.md (the checklist) and the spec for the task at hand in docs/ (melody-writing.md, open-singer.md, styles.md, sound-set.md, production.md).
+
+- The score is the source of truth; audio comes from the notes.
+- Run `python -m unittest discover -s tests` before and after every change; add tests with every change.
+- Keep SPEC.md, ROADMAP.md, TASKS.md and DECISIONS.md current in the same commit as the change.
+- The owner can't read music or sing: anything she chooses, she chooses by listening. Make results audible.
+- GPU work (YuE2 takes, planning, training) runs on her Mac; write the command for her and say how long it takes.
+- Never commit voices/, .cache/, out/, model weights, sample libraries, or anything from her musical (lights-on).
