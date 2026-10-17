@@ -1,0 +1,493 @@
+"""A local web front end for Copyist: `copyist serve` (docs/web.md).
+
+It reads the project folder (songs/, out/, .cache/lora/) and runs the copyist
+command for anything that makes something, one job at a time, since the GPU
+can only do one. It listens on 127.0.0.1 only, and refuses requests that come
+from other sites or other host names.
+"""
+from __future__ import annotations
+
+import json
+import mimetypes
+import os
+import re
+import subprocess
+import sys
+import threading
+import time
+from datetime import datetime
+from http import HTTPStatus
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
+from urllib.parse import parse_qs, unquote, urlparse
+
+import yaml
+
+STATIC = Path(__file__).parent / "static"
+AUDIO = (".wav", ".mp3", ".flac", ".m4a", ".ogg")
+SLUG = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.-]{0,99}")
+TAKE = re.compile(r"[A-Za-z0-9][A-Za-z0-9_-]{0,63}")
+mimetypes.add_type("font/woff2", ".woff2")
+mimetypes.add_type("text/markdown", ".md")
+
+
+# ------------------------------------------------------------------- reading
+
+def read_yaml(path: Path) -> dict:
+    try:
+        return yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    except (OSError, yaml.YAMLError):
+        return {}
+
+
+def read_json(path: Path):
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+
+
+def report_checks(path: Path) -> dict | None:
+    """The validation report's verdict and its table of checks."""
+    try:
+        text = path.read_text(encoding="utf-8")
+    except OSError:
+        return None
+    verdict = re.search(r"\*\*Finished:\*\*\s*(.+)", text)
+    rows = []
+    for line in text.splitlines():
+        cells = [c.strip() for c in line.strip().strip("|").split("|")]
+        if len(cells) == 4 and cells[1] in ("pass", "fail", "warn", "warning"):
+            rows.append({"check": cells[0], "result": cells[1], "where": cells[2], "details": cells[3]})
+    return {"verdict": verdict.group(1).strip() if verdict else None, "checks": rows}
+
+
+def follow_summary(folder: Path) -> str | None:
+    """The first line of any `follow` report under a take's folder."""
+    for md in sorted(folder.rglob("*-follow.md")):
+        for line in md.read_text(encoding="utf-8").splitlines():
+            if re.match(r"\d+ of \d+ sung notes", line):
+                return line
+    return None
+
+
+class Project:
+    def __init__(self, root: Path):
+        self.root = Path(root).resolve()
+        self.songs_dir = self.root / "songs"
+        self.out = self.root / "out"
+        self.loras = self.root / ".cache" / "lora"
+
+    def rel(self, p: Path) -> str:
+        return p.resolve().relative_to(self.root).as_posix()
+
+    def song_path(self, slug: str) -> Path | None:
+        if not SLUG.fullmatch(slug):
+            return None
+        p = self.songs_dir / f"{slug}.yaml"
+        return p if p.is_file() else None
+
+    def songs(self) -> list[dict]:
+        items = []
+        for p in sorted(self.songs_dir.glob("*.yaml")):
+            d = read_yaml(p)
+            items.append({"slug": p.stem, "title": d.get("title", p.stem), "key": d.get("key"),
+                          "meter": d.get("meter"), "tempo": d.get("tempo")})
+        return items
+
+    def song(self, slug: str) -> dict | None:
+        path = self.song_path(slug)
+        if not path:
+            return None
+        d = read_yaml(path)
+        out = self.out / slug
+        sheets = []
+        for name, label in (("lead-sheet.pdf", "Lead sheet"), ("score.pdf", "Full score")):
+            if (out / name).is_file():
+                sheets.append({"label": label, "path": self.rel(out / name)})
+        for part in sorted((out / "parts").glob("*.pdf")):
+            sheets.append({"label": f"{part.stem.capitalize()} part", "path": self.rel(part)})
+        return {"slug": slug, "title": d.get("title", slug), "credits": d.get("credits") or {},
+                "key": d.get("key"), "meter": d.get("meter"), "tempo": d.get("tempo"),
+                "style": d.get("style"), "production": d.get("production"),
+                "instruments": d.get("instruments"), "verses": d.get("lyrics") or [],
+                "report": report_checks(out / "report.md"), "sheets": sheets,
+                "recordings": self.recordings(slug), "built": (out / "lead-sheet.pdf").is_file(),
+                "default_style": default_style(path)}
+
+    def recordings(self, slug: str) -> list[dict]:
+        out = self.out / slug
+        found = []
+        takes = out / "takes"
+        for folder in sorted(takes.iterdir() if takes.is_dir() else [], key=lambda p: p.stat().st_mtime, reverse=True):
+            audio = next((folder / f"production{e}" for e in AUDIO if (folder / f"production{e}").is_file()), None)
+            if not audio:
+                continue
+            req = read_json(folder / "yue-request.json") or {}
+            found.append({"kind": "take", "name": folder.name, "path": self.rel(audio),
+                          "when": datetime.fromtimestamp(audio.stat().st_mtime).isoformat(timespec="minutes"),
+                          "style": req.get("style"), "seed": req.get("seed"),
+                          "voice": [a.get("name") for a in req.get("adapters") or []],
+                          "follow": follow_summary(folder)})
+        first = out / "production" / "production.wav"
+        if first.is_file():
+            req = read_json(out / "production" / "yue-request.json") or {}
+            found.append({"kind": "take", "name": "production", "path": self.rel(first),
+                          "when": datetime.fromtimestamp(first.stat().st_mtime).isoformat(timespec="minutes"),
+                          "style": req.get("style"), "seed": req.get("seed"), "voice": [],
+                          "follow": follow_summary(out / "production")})
+        sung = out / "sung"
+        for folder in sorted(sung.iterdir() if sung.is_dir() else []):
+            if (folder / "mix.wav").is_file():
+                found.append({"kind": "sung", "name": folder.name, "path": self.rel(folder / "mix.wav")})
+        if (out / f"{slug}.wav").is_file():
+            found.append({"kind": "preview", "name": "preview", "path": self.rel(out / f"{slug}.wav")})
+        return found
+
+    def voices(self) -> list[dict]:
+        """Trained LoRAs, newest checkpoint first, with the style line their songs trained under."""
+        voices = []
+        for run in sorted(self.loras.glob("*/lora")) if self.loras.is_dir() else []:
+            name = run.parent.name
+            style = common_style(run.parent / "songs.jsonl")
+            steps = sorted(run.glob("step-*.safetensors"), key=lambda p: int(re.sub(r"\D", "", p.stem) or 0), reverse=True)
+            for ck in steps:
+                voices.append({"id": self.rel(ck), "label": f"{name}, step {ck.stem.split('-')[1]}", "style": style})
+        return voices
+
+    def training(self) -> list[dict]:
+        runs = []
+        for out in sorted(self.loras.glob("*/train-output.txt")) if self.loras.is_dir() else []:
+            runs.append(parse_training(out))
+        return runs
+
+    def pages(self, rel: str) -> list[str] | None:
+        """A PDF's pages as PNGs (rendered once per version of the PDF, kept in out/.pages/)."""
+        pdf = self.file(rel)
+        if not pdf or pdf.suffix.lower() != ".pdf":
+            return None
+        stamp = int(pdf.stat().st_mtime)
+        folder = self.out / ".pages" / pdf.relative_to(self.out).with_suffix("") / str(stamp)
+        if not folder.is_dir():
+            import fitz   # PyMuPDF
+            tmp = folder.with_name(folder.name + ".tmp")
+            tmp.mkdir(parents=True, exist_ok=True)
+            with fitz.open(pdf) as doc:
+                for i, page in enumerate(doc, 1):
+                    page.get_pixmap(matrix=fitz.Matrix(2, 2), alpha=False).save(tmp / f"page-{i}.png")
+            tmp.replace(folder)
+        return [self.rel(p) for p in sorted(folder.glob("page-*.png"), key=lambda p: int(p.stem.split("-")[1]))]
+
+    def file(self, rel: str) -> Path | None:
+        """A file the browser may fetch: anything under out/."""
+        p = (self.root / unquote(rel)).resolve()
+        try:
+            p.relative_to(self.out.resolve())
+        except ValueError:
+            return None
+        return p if p.is_file() else None
+
+
+_STYLE_CACHE: dict[Path, tuple[float, str | None]] = {}
+
+
+def default_style(path: Path) -> str | None:
+    """The style `copyist produce` uses for this song when given none (parsing the song once per change)."""
+    mtime = path.stat().st_mtime
+    hit = _STYLE_CACHE.get(path)
+    if hit and hit[0] == mtime:
+        return hit[1]
+    try:
+        from .. import yue
+        from ..song import load_song
+        song = load_song(path)
+        style = yue.song_production_style(song) or yue.default_style(song)
+    except Exception:   # a song that doesn't parse still opens; its checks say what's wrong
+        style = None
+    _STYLE_CACHE[path] = (mtime, style)
+    return style
+
+
+def common_style(songs_jsonl: Path) -> str | None:
+    """The opening the training songs' styles share (trigger word and voice line), cut at a sentence end."""
+    try:
+        styles = [json.loads(line)["style"] for line in songs_jsonl.read_text(encoding="utf-8").splitlines() if line.strip()]
+    except (OSError, ValueError, KeyError):
+        return None
+    if not styles:
+        return None
+    prefix = os.path.commonprefix(styles)
+    cut = prefix.rfind(". ")
+    return prefix[:cut + 1] if cut > 0 else prefix.strip() or None
+
+
+def parse_training(path: Path) -> dict:
+    text = path.read_text(encoding="utf-8", errors="replace")
+    run = {"name": path.parent.name, "step": 0, "steps": None, "per_step": None, "hours_left": None,
+           "evals": [], "done": "Done. Adapters" in text, "error": None, "updated": path.stat().st_mtime}
+    for m in re.finditer(r"step (\d+)/(\d+) loss [\d.]+ ([\d.]+) s/step, about ([\d.]+) h to go", text):
+        run.update(step=int(m.group(1)), steps=int(m.group(2)), per_step=float(m.group(3)),
+                   hours_left=float(m.group(4)))
+    for m in re.finditer(r"EVAL step (\d+) (\{.*\})", text):
+        try:
+            run["evals"].append({"step": int(m.group(1)), **json.loads(m.group(2).replace("'", '"'))})
+        except ValueError:
+            pass
+    if "Traceback" in text and not run["done"]:
+        run["error"] = text[text.rfind("Traceback"):][-1500:]
+    run["checkpoints"] = sorted(p.stem for p in (path.parent / "lora").glob("step-*.safetensors"))
+    run["stale_minutes"] = round((time.time() - run["updated"]) / 60)
+    return run
+
+
+# ---------------------------------------------------------------------- jobs
+
+class Jobs:
+    """Runs one copyist command at a time and keeps its output."""
+
+    def __init__(self, project: Project):
+        self.project = project
+        self.lock = threading.Lock()
+        self.jobs: list[dict] = []
+        self.logs = project.out / ".jobs"
+
+    def running(self) -> dict | None:
+        return next((j for j in self.jobs if j["status"] == "running"), None)
+
+    def start(self, label: str, song: str | None, args: list[str]) -> dict:
+        with self.lock:
+            busy = self.running()
+            if busy:
+                raise ValueError(f"Wait for “{busy['label']}” to finish first.")
+            self.logs.mkdir(parents=True, exist_ok=True)
+            job_id = datetime.now().strftime("%Y%m%d-%H%M%S")
+            job = {"id": job_id, "label": label, "song": song, "status": "running", "started": time.time(),
+                   "ended": None, "code": None, "log": str(self.logs / f"{job_id}.log")}
+            self.jobs.insert(0, job)
+            del self.jobs[20:]
+        threading.Thread(target=self._run, args=(job, args), daemon=True).start()
+        return job
+
+    def _run(self, job: dict, args: list[str]) -> None:
+        with open(job["log"], "w", encoding="utf-8") as log:
+            log.write("$ copyist " + " ".join(args) + "\n")
+            log.flush()
+            try:
+                p = subprocess.run([sys.executable, "-m", "copyist", *args], cwd=self.project.root,
+                                   stdout=log, stderr=subprocess.STDOUT)
+                job["code"] = p.returncode
+            except OSError as e:
+                log.write(f"Couldn't start: {e}\n")
+                job["code"] = -1
+        job["status"] = "done" if job["code"] == 0 else "failed"
+        job["ended"] = time.time()
+
+    def view(self, job: dict) -> dict:
+        try:
+            text = Path(job["log"]).read_text(encoding="utf-8", errors="replace")
+        except OSError:
+            text = ""
+        return {k: v for k, v in job.items() if k != "log"} | {"output": text[-6000:]}
+
+    def find(self, job_id: str) -> dict | None:
+        return next((j for j in self.jobs if j["id"] == job_id), None)
+
+
+def job_args(project: Project, body: dict) -> tuple[str, str | None, list[str]]:
+    """Turn a request from the page into a copyist command. Only these actions exist."""
+    action = body.get("action")
+    slug = body.get("song")
+    path = project.song_path(slug) if isinstance(slug, str) else None
+    if not path:
+        raise ValueError("No such song.")
+    song = project.rel(path)
+    if action == "build":
+        return "Writing the score", slug, ["build", song]
+    if action == "produce":
+        args = ["produce", song, "--take", datetime.now().strftime("take-%Y%m%d-%H%M%S")]
+        verses = int(body.get("verses") or 1)
+        seed = int(body.get("seed") or 831001)
+        if not (1 <= verses <= 20 and 0 <= seed < 2**31):
+            raise ValueError("Verses or seed out of range.")
+        args += ["--verses", str(verses), "--seed", str(seed)]
+        style = (body.get("style") or "").strip()
+        if style:
+            args += ["--style", style[:1500]]
+        voice = body.get("voice")
+        if voice:
+            ids = {v["id"] for v in project.voices()}
+            if voice not in ids:
+                raise ValueError("No such voice.")
+            strength = float(body.get("strength") or 1.0)
+            if not 0 < strength <= 2:
+                raise ValueError("Voice strength is between 0 and 2.")
+            args += ["--lora", f"{voice}:{strength:g}"]
+        return "Making a take", slug, args
+    if action == "follow":
+        take = body.get("take")
+        rec = next((r for r in project.recordings(slug) if r["kind"] == "take" and r["name"] == take), None)
+        if not rec or not TAKE.fullmatch(take):
+            raise ValueError("No such take.")
+        return "Checking the melody", slug, ["follow", song, rec["path"], "--separate"]
+    raise ValueError("Unknown action.")
+
+
+# ---------------------------------------------------------------------- HTTP
+
+class Handler(BaseHTTPRequestHandler):
+    project: Project
+    jobs: Jobs
+    port: int
+    server_version = "Copyist"
+
+    def log_message(self, fmt, *args):   # quiet; jobs keep their own logs
+        pass
+
+    # -- guards
+    def _host_ok(self) -> bool:
+        host = (self.headers.get("Host") or "").split(":")[0]
+        return host in ("127.0.0.1", "localhost")
+
+    def _origin_ok(self) -> bool:
+        origin = self.headers.get("Origin")
+        if not origin:
+            return True
+        return urlparse(origin).hostname in ("127.0.0.1", "localhost") and urlparse(origin).port == self.port
+
+    # -- replies
+    def _send(self, status: int, body: bytes, ctype: str, extra: dict | None = None):
+        self.send_response(status)
+        self.send_header("Content-Type", ctype)
+        self.send_header("Content-Length", str(len(body)))
+        self.send_header("X-Content-Type-Options", "nosniff")
+        self.send_header("Cache-Control", "no-store")
+        for k, v in (extra or {}).items():
+            self.send_header(k, v)
+        self.end_headers()
+        if self.command != "HEAD":
+            self.wfile.write(body)
+
+    def _json(self, data, status=200):
+        self._send(status, json.dumps(data).encode(), "application/json")
+
+    def _error(self, status, message):
+        self._json({"error": message}, status)
+
+    def _file(self, path: Path):
+        size = path.stat().st_size
+        ctype = mimetypes.guess_type(path.name)[0] or "application/octet-stream"
+        rng = re.fullmatch(r"bytes=(\d*)-(\d*)", self.headers.get("Range") or "")
+        start, end = 0, size - 1
+        status = HTTPStatus.OK
+        if rng and (rng.group(1) or rng.group(2)):
+            if rng.group(1):
+                start = int(rng.group(1))
+                end = min(int(rng.group(2)), size - 1) if rng.group(2) else size - 1
+            else:
+                start = max(0, size - int(rng.group(2)))
+            if start > end or start >= size:
+                self.send_response(HTTPStatus.REQUESTED_RANGE_NOT_SATISFIABLE)
+                self.send_header("Content-Range", f"bytes */{size}")
+                self.end_headers()
+                return
+            status = HTTPStatus.PARTIAL_CONTENT
+        self.send_response(status)
+        self.send_header("Content-Type", ctype)
+        self.send_header("Accept-Ranges", "bytes")
+        self.send_header("Content-Length", str(end - start + 1))
+        self.send_header("X-Content-Type-Options", "nosniff")
+        if status == HTTPStatus.PARTIAL_CONTENT:
+            self.send_header("Content-Range", f"bytes {start}-{end}/{size}")
+        self.end_headers()
+        if self.command == "HEAD":
+            return
+        with open(path, "rb") as f:
+            f.seek(start)
+            left = end - start + 1
+            while left > 0:
+                chunk = f.read(min(1 << 16, left))
+                if not chunk:
+                    break
+                try:
+                    self.wfile.write(chunk)
+                except (BrokenPipeError, ConnectionResetError):
+                    return
+                left -= len(chunk)
+
+    # -- routes
+    def do_HEAD(self):
+        self.do_GET()
+
+    def do_GET(self):
+        if not self._host_ok():
+            return self._error(403, "Open Copyist at http://127.0.0.1.")
+        path = urlparse(self.path).path
+        p = self.project
+        if path in ("/", "/index.html"):
+            return self._file(STATIC / "index.html")
+        if path.startswith("/static/"):
+            f = (STATIC / path[len("/static/"):]).resolve()
+            if f.is_file() and STATIC.resolve() in f.parents:
+                return self._file(f)
+            return self._error(404, "Not found.")
+        if path.startswith("/files/"):
+            f = p.file(path[len("/files/"):])
+            return self._file(f) if f else self._error(404, "Not found.")
+        if path == "/api/songs":
+            return self._json(p.songs())
+        m = re.fullmatch(r"/api/songs/([^/]+)", path)
+        if m:
+            song = p.song(unquote(m.group(1)))
+            return self._json(song) if song else self._error(404, "No such song.")
+        if path == "/api/pages":
+            q = parse_qs(urlparse(self.path).query).get("file", [""])[0]
+            pages = p.pages(q)
+            return self._json({"pages": pages}) if pages is not None else self._error(404, "No such sheet.")
+        if path == "/api/voices":
+            return self._json(p.voices())
+        if path == "/api/training":
+            return self._json(p.training())
+        if path == "/api/jobs":
+            return self._json([self.jobs.view(j) for j in self.jobs.jobs[:10]])
+        m = re.fullmatch(r"/api/jobs/([\w-]+)", path)
+        if m:
+            job = self.jobs.find(m.group(1))
+            return self._json(self.jobs.view(job)) if job else self._error(404, "No such job.")
+        return self._error(404, "Not found.")
+
+    def do_POST(self):
+        if not (self._host_ok() and self._origin_ok()) or self.headers.get("X-Copyist") != "1":
+            return self._error(403, "Requests come from the Copyist page only.")
+        if urlparse(self.path).path != "/api/jobs":
+            return self._error(404, "Not found.")
+        try:
+            length = int(self.headers.get("Content-Length") or 0)
+            body = json.loads(self.rfile.read(min(length, 65536)) or b"{}")
+            label, song, args = job_args(self.project, body)
+            job = self.jobs.start(label, song, args)
+        except (ValueError, TypeError) as e:
+            return self._error(400, str(e))
+        return self._json(self.jobs.view(job), 202)
+
+
+def make_server(root: Path, port: int = 8765) -> ThreadingHTTPServer:
+    project = Project(root)
+    handler = type("CopyistHandler", (Handler,), {"project": project, "jobs": Jobs(project)})
+    server = ThreadingHTTPServer(("127.0.0.1", port), handler)
+    handler.port = server.server_address[1]
+    return server
+
+
+def serve(root: Path, port: int = 8765, open_browser: bool = False) -> None:
+    server = make_server(root, port)
+    url = f"http://127.0.0.1:{server.server_address[1]}/"
+    print(f"Copyist is at {url} (Ctrl-C to stop)")
+    if open_browser:
+        import webbrowser
+        webbrowser.open(url)
+    try:
+        server.serve_forever()
+    except KeyboardInterrupt:
+        pass
+    finally:
+        server.server_close()

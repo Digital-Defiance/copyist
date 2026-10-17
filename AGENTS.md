@@ -27,6 +27,7 @@ copyist check songs/amazing-grace.yaml    # run validators only
 copyist sing songs/amazing-grace.yaml --bars 0-4   # sung vocal (needs SoulX-Singer; docs/singing.md)
 copyist produce songs/amazing-grace.yaml           # YuE2 production from the score (docs/production.md)
 copyist follow songs/amazing-grace.yaml VOCAL.wav # does a recording sing the melody? (timing and octave allowed)
+copyist serve                                      # the web front end (docs/web.md)
 python -m unittest discover -s tests      # tests
 ```
 

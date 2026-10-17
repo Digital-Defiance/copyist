@@ -1,0 +1,191 @@
+/* Copyist: a copyist's desk. Engraved serif for what Copyist wrote, a pencil hand for
+   what you do with it; red and blue pencil marks; music-paper staff lines. */
+
+@font-face { font-family: "Pencil"; src: url("fonts/shantell-sans.woff2") format("woff2");
+  font-weight: 300 800; font-display: swap; }
+@font-face { font-family: "Engraved"; src: url("fonts/source-serif-4.woff2") format("woff2");
+  font-weight: 200 900; font-display: swap; }
+@font-face { font-family: "Engraved"; src: url("fonts/source-serif-4-italic.woff2") format("woff2");
+  font-weight: 200 900; font-style: italic; font-display: swap; }
+
+:root {
+  --paper: #fafbf9;
+  --wash: #eef2ef;
+  --staff: #9fb6a8;
+  --ink: #1f2547;
+  --ink-soft: #5a6080;
+  --red: #b8322b;
+  --blue: #2c5ba8;
+  --pencil: "Pencil", "Comic Sans MS", system-ui, sans-serif;
+  --engraved: "Engraved", "Iowan Old Style", Georgia, serif;
+  --gap: 0.6rem;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #161a26; --wash: #1d2232; --staff: #3f5c4f; --ink: #e4e7f1; --ink-soft: #a3a9c2;
+    --red: #f0756c; --blue: #86aaf0; color-scheme: dark;
+  }
+}
+
+* { box-sizing: border-box; }
+html { font-size: 106.25%; }
+body {
+  margin: 0; background: var(--paper); color: var(--ink);
+  font-family: var(--engraved); font-size: 1rem; line-height: 1.6;
+  font-variant-numeric: oldstyle-nums;
+}
+a { color: var(--blue); }
+:focus-visible { outline: 2.5px solid var(--blue); outline-offset: 3px; border-radius: 4px; }
+h1, h2, h3 { font-family: var(--pencil); font-weight: 600; line-height: 1.25; margin: 0; }
+h2 { font-size: 1.15rem; }
+h3 { font-size: 1.05rem; }
+
+/* ---------------------------------------------------------------- masthead */
+.masthead {
+  display: flex; align-items: baseline; gap: 1rem; flex-wrap: wrap;
+  padding: 1rem 1.5rem 0.75rem; border-bottom: 1.5px solid var(--staff);
+}
+.wordmark {
+  font-family: var(--pencil); font-weight: 700; font-size: 1.5rem; color: var(--ink);
+  text-decoration: none; font-variation-settings: "INFM" 40;
+}
+.tagline { margin: 0; font-style: italic; color: var(--ink-soft); }
+
+/* -------------------------------------------------------------------- desk */
+.desk { display: grid; grid-template-columns: 16rem minmax(0, 1fr); min-height: calc(100vh - 3.6rem); }
+.drawer { border-right: 1.5px solid var(--staff); padding: 1.25rem 1.25rem 2rem; background: var(--wash); }
+.drawer section + section { margin-top: 2rem; }
+.drawer h2 { margin-bottom: 0.5rem; }
+.song-list { list-style: none; margin: 0; padding: 0; }
+.song-list a {
+  display: block; padding: 0.3rem 0.5rem; margin: 0 -0.5rem; color: var(--ink); text-decoration: none;
+  border-radius: 6px;
+}
+.song-list a:hover { background: color-mix(in srgb, var(--staff) 22%, transparent); }
+.song-list a[aria-current="page"] { font-weight: 650; box-shadow: inset 3px 0 0 var(--blue); }
+main { padding: 1.5rem 2.5rem 4rem; min-width: 0; }
+main:focus { outline: none; }
+
+/* ------------------------------------------------- the title, on a staff */
+.staff-title { position: relative; padding: 1.1rem 0 1rem 1.25rem; margin: 0 0 0.25rem -1.25rem; }
+.staff-title::before {
+  content: ""; position: absolute; left: 0; right: 0; top: 50%;
+  height: calc(var(--gap) * 4 + 1.5px); transform: translateY(-38%);
+  background: repeating-linear-gradient(to bottom, var(--staff) 0 1.5px, transparent 1.5px var(--gap));
+  border-left: 1.5px solid var(--staff); z-index: 0;
+}
+.staff-title h1 {
+  position: relative; z-index: 1; font-size: clamp(2rem, 4.5vw, 2.9rem); font-weight: 650;
+  font-variation-settings: "INFM" 55; letter-spacing: -0.01em;
+}
+.facts { margin: 0.25rem 0 0; color: var(--ink-soft); max-width: 70ch; }
+
+/* -------------------------------------------------------------------- tabs */
+.tabs { display: flex; gap: 1.75rem; margin: 1.5rem 0 1.75rem; flex-wrap: wrap; }
+.tabs a {
+  font-family: var(--pencil); font-size: 1.15rem; font-weight: 500; color: var(--ink-soft); text-decoration: none;
+  padding: 0.15rem 0;
+}
+.tabs a:hover { color: var(--ink); }
+.tabs a[aria-current="page"] {
+  color: var(--ink); font-weight: 650; text-decoration: underline wavy var(--blue) 2px; text-underline-offset: 7px;
+}
+
+/* ---------------------------------------------------------------- buttons */
+button, .button {
+  font-family: var(--pencil); font-size: 1rem; font-weight: 600; cursor: pointer;
+  border: 2px solid var(--blue); color: var(--blue); background: transparent;
+  padding: 0.35rem 1rem; border-radius: 255px 14px 225px 14px / 14px 225px 14px 255px;
+  text-decoration: none; display: inline-block; line-height: 1.4;
+}
+button:hover, .button:hover { background: color-mix(in srgb, var(--blue) 10%, transparent); }
+button.go { background: var(--red); border-color: var(--red); color: var(--paper); }
+button.go:hover { background: color-mix(in srgb, var(--red) 85%, black); }
+button:disabled { opacity: 0.45; cursor: not-allowed; }
+button.small, .button.small { font-size: 0.9rem; padding: 0.15rem 0.7rem; }
+
+/* ------------------------------------------------------------ the song tab */
+.song-tab { display: grid; grid-template-columns: minmax(0, 1fr) minmax(16rem, 22rem); gap: 3rem; }
+.verses { columns: 2 17rem; column-gap: 2.5rem; }
+.verse { break-inside: avoid; margin: 0 0 1.4rem; }
+.verse .n { font-family: var(--pencil); color: var(--ink-soft); font-size: 0.9rem; }
+.verse p { margin: 0.1rem 0 0; font-size: 1.08rem; line-height: 1.7; max-width: 34ch; }
+.checks { list-style: none; padding: 0; margin: 0.6rem 0 0; }
+.checks li { display: grid; grid-template-columns: 1.5rem 1fr; gap: 0.25rem; margin-bottom: 0.55rem; font-size: 0.95rem; }
+.mark { font-family: var(--pencil); font-weight: 700; font-size: 1.15rem; line-height: 1.3; }
+.mark.pass { color: var(--blue); }
+.mark.fail, .mark.warn { color: var(--red); }
+.checks b { font-weight: 600; }
+.verdict { font-family: var(--pencil); margin: 0.4rem 0 0; }
+
+/* ----------------------------------------------------------- the score tab */
+.sheet-picker { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1rem; align-items: center; }
+.sheet-picker button[aria-pressed="true"] { background: var(--blue); color: var(--paper); }
+.sheets { display: grid; gap: 1.5rem; max-width: 58rem; }
+.sheet-page {
+  display: block; width: 100%; height: auto; background: white; border-radius: 3px;
+  box-shadow: 0 1px 0 var(--staff), 0 0 0 1px color-mix(in srgb, var(--staff) 60%, transparent);
+}
+
+/* ----------------------------------------------------------- the sound tab */
+.make { background: var(--wash); border-radius: 10px; padding: 1.25rem 1.5rem 1.5rem; margin-bottom: 2.5rem; max-width: 52rem; }
+.make h2 { margin-bottom: 0.75rem; }
+.fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr)); gap: 1rem 1.5rem; }
+.field { display: grid; gap: 0.3rem; }
+.field.wide { grid-column: 1 / -1; }
+label, .label { font-family: var(--pencil); font-weight: 500; font-size: 0.95rem; }
+select, input, textarea {
+  font: inherit; color: var(--ink); background: var(--paper); border: 1.5px solid var(--staff);
+  border-radius: 6px; padding: 0.35rem 0.55rem; width: 100%;
+}
+input[type="range"] { accent-color: var(--blue); padding: 0; border: 0; background: none; }
+textarea { min-height: 5.5rem; resize: vertical; line-height: 1.45; }
+.row { display: flex; gap: 0.5rem; align-items: center; }
+.hint { color: var(--ink-soft); font-size: 0.9rem; margin: 0.15rem 0 0; }
+.actions { margin-top: 1.25rem; display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; }
+.job { margin-top: 1rem; }
+.job pre {
+  max-height: 14rem; overflow: auto; background: var(--paper); border: 1.5px solid var(--staff);
+  border-radius: 6px; padding: 0.6rem 0.75rem; font-size: 0.8rem; line-height: 1.45; white-space: pre-wrap;
+}
+.status { font-family: var(--pencil); }
+.status.failed { color: var(--red); }
+
+.recordings { list-style: none; padding: 0; margin: 0; max-width: 52rem; }
+.recordings li { padding: 1rem 0 1.1rem; border-bottom: 1.5px solid color-mix(in srgb, var(--staff) 55%, transparent); }
+.recordings h3 { font-weight: 600; }
+.recordings .meta { color: var(--ink-soft); font-size: 0.92rem; margin: 0.1rem 0 0.5rem; }
+.recordings audio { width: 100%; max-width: 36rem; display: block; }
+.recordings details { margin-top: 0.4rem; font-size: 0.92rem; }
+.recordings summary { cursor: pointer; color: var(--blue); }
+.follow { margin: 0.5rem 0 0; font-size: 0.95rem; }
+.section-gap { margin-top: 2.5rem; }
+
+/* -------------------------------------------------------- training drawer */
+.run { margin-top: 0.75rem; }
+.run h3 { font-size: 1rem; }
+.run p { margin: 0.2rem 0; font-size: 0.92rem; }
+.bars { display: block; width: 100%; height: auto; margin: 0.5rem 0 0.25rem; }
+.bars .line { stroke: var(--staff); stroke-width: 1; }
+.bars .barline { stroke: var(--ink-soft); stroke-width: 1.2; }
+.bars .done { fill: color-mix(in srgb, var(--blue) 28%, transparent); }
+.bars .head { fill: var(--blue); }
+.losses { display: grid; grid-template-columns: 1fr auto; gap: 0.1rem 0.75rem; font-size: 0.85rem; margin-top: 0.4rem; }
+.losses span:nth-child(even) { text-align: right; font-variant-numeric: lining-nums tabular-nums; }
+.ready a { font-family: var(--pencil); }
+.warn-text { color: var(--red); }
+
+.empty { max-width: 40rem; }
+.empty p { font-size: 1.05rem; }
+
+/* --------------------------------------------------------------- narrow */
+@media (max-width: 760px) {
+  .desk { grid-template-columns: 1fr; }
+  .drawer { border-right: 0; border-bottom: 1.5px solid var(--staff); padding: 1rem; }
+  main { padding: 1.25rem 1rem 3rem; }
+  .song-tab { grid-template-columns: 1fr; gap: 2rem; }
+  .masthead { padding: 0.9rem 1rem 0.6rem; }
+  .staff-title { margin-left: -1rem; padding-left: 1rem; }
+}
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }

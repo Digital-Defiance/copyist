@@ -105,11 +105,16 @@ class DurationTests(unittest.TestCase):
 
 class RuntimeTests(unittest.TestCase):
     def test_missing_runtime_points_at_the_docs(self):
-        with mock.patch.dict(os.environ, {}, clear=False):
-            for key in ("COPYIST_YUE_SYNTH", "COPYIST_YUE_MODEL", "COPYIST_YUE_VAE"):
-                os.environ.pop(key, None)
-            with self.assertRaises(SongError) as caught:
-                yue.run_yue2cpp({"style": "x"}, Path(tempfile.mkdtemp()))
+        here = os.getcwd()
+        os.chdir(tempfile.mkdtemp())    # no .cache/ copies here either
+        try:
+            with mock.patch.dict(os.environ, {}, clear=False):
+                for key in ("COPYIST_YUE_SYNTH", "COPYIST_YUE_MODEL", "COPYIST_YUE_VAE"):
+                    os.environ.pop(key, None)
+                with self.assertRaises(SongError) as caught:
+                    yue.run_yue2cpp({"style": "x"}, Path(tempfile.mkdtemp()))
+        finally:
+            os.chdir(here)
         self.assertIn("docs/production.md", str(caught.exception))
 
     def test_produce_calls_yue_synth(self):

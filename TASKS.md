@@ -65,6 +65,14 @@ The SoundFont band plus a SoulX vocal will never sound like Suno: they're checki
 - [ ] If the score fights the voice: train with each song's own score too (SheetSage2 transcription, `cot=full` prefixes)
 - [ ] Use the realaudio NAR adapter (`nar_lora_joint_v9.bf16.safetensors`) in `copyist produce` (`--adapters`), and compare it by ear with a plain render
 
+## 3c. Web front end (docs/web.md)
+
+- [x] `copyist serve`: a local page for songs, lyrics and checks, the score as pages, takes with players, making a take, checking the melody, and voice-training progress. Tested here (server tests, and screenshots in light, dark and phone widths)
+- [ ] Use it on the Mac for a real take with a trained voice
+- [ ] Compare two takes side by side; mark a favorite take
+- [ ] Write a new song from the page (needs melody proposals, M2)
+- [ ] Hosting for other people (accounts, a GPU queue): later
+
 ## 4. Singing that sounds performed
 
 - [ ] Lyric timing check: align the sung WAV to the lyrics (Whisper word timestamps or a CTC aligner) and flag words that land too far from their notes in the score

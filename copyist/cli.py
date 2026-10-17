@@ -7,6 +7,7 @@
 from __future__ import annotations
 
 import argparse
+import re
 import sys
 from pathlib import Path
 
@@ -139,7 +140,9 @@ def cmd_produce(args) -> int:
     req = yue.request(song, verses=args.verses, style=args.style, seed=args.seed, intro_bars=args.intro_bars,
                       octave=octave)
     req["output_format"] = "wav16"
-    out = Path(args.out) / song.slug / "production"
+    if args.take and not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_-]{0,63}", args.take):
+        raise SongError("A take name uses letters, digits, - and _ only.")
+    out = Path(args.out) / song.slug / (f"takes/{args.take}" if args.take else "production")
     extra = []
     if args.lora:
         req["adapters"], folder = yue.lora_adapters(args.lora)
@@ -156,6 +159,9 @@ def cmd_follow(args) -> int:
     from . import pitch, sing, yue
     song = load_song(args.song)
     recording = Path(args.recording)
+    if args.separate:
+        from .stems import vocal_stem
+        recording = vocal_stem(recording)
     tracked = pitch.track(recording)
     lines = [f"# {song.title}: does the recording follow the score?", "",
              f"Recording: `{recording.name}`. The recording may sit up to {args.search:g} s early or late, each phrase"
@@ -186,6 +192,13 @@ def cmd_lora_songs(args) -> int:
     lora.write_songs(songs, out)
     print(f"{len(songs)} songs, trigger “{args.trigger}”. Wrote {out}")
     print(f"Audio comes from {Path(args.audio).resolve()} (give the same folder to scripts/yue-lora/prepare.py).")
+    return 0
+
+
+def cmd_serve(args) -> int:
+    """Open Copyist in a browser (docs/web.md)."""
+    from .web.server import serve
+    serve(Path(args.root), port=args.port, open_browser=not args.no_open)
     return 0
 
 
@@ -239,6 +252,7 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--seed", type=int, default=831001, help="seed for the render (default 831001)")
     p.add_argument("--style", help="style tags; default comes from the song")
     p.add_argument("--device", help="yue-synth device, e.g. MTL0 (or set COPYIST_YUE_DEVICE)")
+    p.add_argument("--take", help="keep this render in out/<song>/takes/TAKE/ instead of production/")
     p.add_argument("--lora", action="append", metavar="FILE[:SCALE]",
                    help="a YuE2 LoRA (.safetensors) to render with, e.g. a voice trained with scripts/yue-lora; "
                         "repeat for more. Put its trigger word in --style")
@@ -253,6 +267,8 @@ def main(argv: list[str] | None = None) -> int:
     f.add_argument("--verses", type=int, default=1, help="how many verses the recording has (default 1)")
     f.add_argument("--intro-bars", type=int, default=4, help="bars before verse 1, as in `produce` (default 4)")
     f.add_argument("--search", type=float, default=3.0, help="seconds the recording may sit early or late (default 3)")
+    f.add_argument("--separate", action="store_true",
+                   help="the recording is a full mix: separate its vocal with Demucs first")
     f.add_argument("--written-octave", action="store_true", help="count only notes in the written octave")
     f.add_argument("--pass-share", type=float, default=0.8, help="share of notes that must match (default 0.8)")
     f.set_defaults(func=cmd_follow)
@@ -264,6 +280,12 @@ def main(argv: list[str] | None = None) -> int:
     ls.add_argument("--style", choices=("demo", "production"), default="demo", help="which style on each sheet (default demo)")
     ls.add_argument("--out", required=True, help="where to write songs.jsonl")
     ls.set_defaults(func=cmd_lora_songs)
+
+    sv = sub.add_parser("serve", help="open Copyist in a browser, on this computer only (docs/web.md)")
+    sv.add_argument("--port", type=int, default=8765)
+    sv.add_argument("--root", default=".", help="the project folder (default: here)")
+    sv.add_argument("--no-open", action="store_true", help="don't open a browser window")
+    sv.set_defaults(func=cmd_serve)
 
     v = sub.add_parser("voice", help="make a singer voice for `copyist sing` from a recording")
     v.add_argument("recording", help="a recording of one person singing (a vocal stem works)")
