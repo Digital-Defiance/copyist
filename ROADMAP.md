@@ -103,8 +103,9 @@ A free, open-source Tauri app: the page as its window, the engine and yue2.cpp a
 
 ## S: Sound set and default voices (docs/sound-set.md, docs/default-voices.md)
 
-- [ ] Build `sfizz_render`; render a song with the Salamander piano and an AVL drum kit; compare with the SoundFont by ear
-- [ ] Find a bass and a guitar with clear licences
+- [x] Build `sfizz_render`; render a song with the Salamander piano, Growlybass and an AVL drum kit
+- [x] A bass with a clear licence: Karoryfer Growlybass and Meatbass (CC0)
+- [ ] A guitar with a clear licence
 - [ ] Instruments as a pinned download; `render.py` on sfizz; credits in the app and the report
 - [ ] Voice presets: style lines and seeds that stay one singer across songs
 - [ ] Synthetic voice LoRAs: many takes per preset, grouped by speaker embedding, trained with scripts/yue-lora

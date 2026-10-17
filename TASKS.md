@@ -85,7 +85,9 @@ The SoundFont band plus a SoulX vocal will never sound like Suno: they're checki
 ## 3e. Sound set and default voices (ROADMAP milestone S)
 
 - [x] Research: instrument libraries and licences (docs/sound-set.md); voice sources and licences (docs/default-voices.md). No hiring: voices come from presets, synthetic LoRAs and open data
-- [ ] Prototype: `sfizz_render` with the Salamander piano and an AVL drum kit on Amazing Grace
+- [x] Prototype: `sfizz_render` with the Salamander piano, Growlybass (CC0) and an AVL kit on Amazing Grace; under 2 s a part (docs/sound-set.md)
+- [ ] Listen: old SoundFont band against the sampled band
+- [ ] Wire it in: instruments as a pinned download, `sfizz_render` as a sidecar, `render.py` one part at a time with stems
 
 ## 4. Singing that sounds performed
 
