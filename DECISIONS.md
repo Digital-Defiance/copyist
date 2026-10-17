@@ -2,6 +2,14 @@
 
 Newest first. One entry per decision: what, why, and what we gave up.
 
+## 2026-10-17 (web front end)
+
+- **A local page served by Python's own HTTP server** (`copyist serve`), not a framework or a hosted app. No new dependencies, and the work has to run where the GPU is. Gave up: hosting for other people, for now.
+- **The page runs the `copyist` commands as jobs, one at a time.** The command line stays the one way things get made, and the GPU can't do two renders at once.
+- **Sheets are shown as page images** rendered from the PDFs with PyMuPDF, because browsers' PDF viewers aren't reliable (Chromium headless shows nothing).
+- **Fonts are bundled** (Shantell Sans for what you do, Source Serif 4 for what Copyist wrote; both SIL OFL), so the page fetches nothing from the internet.
+- **Guards:** 127.0.0.1 only, files from `out/` only, a Host check against DNS rebinding, and jobs only from the page itself (a custom header plus an Origin check).
+
 ## 2026-10-17 (voice LoRA)
 
 - **A voice comes from a YuE2 LoRA, not from SoulX over the SoundFont band.** The SoundFont band and a SoulX vocal stay as checking tools; she found the band "terrible" and the singer "a little glitchy". Gave up: SoulX's note-exact control of the vocal line.

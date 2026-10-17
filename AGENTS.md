@@ -47,12 +47,16 @@ copyist/          the package
   sing.py         voice part → SoulX-Singer input; runs the model (docs/singing.md)
   pitch.py        sung pitch vs the score, note by note
   hear.py         Whisper transcription of a vocal vs the lyrics
-  yue.py          the score as YuE2's ABC, and the call to yue-synth
+  yue.py          the score as YuE2's ABC, and the call to yue-synth (docs/production.md)
+  stems.py        separating a recording's vocal with Demucs
+  lora.py         training data for a YuE2 voice LoRA (docs/voice-lora.md)
+  voiceprompt.py  a SoulX voice from a recording
+  web/            `copyist serve`: server.py and the page in static/ (docs/web.md)
   cli.py          the `copyist` command
 songs/            song files (public domain or original only)
 tests/            unittest tests
-docs/             longer design notes; docs/singing.md for vocals
-scripts/          setup helpers (setup-soulx.sh)
+docs/             production.md, voice-lora.md, web.md, singing.md
+scripts/          setup-yue.sh, setup-yue-train.sh, setup-demucs.sh, setup-soulx.sh; yue-lora/ (prepare, train, run.sh)
 out/              build output (ignored)
 .cache/           downloaded assets (ignored)
 ```
@@ -76,4 +80,4 @@ out/              build output (ignored)
 
 ## Owner
 
-Jessica Mulein (Digital Defiance). She writes melodies and lyrics and directs the work through AI tools in short bursts, so leave the repo in a state where the next person can continue without context: tests passing, roadmap current, no half-finished changes left uncommitted.
+Jessica Mulein (Digital Defiance). She writes lyrics and directs the work through AI tools in short bursts. She can't sing, play an instrument or read music, so melodies and sounds are chosen by listening, so leave the repo in a state where the next person can continue without context: tests passing, roadmap current, no half-finished changes left uncommitted.

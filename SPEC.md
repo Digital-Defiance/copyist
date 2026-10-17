@@ -1,6 +1,6 @@
 # Copyist specification
 
-*The song, the score, the sound.* Version 0.1, October 2026. This is the source of truth for what Copyist is and how it works. If code and this document disagree, fix one of them in the same change and note it in DECISIONS.md.
+*The song, the score, the sound.* Version 0.2, 17 October 2026. This is the source of truth for what Copyist is and how it works. If code and this document disagree, fix one of them in the same change and note it in DECISIONS.md.
 
 ## 1. What Copyist is
 
@@ -40,8 +40,10 @@ For every song:
 | Full score | PDF, MusicXML | Every instrument, concert pitch or transposed (option) |
 | Parts | PDF per player | Transposed for the instrument, correct clef and range |
 | MIDI | .mid | Full arrangement; one track per instrument |
-| Demo audio | WAV | Rendered from the MIDI (sampled instruments at M0; better renderers later) |
+| Demo audio | WAV | Rendered from the MIDI with a SoundFont. For checking only: it sounds like a demo |
+| Production | WAV, one folder per take | YuE2 performs the score, band and singer together, optionally in a trained voice (section 6) |
 | Validation report | Markdown | Every check, pass or fail, with bar and beat |
+| Melody check | Markdown | `copyist follow`: how many sung notes match the score, in which octave, and each phrase's timing |
 
 ## 3. Architecture
 
@@ -66,8 +68,8 @@ Internally every song is a `music21` `Score`. On disk the source of truth is the
 3. **Validators.** Deterministic checks (section 5). Failing checks block "finished" status and, during generation, trigger regeneration of the failing section.
 4. **Arrangement.** From the lead sheet to an instrumentation template (piano-vocal, rock/pop band, country band, pit orchestra, string quartet, choir). Rule-based first (M1), model-assisted later (M4). Every instrument stays in range and is written in its own transposition.
 5. **Engraving.** music21 exports MusicXML; Verovio engraves it to SVG; PyMuPDF assembles PDF. Lead sheet, full score and one PDF per part. Verovio's SVG relies on CSS and an embedded music font that MuPDF ignores, so each page is rewritten into plain SVG first (`engrave.printable_svg`). The page header (title, subtitle, words and music credits) is written into Verovio's MEI directly.
-6. **Rendering.** MIDI → audio. M0: sampled instruments via a SoundFont (GeneralUser GS) with TinySoundFont. Later: an expressive-performance layer (timing, dynamics, articulation as MIDI), better sample libraries, a MIDI-conditioned neural renderer, and singing (section 6).
-7. **Verification.** For neural renders: transcribe each rendered stem, compare it to the score within tolerances, and regenerate sections that drift. (M5)
+6. **Rendering.** Two renders, for two jobs. The SoundFont preview (GeneralUser GS through TinySoundFont) is exact and quick, for checking the arrangement. The production render is YuE2 performing the score (section 6): that's the one meant to be heard.
+7. **Verification.** `copyist follow` separates the vocal (Demucs), finds the recording's timing and each phrase's drift, and compares every sung note with the score. A take that doesn't sing the score isn't finished. Later: the same for the bass and drums, and regenerating phrases that drift.
 
 ## 4. Song file format (`copyist-song/0`)
 
@@ -143,11 +145,14 @@ Planned: `breath` (singers get a breath at least every N bars), `tessitura` (whe
    - Fallbacks: DiffSinger guide vocal plus consented voice conversion (e.g. Seed-VC).
    Whatever renders the voice, every sung note's pitch is checked against the score (pYIN; the middle of each note, ±50 cents) and the words are checked by transcribing the vocal with Whisper. Drifting phrases are nudged or regenerated.
 
-   **Status (2026-10-16): SoulX-Singer is integrated** (`copyist sing`, `copyist/sing.py`, docs/singing.md). First test, Amazing Grace bars 0–4 with SoulX-Singer's example voice on a 2-core CPU: 10 of 10 notes within ±50 cents, and Whisper heard every word in order. Speed on that machine: about 25 seconds of computing per second of singing.
+   **Status, 17 October 2026.**
 
-   **YuE2 production** (`copyist produce`, `copyist/yue.py`, docs/production.md) sends the same score, written in YuE2's ABC, to yue2.cpp. First render, Amazing Grace verse 1 on an M4 Max: 47 seconds of audio in 45 seconds. A pitch check of that full mix followed the band (0 of 32 notes within ±50 cents), so it did not show whether the voice sang the tune. The weights are CC BY-NC 4.0 with an individual-creator permission; a company needs its own licence before commercial use. Copyist does not ship the weights.
+   - **YuE2 is the production render** (`copyist produce`, `copyist/yue.py`, docs/production.md). Copyist writes the score in YuE2's own ABC and yue2.cpp performs it, band and singer together; on an M4 Max a verse takes about as long to render as to play. YuE2 sings **one octave below** the ABC it's given (measured twice on Amazing Grace: written D4–D5 came back D3–D4, 32 of 32 notes; written an octave up came back in the right octave, 30 of 32), so the vocal goes to YuE2 an octave up. It also shortens the intro and drifts, coming in up to about 2 s early, so `copyist follow` finds the timing before comparing notes.
+   - **SoulX-Singer and the SoundFont band are checking tools now** (`copyist sing`, docs/singing.md). SoulX sings the exact notes and syllables (10 of 10 on pitch, every word heard), but over the SoundFont band it doesn't sound like a record, and it can be glitchy.
+   - **A voice for YuE2 comes from a LoRA** (docs/voice-lora.md): a small add-on trained on one artist's recordings, called up by a trigger word in the style. `copyist lora-songs` turns prompt sheets (a style and tagged lyrics per song) into training data; `scripts/yue-lora/` tokenizes the audio and trains on Apple Silicon, CUDA or CPU; `copyist produce --lora` renders with it. The first one is training on the 41 songs of *I Left the Lights On* (trigger word `lightson`).
+   - **Continuation** (opening a render with a few seconds of a real recording) carried a singer's sound into the score, but the melody followed only 14 of 32 notes when the opening's tempo differed. Not reliable yet.
 
-   **Copyist ships no voices.** A voice is a 10–30 second reference recording in the git-ignored `voices/` folder, not a training run. A voice Copyist ever ships or sells must come from a consenting person, never from another AI generator. Suno's terms (September 2026) forbid using its output to "power, enable or train other artificial intelligence and machine learning models" or to build competing products.
+   **Copyist ships no voices.** A voice is a reference recording in the git-ignored `voices/` folder (SoulX), or a LoRA in `.cache/` (YuE2); neither is committed or published. A voice Copyist ever ships or sells must come from a consenting person, never from another AI generator. Suno's terms (September 2026) forbid using its output to "power, enable or train other artificial intelligence and machine learning models" or to build competing products. The YuE2 weights are CC BY-NC 4.0 with an individual-creator permission; a company needs its own licence before commercial use, and LoRAs trained on them carry the same terms.
 
 ## 7. Arrangement (M1 and later)
 
@@ -235,6 +240,7 @@ A score is "good" when a professional player could sight-read it:
 
 - Test songs in `songs/` must be public domain or written for this project. Never commit copyrighted lyrics or melodies.
 - Training data (later milestones): public-domain scores, licensed or commissioned recordings, synthetic data, and contributions with explicit opt-in. Keep a manifest of every source and its license.
+- LoRAs and voices are trained or made locally from the person's own recordings, kept in `.cache/` and `voices/`, and never committed or published (section 6).
 - Sound assets: GeneralUser GS SoundFont (free for any music creation, including commercial; downloaded at first use into `.cache/`, not committed). Its author can't vouch for the origin of every sample, so a product release should switch to a SoundFont or sample library with documented provenance.
 
 ## 11. Milestones
@@ -287,8 +293,14 @@ Demucs (separation), Basic Pitch (notes), torchcrepe or pYIN (vocal pitch), Beat
 
 Only transcribe recordings the user owns or has rights to. The fitted score of someone else's song is still their song.
 
-## 13. Open questions
+## 13. In a browser
+
+`copyist serve` (docs/web.md) is a local web page for everything above: the songs, their lyrics and checks, the score as pages, every take with a player, making a new take (voice, strength, verses, seed, style), checking a take's melody, and the progress of a voice training run. It runs the same `copyist` commands, one at a time, on the machine with the GPU, listens on 127.0.0.1 only, and loads nothing from the internet. Choices are made by listening and pressing buttons; nothing on the page needs musical skills.
+
+## 14. Open questions
 
 - License for the code (MIT, Apache-2.0, or GPL to match tools like Seed-VC).
 - Which local LLM or API drafts song plans (M2), and how prompts are versioned.
-- How users edit: YAML by hand, MuseScore round-trip via MusicXML, or a web editor.
+- How users edit notes: YAML by hand, MuseScore round-trip via MusicXML, or editing on the web page.
+- Hosting for other people: accounts, a GPU queue, and which renderer licence allows it (YuE2's weights don't, for a company).
+- Several singers in one LoRA (the musical has a cast): one trigger word per character, or one LoRA per voice.

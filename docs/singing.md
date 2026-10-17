@@ -27,7 +27,7 @@ On an Apple Silicon Mac it tries the GPU (`mps`) first and falls back to the CPU
 
 The singer's voice comes from a short **reference recording** (a "prompt") plus its metadata (lyrics, notes and pitch), not from training. Without `--voice`, Copyist uses the English example voice that ships with SoulX-Singer. **Use that for testing only;** its source and licence aren't documented.
 
-For real songs, use only voices recorded with the singer's explicit permission for this use (SPEC section 10). To make a voice:
+Voices stay in the git-ignored `voices/` folder and are never committed or published; a voice Copyist ships must come with the singer's permission (SPEC section 6). To make a voice:
 
 1. Record the singer: 10 to 30 seconds, dry (no reverb), one voice, in their comfortable range, singing something with known lyrics.
 2. Run SoulX-Singer's preprocessing on it (`example/preprocess.sh` in the SoulX-Singer folder) to get the matching `.json`, and fix any misaligned notes with its MIDI editor.

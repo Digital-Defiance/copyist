@@ -1,6 +1,6 @@
 # Roadmap
 
-Take the first unchecked item in the current milestone. Tick items when they're done and tested. Milestone definitions are in SPEC.md section 10.
+Take the first unchecked item in the current milestone. Tick items when they're done and tested. Milestone definitions are in SPEC.md section 11. The current milestone is M5 (better sound); TASKS.md has the day-to-day list.
 
 ## M0: Walking skeleton (done 2026-10-16)
 
@@ -17,7 +17,7 @@ Take the first unchecked item in the current milestone. Tick items when they're 
 - [x] Tests for loader, lyrics, every validator (pass and fail cases)
 - [x] Look at the lead sheet against the SPEC section 9 checklist and fix what's wrong
 
-## M1: Band arrangement (current)
+## M1: Band arrangement (paused; these leftovers come back after M5)
 
 - [x] Arrangement patterns as data (`arrange.STYLES`); move them to `styles/*.yaml` files with instruments, ranges, clefs and transpositions (SPEC 8.2)
 - [x] `band` template: voice, piano, bass, with `waltz`, `ballad` and `straight` patterns
@@ -36,7 +36,7 @@ Take the first unchecked item in the current milestone. Tick items when they're 
 
 ## MT: Transcription from recordings (SPEC section 12)
 
-- [ ] Stem separation with Demucs; cache stems per song
+- [x] Stem separation with Demucs (on the Mac, `-d mps --two-stems vocals`): 141 songs separated into `out/separated/htdemucs/<song>/vocals.wav` on 2026-10-16; `copyist follow --separate` caches the vocal beside each take
 - [ ] Beat, tempo map, key and chord detection
 - [ ] Vocal melody: pitch contour → notes on the beat grid; lyrics aligned with Whisper word timings and the person's own lyric text
 - [ ] Bass line and drum groove extraction
@@ -63,19 +63,33 @@ Take the first unchecked item in the current milestone. Tick items when they're 
 - [ ] Side-by-side audition: several proposals per section, rendered
 - [ ] Evaluate open symbolic models (MuPT, Amadeus) against an LLM baseline
 
-## M5: Better sound (vocals first; current)
+## M5: Better sound (current)
 
 - [x] Integrate SoulX-Singer: `copyist sing` exports the voice part (per-word phonemes, held notes, phrases), runs the model, checks pitch per note and words with Whisper, mixes with the band (docs/singing.md)
-- [ ] Run `copyist sing` on the Mac (M4 Max): confirm `mps` works or fall back to CPU; record the speed
+- [ ] Run `copyist sing` on the Mac (M4 Max): confirm `mps` works or fall back to CPU; record the speed (SoulX is a checking tool now; low priority)
 - [ ] Record consented reference voices (a few singers, different ranges) and make their metadata with SoulX-Singer's preprocessing
 - [ ] Auto-retry phrases that fail the pitch or lyric check (new seed), keep the best take
 - [ ] Sing every verse and stitch them with the band playing the tune once per verse
 - [ ] Duets and choruses: one voice part per singer, each with its own reference voice
-- [ ] Evaluate YuE2: feed it a Copyist ABC score; transcribe the result and compare to the score; confirm licence terms for Digital Defiance. Licence is recorded in DECISIONS.md, and `copyist produce` rendered Amazing Grace verse 1. Still open: transcribe a vocal stem and compare that to the score (a pitch check of the full mix followed the band, 0 of 32 notes)
+- [x] Evaluate YuE2: `copyist produce` renders a Copyist score with yue2.cpp; the separated vocal sang 32 of 32 notes, an octave low; licence recorded in DECISIONS.md
+- [x] Octave fix: the vocal goes to YuE2 an octave up (`SUNG_OCTAVE_BELOW`); tested at 30 of 32 in the written octave
+- [x] `copyist follow`: melody check with timing search and any-octave matching, `--separate` to run Demucs first
+- [x] `produce --take` keeps every render; `produce --lora` renders with a trained voice
+- [x] Voice LoRA tooling: `copyist lora-songs`, `scripts/yue-lora/` (prepare, train on mps/CUDA/CPU, resume), docs/voice-lora.md
+- [ ] First LoRA: *I Left the Lights On*, 41 songs, trigger `lightson` (training on the Mac since 2026-10-17); pick a checkpoint by ear and with `follow`
+- [ ] Continuation (open with a real recording) at a matching tempo; keep it if the melody holds
+- [ ] Train with each song's own score too (SheetSage2 transcription, `cot=full`) if the score fights the voice
 - [ ] Evaluate ACE-Step 1.5 as the fully open fallback
 - [x] Pitch check: per-note f0 (pYIN) vs score, ±50 cents on the middle of each note (SPEC 6)
 - [x] Lyric check: Whisper transcription compared with the sung words
 
+## W: Web front end (SPEC section 13)
+
+- [x] `copyist serve`: songs, lyrics and checks, the score as page images, takes with players, making a take, the melody check, voice-training progress; local only (docs/web.md)
+- [ ] A real take from the page on the Mac, with a trained voice
+- [ ] Compare two takes side by side; mark a favorite
+- [ ] Write a new song from the page (after M2 and M3)
+
 ## M4 and later
 
-See SPEC.md section 10.
+See SPEC.md section 11.
