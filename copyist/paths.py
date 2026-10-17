@@ -4,10 +4,11 @@
   the person's own work.
 - The data folder (COPYIST_HOME, else the platform's usual place): models/,
   downloaded once and shared by every library.
-- Programs such as yue-synth: COPYIST_BIN (the desktop app's bundled sidecars).
+- Programs such as yue-synth and sfizz_render: COPYIST_BIN (the desktop app's
+  bundled sidecars).
 
 When those aren't set, the developer setup in the current folder's .cache/
-(scripts/setup-yue.sh and friends) is used, so a checkout keeps working.
+(scripts/setup-yue.sh, setup-sfizz.sh and friends) is used, so a checkout keeps working.
 """
 from __future__ import annotations
 
@@ -53,7 +54,7 @@ def find_program(name: str, env_var: str | None = None) -> Path | None:
     candidates = []
     if os.environ.get("COPYIST_BIN"):
         candidates.append(Path(os.environ["COPYIST_BIN"]).expanduser() / exe)
-    candidates.append(Path(".cache/yue2.cpp/build") / exe)
+    candidates += [Path(".cache/yue2.cpp/build") / exe, Path(".cache/sfizz") / exe]
     for p in candidates:
         if p.is_file():
             return p.resolve()

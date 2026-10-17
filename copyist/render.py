@@ -1,12 +1,19 @@
-"""Demo audio: MIDI → WAV with TinySoundFont and the GeneralUser GS SoundFont.
+"""The score as audio: each part on its sampled instrument, mixed (docs/sound-set.md).
 
-This is the M0 "sound": exact and predictable, but it sounds like a demo.
-See SPEC.md section 6 for what comes next.
+`render_band` splits the arrangement's MIDI into its parts (melody, piano,
+bass, drums), plays each one through sfizz with its sampled instrument, and
+mixes them (copyist/mixdown.py), keeping each part as a stem. When sfizz or the
+instruments aren't installed yet, it falls back to the GeneralUser GS
+SoundFont through TinySoundFont, which is exact but sounds like old MIDI, and
+says so.
 """
 from __future__ import annotations
 
+import subprocess
+import tempfile
 import urllib.request
 import wave
+from dataclasses import dataclass, field
 from pathlib import Path
 
 SOUNDFONT_URL = "https://github.com/mrbumpy409/GeneralUser-GS/raw/main/GeneralUser-GS.sf2"
@@ -16,6 +23,156 @@ DRUM_CHANNEL = 9
 
 class AudioUnavailable(RuntimeError):
     """TinySoundFont isn't installed, or the SoundFont couldn't be fetched."""
+
+
+# ------------------------------------------------------------------ sampled instruments
+
+SAMPLE_RATE = 48000
+PART_OF_ROLE = {"melody": "melody", "piano_rh": "piano", "piano_lh": "piano", "bass": "bass",
+                "drums": "drums", "other": "other"}
+PART_ORDER = ["melody", "piano", "other", "bass", "drums"]
+BALANCE_DB = {"melody": 0.0, "piano": -4.0, "other": -6.0, "bass": -6.0, "drums": -9.0}   # loudness vs. the melody
+REVERB = {"melody": 0.30, "piano": 0.22, "other": 0.22, "bass": 0.05, "drums": 0.12}      # send to the room
+POLYPHONY = 256        # the piano with its pedal down needs plenty
+
+
+@dataclass
+class BandAudio:
+    wav: Path
+    engine: str                                   # "sampled" or "soundfont"
+    instruments: dict[str, str] = field(default_factory=dict)   # part -> instrument id
+    stems: dict[str, Path] = field(default_factory=dict)
+    credits: list[str] = field(default_factory=list)
+    note: str = ""                                # why the SoundFont played instead
+    loudness: float | None = None
+    limited_db: float | None = None
+
+    def summary(self) -> dict:
+        """What played, for out/<song>/audio.json (the page reads it)."""
+        from . import instruments
+        parts = [{"part": part, "instrument": self.instruments[part],
+                  "label": instruments.CATALOG[self.instruments[part]].label,
+                  "licence": instruments.CATALOG[self.instruments[part]].licence,
+                  "stem": self.stems[part].name if part in self.stems else None}
+                 for part in PART_ORDER if part in self.instruments] if self.engine == "sampled" else []
+        return {"engine": self.engine, "parts": parts, "credits": self.credits, "note": self.note,
+                "loudness": self.loudness, "limited_db": self.limited_db}
+
+    def report_lines(self) -> list[str]:
+        from . import instruments
+        if self.engine != "sampled":
+            return [f"Played with the GeneralUser GS SoundFont, because {self.note}"]
+        lines = ["Played on sampled instruments with sfizz, one part at a time, then mixed:", ""]
+        for part in PART_ORDER:
+            if part in self.instruments:
+                inst = instruments.CATALOG[self.instruments[part]]
+                lines.append(f"- {part.title()}: {inst.label} ({inst.licence})")
+        limiting = (f"the limiter took off at most {self.limited_db:.1f} dB" if self.limited_db >= 0.05
+                    else "no limiting needed")
+        lines += ["", f"Mastered to {self.loudness:.1f} LUFS with peaks under -1 dBFS ({limiting})."]
+        if self.stems:
+            lines.append("Each part is also in `stems/`, as it sits in the mix.")
+        if self.credits:
+            lines += ["", "Credits: " + "; ".join(self.credits) + "."]
+        return lines
+
+
+def sfizz_program() -> Path | None:
+    from . import paths
+    return paths.find_program("sfizz_render", "COPYIST_SFIZZ")
+
+
+def split_parts(midi_path: Path, folder: Path) -> dict[str, Path]:
+    """One MIDI file per part, each keeping every track's tempo and meter events."""
+    import mido
+    from . import perform
+    mid = mido.MidiFile(str(midi_path))
+    notes, _ = perform.read(mid)
+    role = perform.roles(mid, notes)
+    tracks: dict[str, set[int]] = {}
+    for ti, r in role.items():
+        tracks.setdefault(PART_OF_ROLE.get(r, "other"), set()).add(ti)
+    folder.mkdir(parents=True, exist_ok=True)
+    out = {}
+    for part in [p for p in PART_ORDER if p in tracks]:
+        new = mido.MidiFile(type=1, ticks_per_beat=mid.ticks_per_beat)
+        for ti, track in enumerate(mid.tracks):
+            kept, carry = mido.MidiTrack(), 0
+            for msg in track:
+                if ti in tracks[part] or msg.is_meta:
+                    kept.append(msg.copy(time=msg.time + carry))
+                    carry = 0
+                else:
+                    carry += msg.time
+            new.tracks.append(kept)
+        path = folder / f"{part}.mid"
+        new.save(str(path))
+        out[part] = path
+    return out
+
+
+def play_part(program: Path, sfz: Path, midi: Path, wav: Path) -> Path:
+    """Render one part's MIDI through one SFZ instrument."""
+    cmd = [str(program), "--sfz", str(sfz), "--midi", str(midi), "--wav", str(wav),
+           "-s", str(SAMPLE_RATE), "-p", str(POLYPHONY)]
+    try:
+        r = subprocess.run(cmd, capture_output=True, text=True, timeout=1800)
+    except (OSError, subprocess.TimeoutExpired) as e:
+        raise AudioUnavailable(f"sfizz couldn't play the {midi.stem} part: {e}") from e
+    if r.returncode != 0 or not wav.is_file():
+        detail = (r.stderr or r.stdout).strip().splitlines()[-1:] or ["no output"]
+        raise AudioUnavailable(f"sfizz couldn't play the {midi.stem} part: {detail[0]}")
+    return wav
+
+
+def sampled_plan(parts, style: str | None) -> tuple[dict[str, str], str]:
+    """(part -> instrument id, and why the sampled instruments can't play, or "")."""
+    from . import instruments
+    plan = {part: instruments.instrument_for(part, style) for part in parts}
+    if sfizz_program() is None:
+        return plan, ("sfizz isn't installed yet (scripts/setup-sfizz.sh, or the desktop app, which "
+                      "bundles it).")
+    missing = sorted({i for i in plan.values() if instruments.sfz_path(i) is None})
+    if missing:
+        return plan, ("these instruments aren't downloaded yet: " + ", ".join(missing) +
+                      " (`copyist models download band`, or the Download button on the Sound tab).")
+    return plan, ""
+
+
+def render_band(midi_path: Path, wav_path: Path, style: str | None = None, cache_dir: Path = Path(".cache"),
+                stems_dir: Path | None = None) -> BandAudio:
+    """The arrangement as audio: sampled instruments when they're installed, else the SoundFont."""
+    from . import instruments, mixdown
+    with tempfile.TemporaryDirectory(prefix="copyist-parts-") as tmp:
+        work = Path(tmp)
+        parts = split_parts(midi_path, (stems_dir or work) / "midi")
+        plan, why_not = sampled_plan(parts, style)
+        if not parts:
+            why_not = "the arrangement has no notes to play."
+        if not why_not:
+            try:
+                program = sfizz_program()
+                audio = {}
+                for part, midi in parts.items():
+                    raw = play_part(program, instruments.sfz_path(plan[part]), midi, work / f"{part}.wav")
+                    audio[part], sr = mixdown.read(raw)
+                    if sr != SAMPLE_RATE:
+                        raise AudioUnavailable(f"sfizz played the {part} part at {sr} Hz, not {SAMPLE_RATE}")
+                mixed = mixdown.mix(audio, SAMPLE_RATE, BALANCE_DB, REVERB)
+            except AudioUnavailable as e:
+                why_not = str(e)
+        if why_not:
+            soundfont = soundfont_path(cache_dir)
+            render_midi(midi_path, wav_path, soundfont)
+            return BandAudio(wav_path, "soundfont", note=why_not)
+        mixdown.write(wav_path, mixed.audio, SAMPLE_RATE, bits=16)
+        stems = {}
+        if stems_dir:
+            for part, a in mixed.stems.items():
+                stems[part] = mixdown.write(stems_dir / f"{part}.wav", a, SAMPLE_RATE, bits=24)
+        return BandAudio(wav_path, "sampled", instruments=plan, stems=stems,
+                         credits=instruments.credits(plan.values()), loudness=mixed.loudness,
+                         limited_db=mixed.limited_db)
 
 
 def soundfont_path(cache_dir: Path) -> Path:

@@ -16,6 +16,7 @@ A **Tauri 2** app. Its window is the system webview (WebKit on a Mac) showing th
 |---|---|---|
 | `copyist-engine` | the Python engine: `copyist serve` as a local API, plus build, produce, follow | PyInstaller, one per platform |
 | `yue-synth`, `yue-tokenize` | yue2.cpp | CMake; Metal on Macs, CUDA or Vulkan elsewhere |
+| `sfizz_render` | sfizz (BSD-2-Clause), the player for the sampled instruments | CMake, as `scripts/setup-sfizz.sh` does; about 2 s a part |
 
 The engine picks a free port, prints it, and the window loads the page from it. Tauri starts the engine with the app and stops it on quit. The page's guards (127.0.0.1, Host and Origin checks) stay as they are.
 
@@ -26,6 +27,8 @@ The engine picks a free port, prints it, and the window loads the page from it. 
 | YuE2-3B Q6_K | 2.9 GB | every take |
 | YuE2 VAE | 0.5 GB | every take |
 | realaudio tokenizer + MERT | 0.95 GB | voices and continuation |
+
+**Instruments** download the same way, in packs, from each library's own repository at a pinned commit (docs/sound-set.md). The band (1.1 GB: grand piano, two basses, drums, a melody clarinet) is offered on the Sound tab; more packs follow (orchestra and pit, keys, folk and country, percussion, music box and bells).
 
 **Add-ons** download only when someone asks for them: Demucs (melody checks) and the voice trainer (PyTorch, several GB).
 
@@ -51,7 +54,7 @@ Where it may fall short, so measure: speed on smaller machines, the hardware it 
    - `GET /api/health` returns the version, the library and which model groups are installed; `GET /api/models` returns the licence text and each group's files and state.
    - Downloads (`copyist/models.py`) are pinned to a repository revision with each file's size and SHA-256, resume from a `.part` file, and are thrown away if the checksum is wrong. The page asks the person to accept the licence, then shows progress. On the command line, `copyist models` and `copyist models download singer --accept-licence` do the same.
 2. **Tauri shell (written and compiling, 17 October 2026; app/README.md).** A start page, the engine started as a sidecar and its page loaded when it's ready, links out opening in the browser, one instance only, the engine stopped on quit. The page gets no Tauri access. It compiles on Linux; the first Mac run is `npm install && npm run dev` in `app/`.
-3. **Packaging for the Mac.** Freeze the engine with PyInstaller; build yue2.cpp for Apple Silicon with Metal; bundle, sign and notarize. This needs an Apple Developer account ($99 a year, ideally Digital Defiance's).
+3. **Packaging for the Mac.** Freeze the engine with PyInstaller; build yue2.cpp for Apple Silicon with Metal and `sfizz_render` (`scripts/setup-sfizz.sh` builds it); bundle, sign and notarize. This needs an Apple Developer account ($99 a year, ideally Digital Defiance's).
 4. **First run.** Hardware check, model download, and a demo song rendered as the first thing you hear.
 5. **Best of several** (step 3 of "How it beats Suno") and **re-rendering one section.**
 6. **Writing a song in the app,** after milestones M2 and M3 (song plans and melody proposals).

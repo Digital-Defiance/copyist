@@ -160,11 +160,17 @@ progress { accent-color: var(--blue); width: min(100%, 24rem); height: 0.9rem; v
 .recordings li { padding: 1rem 0 1.1rem; border-bottom: 1.5px solid color-mix(in srgb, var(--staff) 55%, transparent); }
 .recordings h3 { font-weight: 600; }
 .recordings .meta { color: var(--ink-soft); font-size: 0.92rem; margin: 0.1rem 0 0.5rem; }
-.recordings audio { width: 100%; max-width: 36rem; display: block; }
+.recordings audio, section > audio { width: 100%; max-width: 36rem; display: block; margin-top: 0.6rem; }
 .recordings details { margin-top: 0.4rem; font-size: 0.92rem; }
 .recordings summary { cursor: pointer; color: var(--blue); }
 .follow { margin: 0.5rem 0 0; font-size: 0.95rem; }
 .section-gap { margin-top: 2.5rem; }
+.players { list-style: none; padding: 0; margin: 0.7rem 0 0.4rem; max-width: 40rem; }
+.players li { display: flex; gap: 0.7rem; align-items: baseline; padding: 0.2rem 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--staff) 40%, transparent); }
+.players .part { font-family: var(--pencil); color: var(--red); min-width: 4.5rem; }
+.players a { margin-left: auto; color: var(--blue); font-size: 0.9rem; }
+.offer { margin-top: 1rem; max-width: 44rem; }
 
 /* -------------------------------------------------------- training drawer */
 .run { margin-top: 0.75rem; }

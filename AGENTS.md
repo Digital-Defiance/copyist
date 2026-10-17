@@ -31,7 +31,7 @@ copyist serve                                      # the web front end (docs/web
 python -m unittest discover -s tests      # tests
 ```
 
-The first build downloads the GeneralUser GS SoundFont (about 32 MB) into `.cache/`.
+For the band's sound, `scripts/setup-sfizz.sh --instruments` builds the sampled-instrument player and downloads the band (about 1.1 GB). Without them, the first build downloads the GeneralUser GS SoundFont (about 32 MB) into `.cache/` and plays that instead.
 
 ## Layout
 
@@ -43,7 +43,13 @@ copyist/          the package
   arrange.py      arrangement templates (SPEC section 7)
   drums.py        drum grooves, fills and crashes; notation and MIDI from one list of hits
   engrave.py      MusicXML, SVG and PDF output via Verovio and PyMuPDF
-  render.py       MIDI to WAV via TinySoundFont; mixing a sung vocal over the band
+  perform.py      expressive performance: the arrangement MIDI played, not just written
+  render.py       the band: each part on its sampled instrument (sfizz), SoundFont fallback; a sung vocal over the band
+  mixdown.py      loudness (BS.1770), the shared room, the gentle master, WAV in and out
+  instruments.py  the sampled instruments: catalog, packs, verified downloads (docs/sound-set.md)
+  sound/          the instrument manifest (git object ids) and Copyist's own clarinet SFZ
+  models.py       the YuE2 models: catalog and verified downloads
+  paths.py        where the data folder, models and programs are
   sing.py         voice part → SoulX-Singer input; runs the model (docs/singing.md)
   pitch.py        sung pitch vs the score, note by note
   hear.py         Whisper transcription of a vocal vs the lyrics
@@ -55,8 +61,10 @@ copyist/          the package
   cli.py          the `copyist` command
 songs/            song files (public domain or original only)
 tests/            unittest tests
-docs/             production.md, voice-lora.md, web.md, singing.md
-scripts/          setup-yue.sh, setup-yue-train.sh, setup-demucs.sh, setup-soulx.sh; yue-lora/ (prepare, train, run.sh)
+docs/             production.md, voice-lora.md, web.md, singing.md, sound-set.md, desktop-app.md, default-voices.md
+scripts/          setup-yue.sh, setup-yue-train.sh, setup-sfizz.sh, setup-demucs.sh, setup-soulx.sh;
+                  yue-lora/ (prepare, train, run.sh); instruments/ (manifest.py, clarinet.py)
+app/              the desktop app (Tauri), which runs the engine as a sidecar (docs/desktop-app.md)
 out/              build output (ignored)
 .cache/           downloaded assets (ignored)
 ```

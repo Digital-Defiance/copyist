@@ -1,0 +1,66 @@
+// Copyist melody voice: the VSCO 2 Community Edition clarinet (CC0, Versilian Studios).
+// Written by scripts/instruments/clarinet.py; see that file for how each number was measured.
+<control>
+default_path=Woodwinds/Clarinet/susLong/
+
+<global>
+ampeg_attack=0.01
+ampeg_release=0.18
+amp_veltrack=45
+loop_crossfade=0.12
+
+<group> lokey=0 hikey=51 pitch_keycenter=50 volume=4.5
+<region> lovel=1 hivel=63 offset=1544 tune=0 loop_mode=loop_sustain loop_start=24255 loop_end=92610 sample=DCClar_susLong_D2_v1_rr1_sum.wav
+<region> lovel=64 hivel=99 offset=3749 tune=0 loop_mode=loop_sustain loop_start=33075 loop_end=321930 sample=DCClar_susLong_D2_v2_rr1_sum.wav
+<region> lovel=100 hivel=127 offset=3308 tune=0 loop_mode=loop_sustain loop_start=30870 loop_end=286650 sample=DCClar_susLong_D2_v3_rr1_sum.wav
+
+<group> lokey=52 hikey=55 pitch_keycenter=53 volume=3.6
+<region> lovel=1 hivel=63 offset=2426 tune=0 loop_mode=loop_sustain loop_start=24255 loop_end=244755 sample=DCClar_susLong_F2_v1_rr1_sum.wav
+<region> lovel=64 hivel=99 offset=1985 tune=0 loop_mode=loop_sustain loop_start=24255 loop_end=302085 sample=DCClar_susLong_F2_v2_rr1_sum.wav
+<region> lovel=100 hivel=127 offset=2867 tune=0 loop_mode=loop_sustain loop_start=24255 loop_end=315315 sample=DCClar_susLong_F2_v3_rr1_sum.wav
+
+<group> lokey=56 hikey=60 pitch_keycenter=58 volume=4.0
+<region> lovel=1 hivel=63 offset=1544 tune=-10 loop_mode=loop_sustain loop_start=24255 loop_end=418950 sample=DCClar_susLong_A#2_v1_rr1_sum.wav
+<region> lovel=64 hivel=99 offset=2867 tune=0 loop_mode=loop_sustain loop_start=24255 loop_end=418950 sample=DCClar_susLong_A#2_v2_rr1_sum.wav
+<region> lovel=100 hivel=127 offset=2426 tune=0 loop_mode=loop_sustain loop_start=24255 loop_end=520380 sample=DCClar_susLong_A#2_v3_rr1_sum.wav
+
+<group> lokey=61 hikey=63 pitch_keycenter=62 volume=-0.3
+<region> lovel=1 hivel=63 offset=4190 tune=-10 loop_mode=loop_sustain loop_start=26460 loop_end=524790 sample=DCClar_susLong_D3_v1_rr1_sum.wav
+<region> lovel=64 hivel=99 offset=1985 tune=0 loop_mode=loop_sustain loop_start=24255 loop_end=416745 sample=DCClar_susLong_D3_v2_rr1_sum.wav
+<region> lovel=100 hivel=127 offset=4190 tune=0 loop_mode=loop_sustain loop_start=26460 loop_end=379260 sample=DCClar_susLong_D3_v3_rr1_sum.wav
+
+<group> lokey=64 hikey=67 pitch_keycenter=65 volume=-0.0
+<region> lovel=1 hivel=63 offset=2867 tune=0 loop_mode=loop_sustain loop_start=24255 loop_end=372645 sample=DCClar_susLong_F3_v1_rr1_sum.wav
+<region> lovel=64 hivel=99 offset=3308 tune=-10 loop_mode=loop_sustain loop_start=24255 loop_end=441000 sample=DCClar_susLong_F3_v2_rr1_sum.wav
+<region> lovel=100 hivel=127 offset=2867 tune=0 loop_mode=loop_sustain loop_start=24255 loop_end=379260 sample=DCClar_susLong_F3_v3_rr1_sum.wav
+
+<group> lokey=68 hikey=72 pitch_keycenter=70 volume=-2.7
+<region> lovel=1 hivel=63 offset=4190 tune=-10 loop_mode=loop_sustain loop_start=26460 loop_end=317520 sample=DCClar_susLong_A#3_v1_rr1_sum.wav
+<region> lovel=64 hivel=99 offset=3308 tune=0 loop_mode=loop_sustain loop_start=24255 loop_end=401310 sample=DCClar_susLong_A#3_v2_rr1_sum.wav
+<region> lovel=100 hivel=127 offset=5072 tune=0 loop_mode=loop_sustain loop_start=26460 loop_end=454230 sample=DCClar_susLong_A#3_v3_rr1_sum.wav
+
+<group> lokey=73 hikey=75 pitch_keycenter=74 volume=-0.6
+<region> lovel=1 hivel=63 offset=9482 tune=0 loop_mode=loop_sustain loop_start=30870 loop_end=421155 sample=DCClar_susLong_D4_v1_rr1_sum.wav
+<region> lovel=64 hivel=99 offset=662 tune=0 loop_mode=loop_sustain loop_start=22050 loop_end=381465 sample=DCClar_susLong_D4_v2_rr1_sum.wav
+<region> lovel=100 hivel=127 offset=3308 tune=0 loop_mode=loop_sustain loop_start=24255 loop_end=445410 sample=DCClar_susLong_D4_v3_rr1_sum.wav
+
+<group> lokey=76 hikey=79 pitch_keycenter=77 volume=2.7
+<region> lovel=1 hivel=63 offset=3749 tune=0 loop_mode=loop_sustain loop_start=59535 loop_end=445410 sample=DCClar_susLong_F4_v1_rr1_sum.wav
+<region> lovel=64 hivel=99 offset=7718 tune=0 loop_mode=loop_sustain loop_start=28665 loop_end=469665 sample=DCClar_susLong_F4_v2_rr1_sum.wav
+<region> lovel=100 hivel=127 offset=3308 tune=0 loop_mode=loop_sustain loop_start=24255 loop_end=540225 sample=DCClar_susLong_F4_v3_rr1_sum.wav
+
+<group> lokey=80 hikey=84 pitch_keycenter=82 volume=2.1
+<region> lovel=1 hivel=63 offset=3308 tune=-10 loop_mode=loop_sustain loop_start=24255 loop_end=443205 sample=DCClar_susLong_A#4_v1_rr1_sum.wav
+<region> lovel=64 hivel=99 offset=1985 tune=0 loop_mode=loop_sustain loop_start=24255 loop_end=401310 sample=DCClar_susLong_A#4_v2_rr1_sum.wav
+<region> lovel=100 hivel=127 offset=662 tune=0 loop_mode=loop_sustain loop_start=22050 loop_end=412335 sample=DCClar_susLong_A#4_v3_rr1_sum.wav
+
+<group> lokey=85 hikey=87 pitch_keycenter=86 volume=-5.8
+<region> lovel=1 hivel=63 offset=3308 tune=0 loop_mode=loop_sustain loop_start=24255 loop_end=370440 sample=DCClar_susLong_D5_v1_rr1_sum.wav
+<region> lovel=64 hivel=99 offset=3308 tune=-10 loop_mode=loop_sustain loop_start=24255 loop_end=396900 sample=DCClar_susLong_D5_v2_rr1_sum.wav
+<region> lovel=100 hivel=127 offset=2426 tune=0 loop_mode=loop_sustain loop_start=24255 loop_end=343980 sample=DCClar_susLong_D5_v3_rr1_sum.wav
+
+<group> lokey=88 hikey=127 pitch_keycenter=89 volume=-3.3
+<region> lovel=1 hivel=63 offset=2426 tune=0 loop_mode=loop_sustain loop_start=24255 loop_end=196245 sample=DCClar_susLong_F#5_v1_rr1_sum.wav
+<region> lovel=64 hivel=99 offset=1103 tune=0 loop_mode=loop_sustain loop_start=22050 loop_end=257985 sample=DCClar_susLong_F#5_v2_rr1_sum.wav
+<region> lovel=100 hivel=127 offset=1103 tune=0 loop_mode=loop_sustain loop_start=22050 loop_end=346185 sample=DCClar_susLong_F#5_v3_rr1_sum.wav
+

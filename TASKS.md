@@ -21,11 +21,13 @@ Last updated: 2026-10-17.
 - [x] Drums on a percussion staff, with grooves and fills
 - [x] Singing through SoulX-Singer (`copyist sing`), with a pitch check (±50 cents) and a lyric check (Whisper)
 - [x] Voice prompts made from a recording (`copyist voice`; code in `copyist/voiceprompt.py`)
+- [x] Sampled band (`copyist build`): each part on a sampled instrument through sfizz, mixed and mastered, with stems (docs/sound-set.md)
 - [x] YuE2 export (`copyist/yue.py`): the score becomes YuE2's ABC dialect plus a request with style, lyrics, abc and seed. mlx-Yue's `abc_tools inspect` accepts it, and its notes match ours exactly
 
 ## 1. Push
 
-- [ ] `git push`: 12 commits are waiting (performance, the sound set, the app shell, engine as a sidecar, the desktop plan, the docs, the web front end, the voice LoRA, follow and the octave fix)
+- [x] `git push`: everything through the expressive performance is pushed (2026-10-17)
+- [ ] `git push` the sound-set commit (sampled band, instruments download, mixdown, docs)
 
 ## 2. Production-quality sound (YuE2)
 
@@ -60,8 +62,8 @@ The SoundFont band plus a SoulX vocal will never sound like Suno: they're checki
 - [ ] Continuation, second try: a source section at the song's own tempo, or a song file written at the source's tempo. Listen for whether the voice carries
 - [x] LoRA tooling: `copyist lora-songs` (prompt sheets → song list), `scripts/yue-lora/prepare.py` (tokens + dataset), `scripts/yue-lora/train.py` (the trainer: mps/CUDA/CPU, resumable), `scripts/setup-yue-train.sh`, `scripts/yue-lora/run.sh`, `produce --lora`, and docs/voice-lora.md. Tested here on a tiny model and with a real-sized adapter in yue2.cpp
 - [x] The musical's song list: `.cache/lora/lights-on/songs.jsonl`, 41 songs from `lights-on/AI Prompts` (demo style + tagged lyrics) paired with `lights-on-audio`, trigger word `lightson`
-- [ ] **Running now** (started 2026-10-17 around 11:00 Pacific; step 320 of 800 at 12:35, about 15 s a step, held-out loss falling 4.77 → 3.87; the first checkpoint, step 300, is saved). It was started with `scripts/setup-yue-train.sh`, then `scripts/yue-lora/run.sh .cache/lora/lights-on/songs.jsonl ~/Documents/lights-on-audio lights-on`. Watch the first steps for s/step and memory. If PyTorch's mps backend fails on an op, it falls back to the CPU for that op (PYTORCH_ENABLE_MPS_FALLBACK); if it's too slow, try `--max-len 6144`
-- [ ] Listen: `produce --lora` with steps 300–800 and the Jennifer style line, check each with `follow`, and pick one
+- [x] Trained on the Mac, 2026-10-17, about 11:00 to 14:09 Pacific: 800 steps, about 15 s a step, with `scripts/setup-yue-train.sh` then `scripts/yue-lora/run.sh .cache/lora/lights-on/songs.jsonl ~/Documents/lights-on-audio lights-on`. Held-out loss (two songs it never saw): 4.77 at the start, 3.83 at step 300, 3.85 at 500, then rising to 4.01 at 800 while the training songs kept falling (2.91): past about 500 it memorizes the songs rather than learning the voice. The minted guard set held steady (3.61 → 3.56), so general singing didn't degrade. Checkpoints every 100 steps in `.cache/lora/lights-on/lora/`
+- [ ] Listen: `produce --lora` with steps 300 and 500 first (then 400 and 600) and the Jennifer style line, check each with `follow`, and pick one
 - [ ] If the score fights the voice: train with each song's own score too (SheetSage2 transcription, `cot=full` prefixes)
 - [ ] Use the realaudio NAR adapter (`nar_lora_joint_v9.bf16.safetensors`) in `copyist produce` (`--adapters`), and compare it by ear with a plain render
 
@@ -79,18 +81,25 @@ The SoundFont band plus a SoulX vocal will never sound like Suno: they're checki
 - [x] Step 1, the engine as a sidecar: `--root`, `--port 0 --machine`, `/api/health`, `/api/models`, the model manager (`copyist/models.py`, `copyist/paths.py`), the install panel on the page, `copyist models`. 90 tests pass
 - [x] Apple Developer account: she has one
 - [x] Step 2, the Tauri shell: written (`app/`, app/README.md) and compiling on Linux
-- [ ] First run on the Mac: `xcode-select --install`, rustup, then `cd app && npm install && npm run dev`
+- [ ] First run on the Mac: `npm run dev` built `copyist-app` on 2026-10-17. Confirm the window opens, the engine starts, and the page loads
 - [ ] Step 3, packaging: PyInstaller for the engine, yue2.cpp with Metal, `externalBin`, signing and notarization
 
 ## 3e. Sound set and default voices (ROADMAP milestone S)
 
 - [x] Research: instrument libraries and licences (docs/sound-set.md); voice sources and licences (docs/default-voices.md). No hiring: voices come from presets, synthetic LoRAs and open data
 - [x] Prototype: `sfizz_render` with the Salamander piano, Growlybass (CC0) and an AVL kit on Amazing Grace; under 2 s a part (docs/sound-set.md)
-- [ ] Listen: old SoundFont band against the sampled band
+- [x] Listen: old SoundFont band against the sampled band (sent 2026-10-17)
 - [x] Guitars: Karoryfer Black and Green Guitars and Emilyguitar (CC0); bonus jRhodes3d electric piano (docs/sound-set.md). Still missing: an acoustic steel-string guitar
 - [x] Expressive performance (`copyist/perform.py`, on by default, `--plain` off): phrase dynamics, metric accents, melody contour, timing within about 26 ms, rolled piano chords, pedal, phrase breaths, final ritardando. 8 tests
 - [ ] Listen: sampled band, plain against performed
-- [ ] Wire it in: instruments as a pinned download, `sfizz_render` as a sidecar, `render.py` one part at a time with stems
+- [x] Wire it in: the band pack downloads pinned and checked (`copyist/instruments.py`, `copyist models download band`, the page's Download button); `render.py` plays one part at a time on sfizz with stems; `mixdown.py` balances by loudness (BS.1770), adds one room and masters to -16 LUFS under -1 dBFS; credits in the report and on the page; SoundFont fallback. 117 tests pass. Amazing Grace: every melody and bass note within half a semitone, parts aligned within about 15 ms
+- [x] Melody voice: the VSCO 2 CE clarinet with Copyist's own SFZ (`scripts/instruments/clarinet.py`: VSCO's octave naming, mislabelled F#5 files, silent starts trimmed, tuning, loudness evened, loops for held notes)
+- [ ] On the Mac: `scripts/setup-sfizz.sh --instruments`, then build Amazing Grace and listen
+- [ ] `sfizz_render` as a desktop sidecar (with the engine packaging, 3d step 3)
+- [ ] Music box and celesta for the musical: find free libraries (VCSL glockenspiel, chimes and kalimbas are the stand-ins), a pack, and a music-box style in the arranger
+- [ ] Orchestra and pit pack from VSCO 2 CE, and a pit-orchestra template for Broadway songs
+- [ ] Keys, folk and country, and percussion packs (docs/sound-set.md lists what's found); synths generated by sfizz
+- [ ] Research the gaps: acoustic steel and nylon guitars, banjo, mandolin, ukulele, pedal steel, accordion, snare brushes, choir
 - [ ] A guitar part in the arrangements (strummed and picked patterns per style)
 
 ## 4. Singing that sounds performed

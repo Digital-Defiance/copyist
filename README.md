@@ -8,17 +8,18 @@ Tools like Suno and Mozart AI generate audio first. Their notes don't exist as d
 
 ## Status
 
-Early. A song file becomes a validated lead sheet, a band arrangement (voice, piano, bass, drums) with full score and parts, MIDI, and a SoundFont preview. `copyist produce` has YuE2 perform the same score, band and singer together ([docs/production.md](docs/production.md)), and `copyist follow` checks that the take sings the written melody. A trained voice can be added with a LoRA ([docs/voice-lora.md](docs/voice-lora.md)). `copyist serve` puts it all in a browser ([docs/web.md](docs/web.md)). `copyist sing` (SoulX-Singer) sings the exact notes, for checking ([docs/singing.md](docs/singing.md)). See [ROADMAP.md](ROADMAP.md) and [TASKS.md](TASKS.md).
+Early. A song file becomes a validated lead sheet, a band arrangement (voice, piano, bass, drums) with full score and parts, MIDI, and a recording of the score played on sampled instruments (a concert grand, upright and electric basses, a drum kit, a clarinet on the melody), mixed and mastered, with a stem per part ([docs/sound-set.md](docs/sound-set.md)). `copyist produce` has YuE2 perform the same score, band and singer together ([docs/production.md](docs/production.md)), and `copyist follow` checks that the take sings the written melody. A trained voice can be added with a LoRA ([docs/voice-lora.md](docs/voice-lora.md)). `copyist serve` puts it all in a browser ([docs/web.md](docs/web.md)). `copyist sing` (SoulX-Singer) sings the exact notes, for checking ([docs/singing.md](docs/singing.md)). See [ROADMAP.md](ROADMAP.md) and [TASKS.md](TASKS.md).
 
 ## Quick start
 
 ```
 pip install -e .
-pip install --no-deps tinysoundfont      # for audio; skips an optional playback library
+pip install --no-deps tinysoundfont      # the fallback sound; skips an optional playback library
+scripts/setup-sfizz.sh --instruments     # the sampled instruments' player, and the band (about 1.1 GB)
 copyist build songs/amazing-grace.yaml
 ```
 
-Outputs land in `out/<song>/`: the lead sheet and band score as PDF, every part, MusicXML, MIDI, a demo WAV and a validation report.
+Outputs land in `out/<song>/`: the lead sheet and band score as PDF, every part, MusicXML, MIDI, the band recording and its stems, and a validation report. Without sfizz or the instruments, a SoundFont plays instead, and the report says so.
 
 ## Read next
 

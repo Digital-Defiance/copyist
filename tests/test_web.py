@@ -39,6 +39,15 @@ class WebTests(unittest.TestCase):
             doc.new_page(width=200, height=100)
             doc.save(out / "lead-sheet.pdf")
         (out / "takes" / "take-1" / "production.wav").write_bytes(bytes(range(256)) * 4)
+        (out / "amazing-grace.wav").write_bytes(bytes(range(256)) * 4)
+        (out / "stems").mkdir()
+        (out / "stems" / "piano.wav").write_bytes(b"RIFF")
+        (out / "audio.json").write_text(json.dumps({
+            "engine": "sampled", "credits": ["Salamander Grand Piano V3 by Alexander Holm (CC BY 3.0)"], "note": "",
+            "parts": [{"part": "piano", "instrument": "piano", "label": "Salamander Grand Piano V3",
+                       "licence": "CC BY 3.0", "stem": "piano.wav"},
+                      {"part": "bass", "instrument": "upright-bass", "label": "Meatbass", "licence": "CC0",
+                       "stem": "bass.wav"}]}))
         (out / "takes" / "take-1" / "yue-request.json").write_text(json.dumps(
             {"style": "lightson, a waltz", "seed": 7, "adapters": [{"name": "step-300.safetensors", "scale": 1}]}))
         run = cls.root / ".cache" / "lora" / "lights-on"
@@ -147,6 +156,42 @@ class WebTests(unittest.TestCase):
         self.assertIn("CC BY-NC 4.0", listing["licence"])
         singer = next(g for g in listing["groups"] if g["id"] == "singer")
         self.assertEqual([m["id"] for m in singer["models"]], ["yue2", "yue2-vae"])
+
+    def test_instruments_are_listed_in_packs(self):
+        health = json.loads(self.request("GET", "/api/health")[1])
+        self.assertEqual(set(health["instruments"]), {"band"})
+        listing = json.loads(self.request("GET", "/api/models")[1])
+        band = next(g for g in listing["instruments"] if g["id"] == "instruments-band")
+        self.assertEqual([i["id"] for i in band["models"]],
+                         ["piano", "electric-bass", "upright-bass", "drums", "clarinet"])
+        self.assertGreater(band["size"], 500_000_000)
+        self.assertIn("sfizz", listing)
+
+    def test_the_band_recording_says_what_played_it(self):
+        song = json.loads(self.request("GET", "/api/songs/amazing-grace")[1])
+        band = song["band"]
+        self.assertEqual((band["engine"], band["path"]), ("sampled", "out/amazing-grace/amazing-grace.wav"))
+        self.assertEqual([(p["part"], p["path"]) for p in band["parts"]],
+                         [("piano", "out/amazing-grace/stems/piano.wav"), ("bass", None)])   # no bass stem on disk
+
+    def test_an_instrument_download_needs_no_licence_box(self):
+        from copyist import instruments
+
+        def fake_pack(pack, progress=None, opener=None):
+            progress(5, 5)
+            return [Path("/tmp/instruments/piano")]
+        with mock.patch.object(instruments, "download_pack", fake_pack):
+            r, data = self.post({"action": "download", "group": "instruments-band"})
+            self.assertEqual(r.status, 202, data)
+            job = json.loads(data)
+            for _ in range(50):
+                job = json.loads(self.request("GET", f"/api/jobs/{job['id']}")[1])
+                if job["status"] != "running":
+                    break
+                time.sleep(0.1)
+        self.assertEqual((job["status"], job["progress"]), ("done", [5, 5]))
+        r, _ = self.post({"action": "download", "group": "instruments-everything"})
+        self.assertEqual(r.status, 400)
 
     def test_downloads_need_the_licence_accepted(self):
         r, data = self.post({"action": "download", "group": "singer"})

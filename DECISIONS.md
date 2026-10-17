@@ -2,6 +2,18 @@
 
 Newest first. One entry per decision: what, why, and what we gave up.
 
+## 2026-10-17 (the sound set, wired in)
+
+- **The sound set is for everyone's music.** Copyist isn't built around one songwriter's genres: music boxes, Broadway pits, country bands, hymns and synth pop all need instruments, and the arranger needs templates that write for them. So instruments come in packs, each with the templates that use it. The band pack came first because every template needs it. Music box and celesta come next, because *I Left the Lights On* uses them.
+- **One part at a time, then mixed in Python.** sfizz plays one SFZ per render, so each part is rendered alone and the parts are mixed in Copyist. That gives stems for free and keeps the mix under our control. Gave up: one-pass rendering and sfizz's own effects.
+- **Parts are balanced by loudness (BS.1770), not by peak.** Sample libraries are recorded at very different levels: the clarinet peaks at -24 dBFS, the drums at -9. Measured loudness puts each part a set amount under the melody (piano 4 dB, bass 6, drums 9). The numbers are a starting point for listening, not final.
+- **A gentle master: -16 LUFS, peaks under -1 dBFS, at most 4 dB of limiting.** If more limiting would be needed, the mix stays quieter. Gave up: competitive loudness. The band render is for checking the score.
+- **The mixing is plain numpy** (FFT K-weighting, FFT convolution, a block look-ahead limiter), so it runs anywhere the engine does, without scipy.
+- **Instruments are checked against their git object ids, not SHA-256.** The libraries live in git, so `git ls-tree` gives every file's id at the pinned commit without downloading anything. The manifest can't drift from the library, and building it is cheap. Gave up: a stronger hash. SHA-1 here guards against corruption and mixed versions, and the pinned commit is SHA-1 anyway.
+- **Only the files an instrument plays are downloaded:** the SFZ, its includes, its samples, the licence and the readme. The band is 1.1 GB, against several GB for the whole libraries.
+- **The clarinet's SFZ is ours, written from measurements.** VSCO ships WAV files only. Every number in the SFZ (key, tuning, start offset, loudness, loop points) comes from measuring the samples, and the measured pitch wins over the file name.
+- **The SoundFont stays as the fallback,** so `copyist build` always makes audio, and the report and page say why the real instruments didn't play.
+
 ## 2026-10-17 (performance and sound set)
 
 - **The performance is a MIDI-to-MIDI step after the arrangement,** not part of the score. The score and the part PDFs stay exact; only the sound is played. It never adds, removes or moves a note to another pitch, which the tests check. Gave up: performance marks (hairpins, rubato) written into the score; they can come later from the same rules.

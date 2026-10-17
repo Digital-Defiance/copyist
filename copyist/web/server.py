@@ -122,6 +122,7 @@ class Project:
                 "instruments": d.get("instruments"), "verses": d.get("lyrics") or [],
                 "report": report_checks(out / "report.md"), "sheets": sheets,
                 "recordings": self.recordings(slug), "built": (out / "lead-sheet.pdf").is_file(),
+                "band": self.band(slug),
                 "default_style": default_style(path)}
 
     def recordings(self, slug: str) -> list[dict]:
@@ -152,6 +153,19 @@ class Project:
         if (out / f"{slug}.wav").is_file():
             found.append({"kind": "preview", "name": "preview", "path": self.rel(out / f"{slug}.wav")})
         return found
+
+    def band(self, slug: str) -> dict | None:
+        """The score played by the band: the recording, what played it, and the stems."""
+        out = self.out / slug
+        wav = out / f"{slug}.wav"
+        if not wav.is_file():
+            return None
+        info = read_json(out / "audio.json") or {"engine": "soundfont", "parts": [], "credits": [], "note": ""}
+        for part in info.get("parts", []):
+            stem = out / "stems" / (part.get("stem") or "")
+            part["path"] = self.rel(stem) if part.get("stem") and stem.is_file() else None
+        return {**info, "path": self.rel(wav),
+                "when": datetime.fromtimestamp(wav.stat().st_mtime).isoformat(timespec="minutes")}
 
     def voices(self) -> list[dict]:
         """Trained LoRAs, newest checkpoint first, with the style line their songs trained under."""
@@ -330,9 +344,23 @@ class Jobs:
 
 
 def start_download(jobs: Jobs, body: dict) -> dict:
-    """Download a group of models, once the person has accepted their licence."""
-    from .. import models
+    """Download a pack of instruments, or a group of models once the person has accepted their licence."""
+    from .. import instruments, models
     group = body.get("group")
+    pack = group[len("instruments-"):] if isinstance(group, str) and group.startswith("instruments-") else None
+    if pack in instruments.PACKS:
+        label = f"Downloading the instruments: {instruments.PACKS[pack]['label'].lower()}"
+
+        def fetch(job, log):
+            def progress(done, total):
+                job["progress"] = [done, total]
+            log.write(f"{label}\n")
+            log.flush()
+            for p in instruments.download_pack(pack, progress):
+                log.write(f"Ready: {p}\n")
+                log.flush()
+
+        return jobs.start_task(label, fetch)
     if group not in models.GROUPS:
         raise ValueError("No such download.")
     if body.get("accept_licence") is not True:
@@ -502,14 +530,21 @@ class Handler(BaseHTTPRequestHandler):
             pages = p.pages(q)
             return self._json({"pages": pages}) if pages is not None else self._error(404, "No such sheet.")
         if path == "/api/health":
-            from .. import __version__, models
+            from .. import __version__, instruments, models
+            from ..render import sfizz_program
             return self._json({"ok": True, "version": __version__, "root": str(p.root),
-                               "models": {g: models.group_status(g)["ready"] for g in models.GROUPS}})
+                               "models": {g: models.group_status(g)["ready"] for g in models.GROUPS},
+                               "instruments": {k: instruments.pack_status(k)["ready"] for k in instruments.PACKS},
+                               "sfizz": sfizz_program() is not None})
         if path == "/api/models":
-            from .. import models
+            from .. import instruments, models
+            from ..render import sfizz_program
             return self._json({"licence": models.LICENCE, "licence_url": models.LICENCE_URL,
                                "folder": str(models.paths.models_dir()),
-                               "groups": [models.group_status(g) for g in models.GROUPS]})
+                               "groups": [models.group_status(g) for g in models.GROUPS],
+                               "instruments": [instruments.pack_status(k) for k in instruments.PACKS],
+                               "instruments_folder": str(instruments.install_dir()),
+                               "sfizz": sfizz_program() is not None})
         if path == "/api/voices":
             return self._json(p.voices())
         if path == "/api/training":

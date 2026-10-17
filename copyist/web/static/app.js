@@ -187,9 +187,49 @@ function installPanel() {
     </section>`;
 }
 
+const PART_NAMES = { melody: "Melody", piano: "Piano", bass: "Bass", drums: "Drums", other: "Other" };
+
+function bandPack() {
+  return models && (models.instruments || []).find((x) => x.id === "instruments-band");
+}
+
+function bandSection(song) {
+  const b = song.band, pack = bandPack();
+  const gb = (n) => (n / 1e9).toFixed(1);
+  let body;
+  if (!b) {
+    body = '<p class="hint">Write the score (on the Song tab) and the band plays it here.</p>';
+  } else if (b.engine === "sampled") {
+    body = `<audio controls preload="none" src="${fileUrl(b.path)}"></audio>
+      <ul class="players">${b.parts.map((x) => `<li><span class="part">${esc(PART_NAMES[x.part] || x.part)}</span>
+        <span>${esc(x.label)}</span>${x.path ? ` <a href="${fileUrl(x.path)}" download>stem</a>` : ""}</li>`).join("")}</ul>
+      ${b.credits.length ? `<p class="hint">Credits: ${b.credits.map(esc).join("; ")}.</p>` : ""}`;
+  } else {
+    body = `<audio controls preload="none" src="${fileUrl(b.path)}"></audio>
+      <p class="hint">Played with a basic SoundFont${b.note ? `, because ${esc(b.note)}` : "."}</p>`;
+  }
+  let offer = "";
+  if (pack && !pack.ready) {
+    offer = `<div class="offer">
+      <p>Hear it on real instruments: a concert grand, upright and electric basses, a drum kit, and a clarinet
+        for the melody. A one-time download of ${gb(pack.size)} GB${pack.have ? `, ${gb(pack.have)} GB of it already here` : ""}.</p>
+      <p class="hint">${pack.models.map((i) => `${esc(i.label)} (${esc(i.licence)})`).join("; ")}.
+        All free to use in any music you make.</p>
+      <div class="actions"><button class="go" id="get-band">Download the instruments</button>
+        <span class="hint">They go into ${esc(models.instruments_folder)}.</span></div></div>`;
+  } else if (pack && pack.ready && !models.sfizz) {
+    offer = '<p class="hint">The instruments are here, but their player (sfizz) isn\'t installed yet: run scripts/setup-sfizz.sh, or use the desktop app.</p>';
+  } else if (pack && pack.ready && b && b.engine !== "sampled") {
+    offer = '<div class="actions"><button class="go" data-job="build" data-panel="band">Play it on the real instruments</button></div>';
+  }
+  return `<section class="section-gap"><h2>The band</h2>
+    <p class="hint">The score exactly as written, played by the band, so you can check it by ear.</p>
+    ${body}${offer}<div class="job" data-job-panel="band"></div></section>`;
+}
+
 function soundTab(song) {
   const takes = song.recordings.filter((r) => r.kind === "take");
-  const tests = song.recordings.filter((r) => r.kind !== "take");
+  const tests = song.recordings.filter((r) => r.kind !== "take" && r.kind !== "preview");
   const verseOptions = song.verses.map((_, i) => `<option value="${i + 1}">${i + 1}</option>`).join("");
   const voiceOptions = [`<option value="">Let YuE2 choose</option>`,
     ...voices.map((v) => `<option value="${esc(v.id)}">${esc(v.label)}</option>`)].join("");
@@ -219,6 +259,7 @@ function soundTab(song) {
       ${takes.length ? `<ul class="recordings">${takes.map(takeItem).join("")}</ul>`
         : '<p class="hint">No takes yet. Choose a voice above and make the first one.</p>'}
     </section>
+    ${bandSection(song)}
     ${tests.length ? `<section class="section-gap"><h2>Earlier tests</h2><ul class="recordings">${tests.map(testItem).join("")}</ul></section>` : ""}`;
 }
 
@@ -234,11 +275,13 @@ function takeItem(r) {
 }
 
 function testItem(r) {
-  const title = r.kind === "preview" ? "Band preview (SoundFont)" : `Sung test: ${r.name.replace(/-/g, " ")} (SoulX, SoundFont band)`;
+  const title = `Sung test: ${r.name.replace(/-/g, " ")} (SoulX-Singer)`;
   return `<li><h3>${esc(title)}</h3><audio controls preload="none" src="${fileUrl(r.path)}"></audio></li>`;
 }
 
 function wireSound(song) {
+  const getBand = $("#get-band");
+  if (getBand) getBand.addEventListener("click", () => start({ action: "download", group: "instruments-band" }, "band"));
   if (!singerReady()) {
     const accept = $("#accept"), install = $("#install");
     accept.addEventListener("change", () => { install.disabled = !accept.checked; });
@@ -266,11 +309,17 @@ function wireSound(song) {
 
 function wireJobButtons(song) {
   for (const b of document.querySelectorAll("button[data-job]")) {
-    b.addEventListener("click", () => start({ action: b.dataset.job, song: song.slug, take: b.dataset.take }));
+    b.addEventListener("click", () => start({ action: b.dataset.job, song: song.slug, take: b.dataset.take }, b.dataset.panel));
   }
 }
 
-async function start(body) {
+let jobPanel = null;    // which panel shows the running job ("band", or the first one on the page)
+function panelFor() {
+  return (jobPanel && $(`[data-job-panel="${jobPanel}"]`)) || $("[data-job-panel]");
+}
+
+async function start(body, panel = null) {
+  jobPanel = panel;
   try {
     watching = await post(body);
     showJob(watching);
@@ -281,12 +330,12 @@ async function start(body) {
 }
 
 function showMessage(text) {
-  const panel = $("[data-job-panel]");
+  const panel = panelFor();
   if (panel) panel.innerHTML = `<p class="status failed">${esc(text)}</p>`;
 }
 
 function showJob(job) {
-  const panel = $("[data-job-panel]");
+  const panel = panelFor();
   if (!panel) return;
   const words = { running: "Working…", done: "Done.", failed: "That didn't work. The output below says why." };
   const pr = job.progress;
@@ -294,7 +343,7 @@ function showJob(job) {
     ? `<p><progress max="${pr[1]}" value="${pr[0]}"></progress> ${(pr[0] / 1e9).toFixed(2)} of ${(pr[1] / 1e9).toFixed(1)} GB</p>` : "";
   panel.innerHTML = `<p class="status ${job.status}">${esc(job.label)}: ${words[job.status] || job.status}</p>${bar}
     <details ${job.status === "failed" ? "open" : ""}><summary>Output</summary><pre>${esc(job.output || "")}</pre></details>`;
-  for (const b of document.querySelectorAll("button[data-job], #make, #install")) b.disabled = job.status === "running";
+  for (const b of document.querySelectorAll("button[data-job], #make, #install, #get-band")) b.disabled = job.status === "running";
 }
 
 // The "Make a take" choices survive the page redrawing after a job.

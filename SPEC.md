@@ -40,7 +40,7 @@ For every song:
 | Full score | PDF, MusicXML | Every instrument, concert pitch or transposed (option) |
 | Parts | PDF per player | Transposed for the instrument, correct clef and range |
 | MIDI | .mid | Full arrangement; one track per instrument |
-| Demo audio | WAV | Rendered from the MIDI with a SoundFont. For checking only: it sounds like a demo |
+| Band audio | WAV, plus a stem per part | The arrangement performed (section 6) and played part by part on sampled instruments through sfizz, mixed in one room and mastered gently (docs/sound-set.md). For checking the score by ear. The GeneralUser GS SoundFont plays when the instruments aren't installed |
 | Production | WAV, one folder per take | YuE2 performs the score, band and singer together, optionally in a trained voice (section 6) |
 | Validation report | Markdown | Every check, pass or fail, with bar and beat |
 | Melody check | Markdown | `copyist follow`: how many sung notes match the score, in which octave, and each phrase's timing |
@@ -68,7 +68,7 @@ Internally every song is a `music21` `Score`. On disk the source of truth is the
 3. **Validators.** Deterministic checks (section 5). Failing checks block "finished" status and, during generation, trigger regeneration of the failing section.
 4. **Arrangement.** From the lead sheet to an instrumentation template (piano-vocal, rock/pop band, country band, pit orchestra, string quartet, choir). Rule-based first (M1), model-assisted later (M4). Every instrument stays in range and is written in its own transposition.
 5. **Engraving.** music21 exports MusicXML; Verovio engraves it to SVG; PyMuPDF assembles PDF. Lead sheet, full score and one PDF per part. Verovio's SVG relies on CSS and an embedded music font that MuPDF ignores, so each page is rewritten into plain SVG first (`engrave.printable_svg`). The page header (title, subtitle, words and music credits) is written into Verovio's MEI directly.
-6. **Rendering.** Two renders, for two jobs. The SoundFont preview (GeneralUser GS through TinySoundFont) is exact and quick, for checking the arrangement. The production render is YuE2 performing the score (section 6): that's the one meant to be heard.
+6. **Rendering.** Two renders, for two jobs. The band render plays the score exactly: each part on a sampled instrument through sfizz, mixed and mastered, for checking the arrangement by ear (docs/sound-set.md). The production render is YuE2 performing the score (section 6): that's the one meant to be heard.
 7. **Verification.** `copyist follow` separates the vocal (Demucs), finds the recording's timing and each phrase's drift, and compares every sung note with the score. A take that doesn't sing the score isn't finished. Later: the same for the bass and drums, and regenerating phrases that drift.
 
 ## 4. Song file format (`copyist-song/0`)
@@ -135,7 +135,7 @@ Planned: `breath` (singers get a breath at least every N bars), `tessitura` (whe
 
 ## 6. Sound: rendering roadmap
 
-1. **Sampled render (M0).** SoundFont via TinySoundFont. Exact and predictable; sounds like a demo.
+1. **Sampled render.** M0 played the score through a SoundFont (TinySoundFont and GeneralUser GS): exact, but it sounded like old MIDI. Since 17 October 2026, each part plays on a properly sampled instrument through sfizz, one part at a time, and the parts are balanced by loudness (BS.1770), share one room, and are mastered to -16 LUFS with peaks under -1 dBFS (`copyist/render.py`, `copyist/mixdown.py`). Instruments download in packs, pinned to a git commit and checked file by file (`copyist/instruments.py`); the first pack, the band, is a Salamander grand, Karoryfer upright and electric basses, an AVL drum kit and a VSCO clarinet for the melody. The SoundFont is the fallback. More packs (orchestra and pit, keys, folk and country, percussion, music box and bells, synths) follow, each with arranger templates that write for it (docs/sound-set.md).
 2. **Expressive performance (M5; first version done, `copyist/perform.py`).** Turn the plain score into a humanized performance while keeping the same notes. Output is still MIDI. It shapes each phrase's dynamics, leans on strong beats, lets the melody sing over the band and follow its contour, varies timing by a few milliseconds (the melody slightly ahead, piano chords rolled upward), breathes at phrase ends, pedals the piano with the harmony, slows into the last chord, and lets it ring. It's seeded, on by default in `copyist build`, and `--plain` turns it off.
 3. **Neural MIDI-to-audio (M6).** A MIDI-conditioned adapter on an open model (ACE-Step 1.5, Apache-2.0, is the leading candidate). Trained on paired score/audio data built by transcribing licensed audio and keeping only confident passages. Verified by transcribing the output and comparing it to the score, plus a realism metric and human listening: both must pass.
 4. **Vocals.** Copyist already knows which syllable sits on which note, which is exactly what singing synthesis needs. Candidates, as of October 2026:
@@ -148,8 +148,8 @@ Planned: `breath` (singers get a breath at least every N bars), `tessitura` (whe
    **Status, 17 October 2026.**
 
    - **YuE2 is the production render** (`copyist produce`, `copyist/yue.py`, docs/production.md). Copyist writes the score in YuE2's own ABC and yue2.cpp performs it, band and singer together; on an M4 Max a verse takes about as long to render as to play. YuE2 sings **one octave below** the ABC it's given (measured twice on Amazing Grace: written D4–D5 came back D3–D4, 32 of 32 notes; written an octave up came back in the right octave, 30 of 32), so the vocal goes to YuE2 an octave up. It also shortens the intro and drifts, coming in up to about 2 s early, so `copyist follow` finds the timing before comparing notes.
-   - **SoulX-Singer and the SoundFont band are checking tools now** (`copyist sing`, docs/singing.md). SoulX sings the exact notes and syllables (10 of 10 on pitch, every word heard), but over the SoundFont band it doesn't sound like a record, and it can be glitchy.
-   - **A voice for YuE2 comes from a LoRA** (docs/voice-lora.md): a small add-on trained on one artist's recordings, called up by a trigger word in the style. `copyist lora-songs` turns prompt sheets (a style and tagged lyrics per song) into training data; `scripts/yue-lora/` tokenizes the audio and trains on Apple Silicon, CUDA or CPU; `copyist produce --lora` renders with it. The first one is training on the 41 songs of *I Left the Lights On* (trigger word `lightson`).
+   - **SoulX-Singer and the band render are checking tools** (`copyist sing`, docs/singing.md; docs/sound-set.md). SoulX sings the exact notes and syllables (10 of 10 on pitch, every word heard), but it doesn't sound like a record, and it can be glitchy.
+   - **A voice for YuE2 comes from a LoRA** (docs/voice-lora.md): a small add-on trained on one artist's recordings, called up by a trigger word in the style. `copyist lora-songs` turns prompt sheets (a style and tagged lyrics per song) into training data; `scripts/yue-lora/` tokenizes the audio and trains on Apple Silicon, CUDA or CPU; `copyist produce --lora` renders with it. The first one trained on the 41 songs of *I Left the Lights On* (trigger word `lightson`; 800 steps on the M4 Max, finished 17 October). Loss on two held-out songs was lowest at steps 300 to 500 (4.77 at the start, 3.83 at 300, 4.01 by 800, while the training songs kept falling: it starts memorizing them), and the general singing it was guarded with didn't drift, so steps 300 and 500 are the ones to compare by ear.
    - **Continuation** (opening a render with a few seconds of a real recording) carried a singer's sound into the score, but the melody followed only 14 of 32 notes when the opening's tempo differed. Not reliable yet.
 
    **Copyist ships no voices.** A voice is a reference recording in the git-ignored `voices/` folder (SoulX), or a LoRA in `.cache/` (YuE2); neither is committed or published. A voice Copyist ever ships or sells must come from a consenting person, never from another AI generator. Suno's terms (September 2026) forbid using its output to "power, enable or train other artificial intelligence and machine learning models" or to build competing products. The YuE2 weights are CC BY-NC 4.0 with an individual-creator permission; a company needs its own licence before commercial use, and LoRAs trained on them carry the same terms.
@@ -167,7 +167,7 @@ M1 template **band** (instruments chosen by the song file's `instruments`; anyth
 
 Lyrics with held syllables (`_`) get an extender line when a word ends on the held syllable, and the held notes are slurred when every verse holds there.
 
-Later templates: piano-vocal score, country band (adds acoustic guitar and fiddle), pit orchestra (reeds, brass, strings, keys, percussion), string quartet, SATB choir.
+Later templates: piano-vocal score, country band (adds acoustic guitar and fiddle), pit orchestra (reeds, brass, strings, keys, percussion), string quartet, SATB choir, music box (a lullaby texture, high and delicate, alone or over strings). Copyist is for everyone's music, so the templates and the sound set grow together: each new template comes with the instrument pack that plays it, and each pack with templates that write for it.
 
 ## 8. Following directions
 
@@ -241,7 +241,7 @@ A score is "good" when a professional player could sight-read it:
 - Test songs in `songs/` must be public domain or written for this project. Never commit copyrighted lyrics or melodies.
 - Training data (later milestones): public-domain scores, licensed or commissioned recordings, synthetic data, and contributions with explicit opt-in. Keep a manifest of every source and its license.
 - LoRAs and voices are trained or made locally from the person's own recordings, kept in `.cache/` and `voices/`, and never committed or published (section 6).
-- Sound assets: GeneralUser GS SoundFont (free for any music creation, including commercial; downloaded at first use into `.cache/`, not committed). Its author can't vouch for the origin of every sample, so a product release should switch to a SoundFont or sample library with documented provenance.
+- Sound assets: sampled instruments with clear licences only (CC0, CC BY, or CC BY-SA where music made with them can be sold), downloaded from their authors' own repositories at a pinned commit, never committed; the credits a licence asks for go in each song's report and on the page (docs/sound-set.md). The GeneralUser GS SoundFont (free for any music creation, including commercial) remains as a fallback; its author can't vouch for the origin of every sample, so it isn't the product's sound.
 
 ## 11. Milestones
 
@@ -295,7 +295,7 @@ Only transcribe recordings the user owns or has rights to. The fitted score of s
 
 ## 13. In a browser
 
-`copyist serve` (docs/web.md) is a local web page for everything above: the songs, their lyrics and checks, the score as pages, every take with a player, making a new take (voice, strength, verses, seed, style), checking a take's melody, and the progress of a voice training run. It runs the same `copyist` commands, one at a time, on the machine with the GPU, listens on 127.0.0.1 only, and loads nothing from the internet. Choices are made by listening and pressing buttons; nothing on the page needs musical skills.
+`copyist serve` (docs/web.md) is a local web page for everything above: the songs, their lyrics and checks, the score as pages, every take with a player, making a new take (voice, strength, verses, seed, style), checking a take's melody, the band playing the score (with each part, its instrument and its stem, and a download for the instruments), and the progress of a voice training run. It runs the same `copyist` commands, one at a time, on the machine with the GPU, listens on 127.0.0.1 only, and loads nothing from the internet. Choices are made by listening and pressing buttons; nothing on the page needs musical skills.
 
 The plan is for this page to become a free desktop app (Tauri, with the engine and yue2.cpp bundled, models downloaded on first run), so anyone can make songs on their own computer: docs/desktop-app.md.
 
@@ -306,3 +306,4 @@ The plan is for this page to become a free desktop app (Tauri, with the engine a
 - How users edit notes: YAML by hand, MuseScore round-trip via MusicXML, or editing on the web page.
 - Hosting for other people: accounts, a GPU queue, and which renderer licence allows it (YuE2's weights don't, for a company).
 - Several singers in one LoRA (the musical has a cast): one trigger word per character, or one LoRA per voice.
+- Free libraries with clear licences for the instruments still missing: music box and celesta first, then acoustic guitars, banjo, mandolin, ukulele, pedal steel, accordion, snare brushes and a choir (docs/sound-set.md).

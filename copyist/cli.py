@@ -7,6 +7,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import re
 import sys
 from pathlib import Path
@@ -54,11 +55,14 @@ def cmd_build(args) -> int:
         performed = perform.perform(midi, midi, song.meter, float(perform.pickup_of(song)), seed=args.seed)
 
     audio_note = None
+    audio = None
     if not args.no_audio:
         try:
-            sf = render.soundfont_path(Path(args.cache))
-            wav = render.render_midi(midi, out / f"{song.slug}.wav", sf)
-            made.append(wav)
+            audio = render.render_band(midi, out / f"{song.slug}.wav", band.style, Path(args.cache),
+                                       stems_dir=out / "stems")
+            made.append(audio.wav)
+            made += [audio.stems[p] for p in render.PART_ORDER if p in audio.stems]
+            (out / "audio.json").write_text(json.dumps(audio.summary(), indent=1) + "\n", encoding="utf-8")
         except render.AudioUnavailable as e:
             audio_note = str(e)
 
@@ -80,6 +84,8 @@ def cmd_build(args) -> int:
                   f"the piano pedals {performed['pedal_changes']} times with the harmony, and the last "
                   f"{performed['ritardando_bars']} bars slow down into a ringing final chord. Every note is the "
                   "written one. `--plain` writes the MIDI exactly on the grid instead."]
+    if audio:
+        extra += ["", "## Audio", ""] + audio.report_lines()
     if audio_note:
         extra += ["", "## Audio", "", f"Skipped: {audio_note}"]
     extra += ["", "## Files", ""] + [f"- `{p.relative_to(out)}`" for p in made]
@@ -89,6 +95,8 @@ def cmd_build(args) -> int:
     print(f"{song.title}: {status}. Wrote {len(made) + 1} files to {out}/")
     if audio_note:
         print(f"Audio skipped: {audio_note}")
+    elif audio and audio.engine != "sampled":
+        print(f"Audio: the SoundFont played, because {audio.note}")
     return 0 if finished else 1
 
 
@@ -126,8 +134,7 @@ def cmd_sing(args) -> int:
                 perf.remove(part)
         midi = engrave.write_midi(perf, out / "band.mid")
         try:
-            sf2 = render.soundfont_path(Path(args.cache))
-            band_wav = render.render_midi(midi, out / "band.wav", sf2)
+            band_wav = render.render_band(midi, out / "band.wav", band.style, Path(args.cache)).wav
             band_start = 0.0
             if bars:
                 spq = sing.seconds_per_quarter(song)
@@ -215,12 +222,9 @@ def cmd_serve(args) -> int:
 
 
 def cmd_models(args) -> int:
-    """List the downloadable models, or download a group of them."""
-    from . import models
+    """List the downloadable models and instruments, or download a group of them."""
+    from . import instruments, models
     if args.what == "download":
-        if not args.accept_licence:
-            print(models.LICENCE, "\n\nRun again with --accept-licence to download.", file=sys.stderr)
-            return 2
         last = [-1]
 
         def progress(done, total):
@@ -228,15 +232,34 @@ def cmd_models(args) -> int:
             if pct != last[0]:
                 last[0] = pct
                 print(f"\r{pct}% of {total / 1e9:.1f} GB", end="", file=sys.stderr, flush=True)
+        if args.group in instruments.PACKS:
+            for p in instruments.download_pack(args.group, progress):
+                print(f"\nReady: {p}")
+            return 0
+        if args.group not in models.GROUPS:
+            names = ", ".join([*models.GROUPS, *instruments.PACKS])
+            print(f"No download called {args.group!r}. These exist: {names}.", file=sys.stderr)
+            return 2
+        if not args.accept_licence:
+            print(models.LICENCE, "\n\nRun again with --accept-licence to download.", file=sys.stderr)
+            return 2
         for p in models.download_group(args.group, progress):
             print(f"\nReady: {p}")
         return 0
     print(f"Models folder: {models.paths.models_dir()}")
     for g in models.GROUPS:
         s = models.group_status(g)
-        print(f"{s['label']} ({s['why']}), {s['size'] / 1e9:.1f} GB: {'ready' if s['ready'] else 'not downloaded'}")
+        print(f"{g}: {s['label']} ({s['why']}), {s['size'] / 1e9:.1f} GB: "
+              f"{'ready' if s['ready'] else 'not downloaded'}")
         for m in s["models"]:
             print(f"  {m['file']}: {m['state']}" + (f" ({m['path']})" if m["path"] else ""))
+    print(f"\nInstruments folder: {instruments.install_dir()}")
+    for pack in instruments.PACKS:
+        s = instruments.pack_status(pack)
+        print(f"{pack}: {s['label']} ({s['why']}), {s['size'] / 1e9:.1f} GB: "
+              f"{'ready' if s['ready'] else 'not downloaded'}")
+        for i in s["models"]:
+            print(f"  {i['label']} ({i['licence']}): {i['state']}")
     return 0
 
 
@@ -331,7 +354,8 @@ def main(argv: list[str] | None = None) -> int:
 
     md = sub.add_parser("models", help="list the downloadable models, or download some (docs/desktop-app.md)")
     md.add_argument("what", nargs="?", choices=("list", "download"), default="list")
-    md.add_argument("group", nargs="?", default="singer", help="singer (needed for takes) or voices")
+    md.add_argument("group", nargs="?", default="singer",
+                    help="singer (needed for takes), voices, or band (the sampled instruments)")
     md.add_argument("--accept-licence", action="store_true", help="accept the models' licence (it's printed first)")
     md.set_defaults(func=cmd_models)
 
