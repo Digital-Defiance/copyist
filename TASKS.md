@@ -45,11 +45,13 @@ The goal: Suno-level audio that follows our score.
 
 ## 3. Singer voices
 
-- [ ] Compare the three voice prompts by ear, each singing Amazing Grace bars 0–4:
-  `copyist sing songs/amazing-grace.yaml --bars 0-4 --voice voices/<name>.wav --out out-<name>`
-- [ ] Separate a solo vocal from a full mix that has no stems. Demucs 4.1.0 is installed in `.cache/demucs` (`-d mps --two-stems vocals`). Amazing Grace's production vocal is separated. Still to separate: the Lights On mixes and the experimental songs that have no `Lead Vocals` stem. Voices stay in `voices/` and are never committed or shipped (see DECISIONS.md)
-- [ ] Make a voice from the separated vocal: `copyist voice separated.wav --name <name> --lyrics <lyrics file>`, then sing with it
-- [ ] Add tests for `voiceprompt.py`: `smooth_contour` octave folding, `split_notes` on a synthetic contour, `clean_hint`
+- [ ] Compare the voices by ear, each singing Amazing Grace bars 0–4:
+  `copyist sing songs/amazing-grace.yaml --bars 0-4 --voice voices/<name>.wav --out out-<name>`.
+  Five voices are in `voices/`: hope, june-snow, silver-tongues, june-snow-broadway, and SoulX's example voice. Rendered so far: hope and june-snow-broadway, both 10 of 10 on pitch with every word heard (`out/amazing-grace/sung/<voice>/mix.wav`). Still to render: june-snow, silver-tongues
+- [x] Broadway June Snow: the first 45 s were separated with the mel-band-roformer karaoke model (Hugging Face `Soul-AILab/SoulX-Singer-Preprocess`, about 7× slower than real time on a 2-core CPU; `out/separated/june-snow-broadway-vocal.wav`), and made into the `june-snow-broadway` voice
+- [ ] Separate a solo vocal from the other full mixes that have no stems. Demucs 4.1.0 is installed in `.cache/demucs` (`-d mps --two-stems vocals`). Amazing Grace's production vocal is separated. Still to separate: the Lights On mixes and the experimental songs that have no `Lead Vocals` stem. Voices stay in `voices/` and are never committed or shipped (see DECISIONS.md)
+- [x] Make a voice from a separated vocal: `copyist voice separated.wav --name <name> --lyrics <lyrics file>`
+- [x] Tests for `voiceprompt.py` (`tests/test_voiceprompt.py`). They found a bug: a blip inside a held note split it in two; fixed
 - [ ] Choose a default voice and record the choice in DECISIONS.md
 
 ## 4. Singing that sounds performed

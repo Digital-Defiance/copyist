@@ -99,7 +99,7 @@ def to_midi(hz: float) -> float:
     return 69 + 12 * math.log2(hz / 440.0)
 
 
-def clean_hint(text: str, max_chars: int = 400) -> str:
+def clean_hint(text: str, max_chars: int = 400) -> str | None:
     """Lyric lines only (no [Section] tags, (directions) or markdown), for Whisper's prompt."""
     lines = []
     for line in text.splitlines():
@@ -145,7 +145,9 @@ def split_notes(contour, a: int, b: int, min_frames: int = 5) -> list[tuple[int,
             runs.append([i, i + 1, p])
     merged: list[list[int]] = []
     for r in runs:
-        if merged and r[1] - r[0] < min_frames:
+        # A blip joins the note before it, and so does the same pitch resuming
+        # after a blip: one held note, not two.
+        if merged and (r[1] - r[0] < min_frames or r[2] == merged[-1][2]):
             merged[-1][1] = r[1]
         else:
             merged.append(r)
