@@ -2,6 +2,16 @@
 
 Newest first. One entry per decision: what, why, and what we gave up.
 
+## 2026-10-17 (styles)
+
+- **As many styles as make sense: anything that can be written as a correct score in twelve-note notation.** Correct sheet music is what sets Copyist apart, so that's the line. Music built on notes between the piano keys (maqam, raga, gamelan) and rap verses are out for now, because the score would be wrong or empty.
+- **A style is a data file, not code** (`copyist/styles/*.yaml`, `copyist-style/0`). Adding a style means writing a file, which is how the list can grow quickly. The files are checked when they load, and every style is arranged in the tests. Gave up: arbitrary logic per style. What patterns can't express becomes a named generator in the arranger (`walk`, `line`), usable by any style.
+- **The original three styles were ported note for note** (same MIDI, byte for byte), so nothing already made changed.
+- **Swing lives in the performance, not the notation.** The score shows straight eighths with "Swing" over them, as charts do. The MIDI plays the off-beats at two thirds of the beat, and `--plain` keeps that, because the swing is part of how the music is written to be played.
+- **The gallery picks a tempo inside each style's range,** since a pop take at hymn tempo would mislead. Using a style can change the song's tempo too, and only the `style:` and `tempo:` lines of the song file change.
+- **Styles come in waves, each with the parts and instruments it needs.** A style whose band doesn't exist yet (organ, guitar, strings) would only be a sketch.
+- **The voice gets the treble clef unless the song says otherwise.** music21 guessed the bass clef for a melody between C4 and G4.
+
 ## 2026-10-17 (the sound set, wired in)
 
 - **The sound set is for everyone's music.** Copyist isn't built around one songwriter's genres: music boxes, Broadway pits, country bands, hymns and synth pop all need instruments, and the arranger needs templates that write for them. So instruments come in packs, each with the templates that use it. The band pack came first because every template needs it. Music box and celesta come next, because *I Left the Lights On* uses them.

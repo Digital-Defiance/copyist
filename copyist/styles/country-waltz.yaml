@@ -1,0 +1,16 @@
+format: copyist-style/0
+name: Country waltz
+family: Country and folk
+about: Oom-pah-pah. The bass on one only, the piano's chords on two and three, a side-stick backbeat.
+tempo: [84, 132]
+instruments: {bass: electric-bass}
+production: country waltz, 3/4, pedal steel, fiddle, acoustic guitar, brushed drums, heartfelt, honky-tonk
+meters:
+  "3/4":
+    rh: [[1, 1, chord], [2, 1, chord]]
+    lh: [[0, 1, root]]
+    bass: [[0, 1, root]]
+    drums:
+      hands: [[0, 1, [hihat]], [1, 1, [hihat, sidestick]], [2, 1, [hihat, sidestick]]]
+      feet: [[0, 1, [kick]]]
+      fill: [[2, 0.5, [snare]], [2.5, 0.5, [snare]]]

@@ -1,0 +1,18 @@
+format: copyist-style/0
+name: Hymn
+family: Hymns and classical
+about: Plain and reverent, like an organist accompanying a congregation. Sustained chords, the bass holding the root. No drums.
+tempo: [60, 100]
+instruments: {bass: upright-bass}
+production: traditional hymn, pipe organ, congregation choir, reverent, sacred, church
+meters:
+  "3/4":
+    rh: [[0, 2, chord], [2, 1, chord]]
+    lh: [[0, 2, root], [2, 1, root]]
+    bass: [[0, 3, root]]
+    drums: none
+  "4/4":
+    rh: [[0, 2, chord], [2, 2, chord]]
+    lh: [[0, 2, root], [2, 2, root]]
+    bass: [[0, 4, root]]
+    drums: none

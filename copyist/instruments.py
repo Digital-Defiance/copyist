@@ -70,19 +70,19 @@ PACKS = {
              "instruments": ["piano", "electric-bass", "upright-bass", "drums", "clarinet"]},
 }
 
-# Which instrument plays each part of the arrangement (roles from perform.roles).
+# Which instrument plays each part of the arrangement (roles from perform.roles), unless the
+# style chooses (the `instruments:` of a style file, copyist/styles/).
 ROLE_INSTRUMENT = {"melody": "clarinet", "piano_rh": "piano", "piano_lh": "piano", "piano": "piano",
-                   "drums": "drums", "other": "piano"}
-UPRIGHT_STYLES = {"waltz", "ballad"}
-
-
-def bass_for(style: str | None) -> str:
-    """The upright bass for waltzes and ballads, the electric bass for everything else."""
-    return "upright-bass" if style in UPRIGHT_STYLES else "electric-bass"
+                   "bass": "electric-bass", "drums": "drums", "other": "piano"}
 
 
 def instrument_for(role: str, style: str | None = None) -> str:
-    return bass_for(style) if role == "bass" else ROLE_INSTRUMENT.get(role, "piano")
+    from . import styles
+    chosen = styles.get(style)
+    part = "piano" if role.startswith("piano") else role
+    if chosen and part in chosen.instruments:
+        return chosen.instruments[part]
+    return ROLE_INSTRUMENT.get(role, "piano")
 
 
 @lru_cache(maxsize=1)

@@ -171,6 +171,16 @@ progress { accent-color: var(--blue); width: min(100%, 24rem); height: 0.9rem; v
 .players .part { font-family: var(--pencil); color: var(--red); min-width: 4.5rem; }
 .players a { margin-left: auto; color: var(--blue); font-size: 0.9rem; }
 .offer { margin-top: 1rem; max-width: 44rem; }
+.family { font-family: var(--pencil); color: var(--blue); font-weight: 600; margin: 1.6rem 0 0.2rem; }
+.styles { list-style: none; padding: 0; margin: 0; max-width: 52rem; }
+.styles li { padding: 0.7rem 0 0.9rem; border-bottom: 1.5px solid color-mix(in srgb, var(--staff) 45%, transparent); }
+.styles li.current { border-left: 3px solid var(--red); padding-left: 0.7rem; }
+.style-head { display: flex; flex-wrap: wrap; gap: 0.4rem 0.8rem; align-items: baseline; }
+.style-head h4 { margin: 0; font-weight: 600; }
+.style-head .meta { color: var(--ink-soft); font-size: 0.9rem; }
+.style-head button, .style-head .tag { margin-left: auto; }
+.tag { font-family: var(--pencil); color: var(--red); font-size: 0.95rem; }
+.styles audio { width: 100%; max-width: 36rem; display: block; margin-top: 0.4rem; }
 
 /* -------------------------------------------------------- training drawer */
 .run { margin-top: 0.75rem; }

@@ -28,6 +28,7 @@ copyist sing songs/amazing-grace.yaml --bars 0-4   # sung vocal (needs SoulX-Sin
 copyist produce songs/amazing-grace.yaml           # YuE2 production from the score (docs/production.md)
 copyist follow songs/amazing-grace.yaml VOCAL.wav # does a recording sing the melody? (timing and octave allowed)
 copyist serve                                      # the web front end (docs/web.md)
+copyist gallery songs/when-the-saints.yaml         # the song in every style that fits it (docs/styles.md)
 python -m unittest discover -s tests      # tests
 ```
 
@@ -40,7 +41,9 @@ copyist/          the package
   song.py         load and parse song files into a music21 score (melody, chords, lyrics)
   lyrics.py       syllable parsing and alignment
   validate.py     validators (SPEC section 5)
-  arrange.py      arrangement templates (SPEC section 7)
+  arrange.py      arrangement templates (SPEC section 7), playing the song's style
+  styles/         one YAML file per style, and the loader (docs/styles.md)
+  gallery.py      a song played in every style that fits it
   drums.py        drum grooves, fills and crashes; notation and MIDI from one list of hits
   engrave.py      MusicXML, SVG and PDF output via Verovio and PyMuPDF
   perform.py      expressive performance: the arrangement MIDI played, not just written
@@ -61,7 +64,8 @@ copyist/          the package
   cli.py          the `copyist` command
 songs/            song files (public domain or original only)
 tests/            unittest tests
-docs/             production.md, voice-lora.md, web.md, singing.md, sound-set.md, desktop-app.md, default-voices.md
+docs/             production.md, voice-lora.md, web.md, singing.md, sound-set.md, styles.md, desktop-app.md,
+                  default-voices.md
 scripts/          setup-yue.sh, setup-yue-train.sh, setup-sfizz.sh, setup-demucs.sh, setup-soulx.sh;
                   yue-lora/ (prepare, train, run.sh); instruments/ (manifest.py, clarinet.py)
 app/              the desktop app (Tauri), which runs the engine as a sidecar (docs/desktop-app.md)

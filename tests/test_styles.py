@@ -1,0 +1,208 @@
+import dataclasses
+import json
+import tempfile
+import unittest
+from pathlib import Path
+from unittest import mock
+
+import mido
+from music21 import harmony, stream
+
+from copyist import arrange, engrave, gallery, perform, render, styles
+from copyist.song import load_song
+
+ROOT = Path(__file__).resolve().parents[1]
+SONGS = {"3/4": ROOT / "songs" / "amazing-grace.yaml", "4/4": ROOT / "songs" / "when-the-saints.yaml",
+         "6/8": ROOT / "songs" / "silent-night.yaml"}
+
+
+def bar_lengths(part):
+    out = []
+    for m in part.getElementsByClass(stream.Measure):
+        if m.voices:
+            out.append(max(sum(e.quarterLength for e in v.notesAndRests) for v in m.voices))
+        else:
+            out.append(sum(e.quarterLength for e in m.notesAndRests if not isinstance(e, harmony.ChordSymbol)))
+    return out
+
+
+def minimal(**changes) -> dict:
+    data = {"format": "copyist-style/0", "name": "T", "family": "Pop and rock", "about": "a", "production": "p",
+            "meters": {"4/4": {"rh": [[0, 4, "chord"]], "lh": [[0, 4, "root"]], "bass": [[0, 4, "root"]],
+                               "drums": "none"}}}
+    data.update(changes)
+    return data
+
+
+class CatalogTests(unittest.TestCase):
+    def test_every_style_file_reads(self):
+        catalog = styles.catalog()
+        self.assertGreaterEqual(len(catalog), 20)
+        for s in catalog.values():
+            self.assertIn(s.family, styles.FAMILIES)
+            self.assertTrue(s.production and s.about and s.meters)
+
+    def test_every_meter_has_a_default_style_that_plays_it(self):
+        for meter, style_id in styles.DEFAULT_FOR_METER.items():
+            if meter == "12/8":
+                continue                      # no 12/8 style yet: the arranger falls back to whole-bar chords
+            self.assertIn(meter, styles.get(style_id).meters, meter)
+
+    def test_mistakes_in_a_style_file_are_named(self):
+        bad = [
+            minimal(family="Polka"),
+            minimal(feel="lilting"),
+            minimal(meters={"4/4": {"rh": [[0, 4, "melody"]], "lh": [], "bass": [], "drums": "none"}}),
+            minimal(meters={"4/4": {"rh": [[3, 2, "chord"]], "lh": [], "bass": [], "drums": "none"}}),
+            minimal(meters={"4/4": {"rh": [], "lh": [], "bass": [],
+                                    "drums": {"hands": [[0, 1, ["cowbell"]]], "feet": [], "fill": [[0, 1, ["snare"]]]}}}),
+            minimal(meters={"4/4": {"rh": [], "lh": [], "bass": {"line": ["root", "ninth"], "every": 0.5},
+                                    "drums": "none"}}),
+            minimal(instruments={"bass": "tuba"}),
+        ]
+        for data in bad:
+            with self.assertRaises(styles.StyleError):
+                styles.parse(data, "test")
+        self.assertEqual(styles.parse(minimal(), "test").feel, "straight")
+
+    def test_triplets_can_be_written_as_fractions(self):
+        s = styles.parse(minimal(meters={"4/4": {"rh": [["1/3", "1/3", "chord"]], "lh": [], "bass": [],
+                                                 "drums": "none"}}), "test")
+        self.assertAlmostEqual(s.pattern("4/4")["rh"][0][0], 1 / 3)
+
+
+class ArrangeEveryStyleTests(unittest.TestCase):
+    """Every style, on a song in each of its meters: the parts line up and the piano plays the chords."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.songs = {m: load_song(p) for m, p in SONGS.items()}
+
+    def test_every_style_arranges_cleanly(self):
+        for s in styles.catalog().values():
+            for meter in s.meters:
+                song = self.songs[meter]
+                band = arrange.arrange_band(dataclasses.replace(song, style=s.id))
+                with self.subTest(style=s.id, meter=meter):
+                    self.assertEqual(band.style, s.id)
+                    want = bar_lengths(song.melody)
+                    for part in band.score.parts:
+                        self.assertEqual(bar_lengths(part), want, part.partName)
+                    timeline = arrange.chord_timeline(song.melody)
+                    rh = band.score.parts[1]
+                    for ch in rh.recurse().notes:
+                        if isinstance(ch, harmony.ChordSymbol):
+                            continue
+                        cs = arrange.chord_at(timeline, float(ch.getOffsetInHierarchy(rh)))
+                        allowed = {p.name for p in cs.pitches} | {cs.root().transpose("M6").name}   # shells add a 6th
+                        self.assertTrue({p.name for p in ch.pitches} <= allowed, f"{ch} over {cs.figure}")
+                    self.assertEqual("drums" in band.parts, s.has_drums(meter))
+
+    def test_a_walking_bass_starts_each_chord_on_its_root_and_steps_into_the_next(self):
+        song = self.songs["4/4"]
+        band = arrange.arrange_band(dataclasses.replace(song, style="swing"))
+        bass = band.parts["bass"].parts[0]
+        timeline = arrange.chord_timeline(song.melody)
+        notes = list(bass.recurse().getElementsByClass("Note"))
+        for a, b in zip(notes, notes[1:]):
+            off_b = float(b.getOffsetInHierarchy(bass))
+            cs_b = arrange.chord_at(timeline, off_b)
+            if float(b.beat) == 1.0:
+                self.assertEqual(b.pitch.name, cs_b.bass().name, f"bar {b.measureNumber}")
+                self.assertEqual(abs(b.pitch.midi - a.pitch.midi), 1, f"into bar {b.measureNumber}")
+
+    def test_a_boogie_line_climbs_from_the_root(self):
+        band = arrange.arrange_band(dataclasses.replace(self.songs["4/4"], style="blues-shuffle"))
+        bass = band.parts["bass"].parts[0]
+        first = list(bass.getElementsByClass(stream.Measure))[0]
+        line = list(first.getElementsByClass("Note"))
+        self.assertEqual([n.pitch.name for n in line], ["C", "E", "G", "A", "B-", "A", "G", "E"])
+        self.assertEqual(min(n.pitch.midi for n in line), line[0].pitch.midi)
+
+    def test_a_swing_style_says_so_on_the_score(self):
+        band = arrange.arrange_band(dataclasses.replace(self.songs["4/4"], style="swing"))
+        words = [e.content for e in band.score.recurse().getElementsByClass("TextExpression")]
+        self.assertEqual(words, ["Swing"])
+
+
+class SwingTests(unittest.TestCase):
+    def test_off_beat_eighths_land_two_thirds_through_the_beat(self):
+        song = load_song(SONGS["4/4"])
+        band = arrange.arrange_band(dataclasses.replace(song, style="swing"))
+        tmp = Path(tempfile.mkdtemp())
+        midi = engrave.write_midi(band.performance(), tmp / "plain.mid")
+        moved = perform.swing_only(midi, tmp / "swung.mid", song.meter, 0.0, 2 / 3)
+        self.assertGreater(moved, 30)
+        mid = mido.MidiFile(str(tmp / "swung.mid"))
+        tpq = mid.ticks_per_beat
+        fractions = set()
+        for tr in mid.tracks:
+            t = 0
+            for msg in tr:
+                t += msg.time
+                if msg.type == "note_on" and msg.velocity and msg.channel == 9 and msg.note == 51:   # the ride
+                    fractions.add(round((t / tpq) % 1, 2))
+        self.assertEqual(fractions, {0.0, 0.67})
+
+    def test_straight_styles_are_left_alone(self):
+        song = load_song(SONGS["4/4"])
+        band = arrange.arrange_band(dataclasses.replace(song, style="pop"))
+        tmp = Path(tempfile.mkdtemp())
+        midi = engrave.write_midi(band.performance(), tmp / "plain.mid")
+        self.assertEqual(perform.swing_only(midi, tmp / "same.mid", song.meter, 0.0, 0.5), 0)
+
+
+class SetStyleTests(unittest.TestCase):
+    def copy(self, name):
+        path = Path(tempfile.mkdtemp()) / name
+        path.write_text((ROOT / "songs" / name).read_text())
+        return path
+
+    def test_only_the_style_and_tempo_lines_change(self):
+        from copyist.song import set_style
+        path = self.copy("when-the-saints.yaml")
+        before = path.read_text().splitlines()
+        set_style(path, "swing", 132)
+        after = path.read_text().splitlines()
+        changed = [(a, b) for a, b in zip(before, after) if a != b]
+        self.assertEqual(changed, [("tempo: 112", "tempo: 132"), ("style: straight", "style: swing")])
+        self.assertEqual(load_song(path).style, "swing")
+
+    def test_a_dotted_quarter_tempo_keeps_its_unit(self):
+        from copyist.song import set_style
+        path = self.copy("silent-night.yaml")
+        set_style(path, "celtic-jig", 110)
+        self.assertIn('tempo: "3/8=110"', path.read_text())
+        self.assertIn("style: celtic-jig", path.read_text())
+
+    def test_a_song_without_a_style_gets_one(self):
+        from copyist.song import set_style
+        path = self.copy("when-the-saints.yaml")
+        path.write_text(path.read_text().replace("style: straight\n", ""))
+        set_style(path, "rock")
+        self.assertEqual(load_song(path).style, "rock")
+
+
+class GalleryTests(unittest.TestCase):
+    def test_the_gallery_plays_every_style_for_the_meter_at_a_tempo_that_suits_it(self):
+        song = load_song(SONGS["4/4"])
+        out = Path(tempfile.mkdtemp(prefix="copyist-gallery-"))
+        played = []
+
+        def fake_band(midi, wav, style=None, cache=None, stems_dir=None):
+            played.append((style, mido.MidiFile(str(midi)).length))
+            wav.write_bytes(b"RIFF")
+            return render.BandAudio(wav, "sampled")
+        with mock.patch.object(render, "render_band", fake_band):
+            entries = gallery.build(song, out, only=["ballad", "rock", "march"])
+        self.assertEqual([e["style"] for e in entries], ["ballad", "rock", "march"])
+        tempos = {e["style"]: e["tempo"] for e in entries}
+        self.assertEqual(tempos, {"ballad": 92, "rock": 112, "march": 112})     # the song is at 112
+        lengths = dict(played)
+        self.assertGreater(lengths["ballad"], lengths["rock"] * 1.15)            # slowed to a ballad's pace
+        index = json.loads((out / song.slug / "gallery" / gallery.INDEX).read_text())
+        self.assertEqual([e["style"] for e in index["styles"]], ["ballad", "rock", "march"])
+
+
+if __name__ == "__main__":
+    unittest.main()

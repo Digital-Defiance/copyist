@@ -1,0 +1,17 @@
+format: copyist-style/0
+name: Swing
+family: Jazz and blues
+about: Swung eighths. A walking bass, the ride cymbal's spang-a-lang with the hi-hat foot on two and four, the piano comping short 3rd-and-7th chords on the Charleston rhythm.
+feel: swing
+tempo: [110, 200]
+instruments: {bass: upright-bass}
+production: swing jazz, 1940s, walking upright bass, ride cymbal, piano comping, clarinet, horn section, swinging
+meters:
+  "4/4":
+    rh: [[0, 0.5, shell], [1.5, 0.5, shell]]
+    lh: []
+    bass: walk
+    drums:
+      hands: [[0, 1, [ride]], [1, 0.5, [ride]], [1.5, 0.5, [ride]], [2, 1, [ride]], [3, 0.5, [ride]], [3.5, 0.5, [ride]]]
+      feet: [[1, 1, [hihat-pedal]], [3, 1, [hihat-pedal]]]
+      fill: [[2, 0.5, [snare]], [2.5, 0.5, [snare]], [3, 0.5, [tom]], [3.5, 0.5, [snare]]]

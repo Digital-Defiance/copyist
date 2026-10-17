@@ -1,0 +1,20 @@
+format: copyist-song/0
+title: Silent Night
+credits:
+  words: Joseph Mohr (1816), English by John Freeman Young (1859)
+  music: Franz Xaver Gruber (1818)
+key: C
+meter: 6/8
+unit: 1/8
+tempo: "3/8=56"
+voice:
+  name: Melody
+  range: [C4, F5]
+style: lullaby
+# Public domain: words 1816 and 1859, music 1818.
+melody: |
+  "C"G3/2 A/ G E3 | G3/2 A/ G E3 | "G7"d2 d B3 | "C"c2 c G3 | "F"A2 A c3/2 B/ A | "C"G3/2 A/ G E3 |
+  "F"A2 A c3/2 B/ A | "C"G3/2 A/ G E3 | "G7"d2 d f3/2 d/ B | "C"c3 e3 | c3/2 G/ E "G7"G3/2 F/ D | "C"C6 |]
+lyrics:
+  - Si-lent night_ ho-ly night_ all is calm, all is bright, round yon vir-gin moth-er and child_ ho-ly in-fant so ten-der and mild, sleep in hea-ven-ly peace_ sleep in hea-ven-ly peace_
+  - Si-lent night_ ho-ly night_ shep-herds quake at the sight, glo-ries stream from hea-ven a-far_ heav'n-ly hosts_ sing al-le-lu-ia; Christ the Sav-ior is born_ Christ the Sav-ior is born_

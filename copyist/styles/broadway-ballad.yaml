@@ -1,0 +1,13 @@
+format: copyist-style/0
+name: Broadway ballad
+family: Musical theatre
+about: The big emotional number. The piano flows in eighth-note arpeggios over sustained bass notes. No drums.
+tempo: [56, 84]
+instruments: {bass: upright-bass}
+production: Broadway ballad, emotional, theatrical, lush strings, piano, cast recording, soaring
+meters:
+  "4/4":
+    rh: [[0, 0.5, arp1], [0.5, 0.5, arp2], [1, 0.5, arp3], [1.5, 0.5, arp2], [2, 0.5, arp1], [2.5, 0.5, arp2], [3, 0.5, arp3], [3.5, 0.5, arp2]]
+    lh: [[0, 2, root], [2, 2, fifth]]
+    bass: [[0, 4, root]]
+    drums: none

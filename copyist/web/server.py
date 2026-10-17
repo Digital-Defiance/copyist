@@ -122,7 +122,8 @@ class Project:
                 "instruments": d.get("instruments"), "verses": d.get("lyrics") or [],
                 "report": report_checks(out / "report.md"), "sheets": sheets,
                 "recordings": self.recordings(slug), "built": (out / "lead-sheet.pdf").is_file(),
-                "band": self.band(slug),
+                "band": self.band(slug), "gallery": self.gallery(slug), "styles": styles_for(d.get("meter")),
+                "style_in_use": d.get("style") or default_style_for(d.get("meter")),
                 "default_style": default_style(path)}
 
     def recordings(self, slug: str) -> list[dict]:
@@ -166,6 +167,17 @@ class Project:
             part["path"] = self.rel(stem) if part.get("stem") and stem.is_file() else None
         return {**info, "path": self.rel(wav),
                 "when": datetime.fromtimestamp(wav.stat().st_mtime).isoformat(timespec="minutes")}
+
+    def gallery(self, slug: str) -> list[dict]:
+        """The song played in each style (`copyist gallery`), newest render of each."""
+        from ..gallery import read
+        folder = self.out / slug / "gallery"
+        out = []
+        for e in read(folder):
+            wav = folder / str(e.get("file", ""))
+            if wav.is_file():
+                out.append({**e, "path": self.rel(wav)})
+        return out
 
     def voices(self) -> list[dict]:
         """Trained LoRAs, newest checkpoint first, with the style line their songs trained under."""
@@ -379,6 +391,17 @@ def start_download(jobs: Jobs, body: dict) -> dict:
     return jobs.start_task(label, task)
 
 
+def default_style_for(meter) -> str | None:
+    from .. import styles
+    return styles.default_for(str(meter)) if meter else None
+
+
+def styles_for(meter) -> list[dict]:
+    from .. import styles
+    return [{"id": s.id, "name": s.name, "family": s.family, "about": s.about, "feel": s.feel}
+            for s in styles.for_meter(str(meter))] if meter else []
+
+
 def job_args(project: Project, body: dict) -> tuple[str, str | None, list[str]]:
     """Turn a request from the page into a copyist command. Only these actions exist."""
     action = body.get("action")
@@ -389,6 +412,21 @@ def job_args(project: Project, body: dict) -> tuple[str, str | None, list[str]]:
     song = project.rel(path)
     if action == "build":
         return "Writing the score", slug, ["build", song]
+    if action == "gallery":
+        return "Playing it in every style", slug, ["gallery", song]
+    if action == "use-style":
+        from .. import styles
+        style = styles.get(body.get("style"))
+        meter = read_yaml(path).get("meter")
+        if not style or str(meter) not in style.meters:
+            raise ValueError("No such style for this song.")
+        args = ["use-style", song, style.id]
+        if body.get("tempo") is not None:
+            tempo = float(body["tempo"])
+            if not 20 <= tempo <= 300:
+                raise ValueError("Tempo out of range.")
+            args += ["--tempo", f"{tempo:g}"]
+        return f"Changing the style to {style.name}", slug, args
     if action == "produce":
         args = ["produce", song, "--take", datetime.now().strftime("take-%Y%m%d-%H%M%S")]
         verses = int(body.get("verses") or 1)

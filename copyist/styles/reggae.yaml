@@ -1,0 +1,17 @@
+format: copyist-style/0
+name: Reggae
+family: Latin and Caribbean
+about: The one drop. Short piano chords on every off-beat (the skank), a deep melodic bass, kick and side-stick together on three.
+tempo: [66, 90]
+instruments: {bass: electric-bass}
+production: roots reggae, one drop rhythm, offbeat skank guitar, organ bubble, deep dub bass, Jamaican, laid back
+meters:
+  "4/4":
+    rh: [[0.5, 0.25, chord], [1.5, 0.25, chord], [2.5, 0.25, chord], [3.5, 0.25, chord]]
+    lh: []
+    bass: [[0, 1.5, root], [1.5, 0.5, root], [2, 1, fifth], [3, 0.5, third], [3.5, 0.5, root]]
+    drums:
+      hands: [[0, 0.5, [hihat]], [0.5, 0.5, [hihat]], [1, 0.5, [hihat]], [1.5, 0.5, [hihat]],
+              [2, 0.5, [hihat, sidestick]], [2.5, 0.5, [hihat]], [3, 0.5, [hihat]], [3.5, 0.5, [hihat]]]
+      feet: [[2, 1, [kick]]]
+      fill: [[3, 0.5, [snare]], [3.5, 0.5, [tom]]]

@@ -10,7 +10,9 @@ the grid, into a performance, without changing a single note:
   chords rolled upward by a few milliseconds, a breath at each phrase end, and
   a ritardando into the last chord, which then rings;
 - touch: a legato melody, a tighter bass, and sustain pedal on the piano,
-  changed with the harmony.
+  changed with the harmony;
+- feel: in a swing or shuffle style, off-beat eighths land late (at two
+  thirds of the beat for a full swing), as they're played, not as written.
 
 Everything comes from a seed, so the same song and seed give the same MIDI.
 """
@@ -141,8 +143,55 @@ def phrase_arc(x: float) -> float:
     return 1.08 - 0.18 * (x - 0.6) / 0.4
 
 
+def swing_notes(notes: list[Note], shape: Shape, ratio: float) -> int:
+    """Move off-beat eighths (starts and ends) to `ratio` of the beat; returns how many notes moved."""
+    if ratio <= 0.5 + 1e-6 or shape.beat_q != 1.0:
+        return 0
+    delay = round((ratio - 0.5) * shape.tpq)
+
+    def swung(tick: int) -> int:
+        _, pos = shape.where(tick)
+        return tick + delay if abs(pos % 1.0 - 0.5) < 0.01 else tick
+    moved = 0
+    for n in notes:
+        start, end = swung(n.start), swung(n.end)
+        moved += start != n.start
+        n.start, n.end = start, max(start + 1, end)
+    return moved
+
+
+def write(mid: mido.MidiFile, notes: list[Note], others, midi_out: Path, extra=None) -> None:
+    """Write notes and every other event back out, track by track; `extra` adds events per track."""
+    out = mido.MidiFile(type=mid.type, ticks_per_beat=mid.ticks_per_beat)
+    for ti in range(len(mid.tracks)):
+        events: list[tuple[int, int, mido.Message]] = [(t, 0, msg) for t, msg in others[ti]]
+        if extra:
+            events = extra(ti, events)
+        for n in notes:
+            if n.track == ti:
+                events.append((n.start, 2, mido.Message("note_on", channel=n.channel, note=n.pitch, velocity=n.velocity)))
+                events.append((n.end, 0, mido.Message("note_off", channel=n.channel, note=n.pitch, velocity=n.off_velocity)))
+        events.sort(key=lambda e: (e[0], e[1]))
+        track, now = mido.MidiTrack(), 0
+        for t, _, msg in events:
+            track.append(msg.copy(time=t - now))
+            now = t
+        track.append(mido.MetaMessage("end_of_track", time=0))
+        out.tracks.append(track)
+    out.save(str(midi_out))
+
+
+def swing_only(midi_in: Path, midi_out: Path, meter: str, pickup_q: float, ratio: float) -> int:
+    """Just the feel, for `--plain`: swung eighths, nothing else changed."""
+    mid = mido.MidiFile(str(midi_in))
+    notes, others = read(mid)
+    moved = swing_notes(notes, shape_for(meter, float(pickup_q), mid.ticks_per_beat), ratio)
+    write(mid, notes, others, midi_out)
+    return moved
+
+
 def perform(midi_in: Path, midi_out: Path, meter: str, pickup_q: float = 0.0, seed: int = 1,
-            phrase_bars: int = PHRASE_BARS) -> dict:
+            phrase_bars: int = PHRASE_BARS, swing: float = 0.5) -> dict:
     """Write an expressive performance of `midi_in` to `midi_out`; returns what was done, for the report."""
     mid = mido.MidiFile(str(midi_in))
     tpq = mid.ticks_per_beat
@@ -152,6 +201,7 @@ def perform(midi_in: Path, midi_out: Path, meter: str, pickup_q: float = 0.0, se
         return {"notes": 0}
     rng = random.Random(seed)
     shape = shape_for(meter, float(pickup_q), tpq)
+    swung = swing_notes(notes, shape, swing)
     role = roles(mid, notes)
     tempos = [(t, m.tempo) for tr in others for t, m in tr if m.type == "set_tempo"]
     base_tempo = min(tempos)[1] if tempos else 500000              # microseconds per quarter
@@ -259,31 +309,18 @@ def perform(midi_in: Path, midi_out: Path, meter: str, pickup_q: float = 0.0, se
         tempo_events.append((rit_start + k * beat_ticks, round(base_tempo / factor)))
 
     # Writing
-    out = mido.MidiFile(type=mid.type, ticks_per_beat=tpq)
-    for ti in range(len(mid.tracks)):
-        events: list[tuple[int, int, mido.Message]] = []
-        for t, msg in others[ti]:
-            events.append((t, 0, msg))
+    def extra(ti, events):
         if ti == 0:
             events = [e for e in events if e[2].type != "set_tempo" or e[0] < rit_start] + \
                      [(t, 0, mido.MetaMessage("set_tempo", tempo=v)) for t, v in tempo_events]
         if piano_tracks and ti == pedal_track:
             events += [(t, 1, mido.Message("control_change", channel=pedal_channel, control=64, value=v))
                        for t, v in pedal]
-        for n in notes:
-            if n.track == ti:
-                events.append((n.start, 2, mido.Message("note_on", channel=n.channel, note=n.pitch, velocity=n.velocity)))
-                events.append((n.end, 0, mido.Message("note_off", channel=n.channel, note=n.pitch, velocity=n.off_velocity)))
-        events.sort(key=lambda e: (e[0], e[1]))
-        track, now = mido.MidiTrack(), 0
-        for t, _, msg in events:
-            track.append(msg.copy(time=t - now))
-            now = t
-        track.append(mido.MetaMessage("end_of_track", time=0))
-        out.tracks.append(track)
-    out.save(str(midi_out))
+        return events
+    write(mid, notes, others, midi_out, extra)
     return {"notes": len(notes), "seed": seed, "phrases": n_phrases, "pedal_changes": len(pedal) // 2,
-            "ritardando_bars": rit_bars, "timing_ms": max(SIGMA_MS.values()) * 2.5 + MELODY_LEAD_MS}
+            "ritardando_bars": rit_bars, "timing_ms": max(SIGMA_MS.values()) * 2.5 + MELODY_LEAD_MS,
+            "swing": swing if swung else 0.5, "swung_notes": swung}
 
 
 def pickup_of(song) -> Fraction:

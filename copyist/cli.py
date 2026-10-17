@@ -50,9 +50,13 @@ def cmd_build(args) -> int:
     midi = engrave.write_midi(band.performance(), out / f"{song.slug}.mid")
     made.append(midi)
     performed = None
+    from . import perform, styles
+    swing = styles.get(band.style).swing if styles.get(band.style) else 0.5
     if not args.plain:
-        from . import perform
-        performed = perform.perform(midi, midi, song.meter, float(perform.pickup_of(song)), seed=args.seed)
+        performed = perform.perform(midi, midi, song.meter, float(perform.pickup_of(song)), seed=args.seed,
+                                    swing=swing)
+    elif swing > 0.5:
+        perform.swing_only(midi, midi, song.meter, float(perform.pickup_of(song)), swing)
 
     audio_note = None
     audio = None
@@ -84,6 +88,9 @@ def cmd_build(args) -> int:
                   f"the piano pedals {performed['pedal_changes']} times with the harmony, and the last "
                   f"{performed['ritardando_bars']} bars slow down into a ringing final chord. Every note is the "
                   "written one. `--plain` writes the MIDI exactly on the grid instead."]
+        if performed.get("swing", 0.5) > 0.5:
+            extra.append(f"The eighths swing, as the style asks: an off-beat eighth lands {performed['swing']:.0%} "
+                         "of the way through its beat, not halfway.")
     if audio:
         extra += ["", "## Audio", ""] + audio.report_lines()
     if audio_note:
@@ -263,6 +270,51 @@ def cmd_models(args) -> int:
     return 0
 
 
+def cmd_gallery(args) -> int:
+    """The song in every style that fits its meter, as audio, to choose a style by ear."""
+    from . import gallery
+    song = load_song(args.song)
+    only = [s.strip() for s in args.styles.split(",")] if args.styles else None
+
+    def progress(done, total, name):
+        if name:
+            print(f"[{done + 1}/{total}] {name}", flush=True)
+    entries = gallery.build(song, Path(args.out), Path(args.cache), seed=args.seed, only=only, progress=progress)
+    folder = Path(args.out) / song.slug / "gallery"
+    for e in entries:
+        print(f"  {e['name']}: {folder / e['file']} ({e['tempo']} BPM, {e['engine']})")
+    if not entries:
+        print(f"No style plays {song.meter} yet.")
+    return 0
+
+
+def cmd_use_style(args) -> int:
+    """Set a song's style (and tempo), then write the score again."""
+    from . import styles
+    from .song import set_style
+    song = load_song(args.song)
+    style = styles.get(args.style)
+    if not style:
+        print(f"There's no style called {args.style!r}; `copyist styles` lists them.", file=sys.stderr)
+        return 2
+    if song.meter not in style.meters:
+        print(f"{style.name} has no pattern for {song.meter}; it plays {', '.join(style.meters)}.", file=sys.stderr)
+        return 2
+    set_style(Path(args.song), style.id, args.tempo)
+    print(f"{song.title} is now in the {style.name} style" + (f" at {args.tempo:g} BPM." if args.tempo else "."))
+    if args.no_build:
+        return 0
+    return cmd_build(argparse.Namespace(song=args.song, out=args.out, cache=args.cache, no_audio=False,
+                                        plain=False, seed=1, images=False))
+
+
+def styles_list(args) -> int:
+    from . import styles
+    for s in sorted(styles.catalog().values(), key=lambda s: (styles.FAMILIES.index(s.family), s.name)):
+        print(f"{s.id:18} {s.name} ({s.family}; {', '.join(s.meters)}; {s.feel})")
+    return 0
+
+
 def cmd_voice(args) -> int:
     """Make a SoulX-Singer voice from a recording of one person singing."""
     from . import voiceprompt
@@ -351,6 +403,26 @@ def main(argv: list[str] | None = None) -> int:
     sv.add_argument("--machine", action="store_true", help="print one JSON line with the URL first (for the desktop app)")
     sv.add_argument("--demo", action="store_true", help="give an empty library a demo song")
     sv.set_defaults(func=cmd_serve)
+
+    ga = sub.add_parser("gallery", help="play a song in every style that fits its meter (docs/styles.md)")
+    ga.add_argument("song", help="path to a song file (.yaml)")
+    ga.add_argument("--styles", help="only these styles, comma-separated (see `copyist styles`)")
+    ga.add_argument("--out", default="out", help="output folder (default: out)")
+    ga.add_argument("--cache", default=".cache")
+    ga.add_argument("--seed", type=int, default=1, help="seed for the performance (default 1)")
+    ga.set_defaults(func=cmd_gallery)
+
+    us = sub.add_parser("use-style", help="set a song's style (and tempo) and write the score again")
+    us.add_argument("song", help="path to a song file (.yaml)")
+    us.add_argument("style", help="a style id (see `copyist styles`)")
+    us.add_argument("--tempo", type=float, help="the new tempo, in beats a minute")
+    us.add_argument("--no-build", action="store_true", help="only change the song file")
+    us.add_argument("--out", default="out")
+    us.add_argument("--cache", default=".cache")
+    us.set_defaults(func=cmd_use_style)
+
+    st = sub.add_parser("styles", help="list the styles Copyist can arrange in")
+    st.set_defaults(func=styles_list)
 
     md = sub.add_parser("models", help="list the downloadable models, or download some (docs/desktop-app.md)")
     md.add_argument("what", nargs="?", choices=("list", "download"), default="list")

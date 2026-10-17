@@ -1,9 +1,9 @@
 """Arrangement templates (SPEC.md section 7).
 
-M1 ships one template, `band`: voice, piano (grand staff) and bass guitar,
-following a style pattern. Patterns are data: per role, a list of
-(start, length) in quarter notes within a full bar, plus which chord tone to
-play. Chord changes inside a pattern note split it, so the accompaniment
+M1 ships one template, `band`: voice, piano (grand staff), bass and drums,
+following a style. Styles are data files (copyist/styles/, docs/styles.md):
+per part, a list of (start, length, what to play) in quarter notes within a
+full bar. Chord changes inside a pattern note split it, so the accompaniment
 always matches the chord symbols.
 """
 from __future__ import annotations
@@ -11,40 +11,19 @@ from __future__ import annotations
 import copy
 from dataclasses import dataclass
 
-from music21 import (chord, clef, harmony, instrument, interval, key, layout, meter, note,
+from music21 import (chord, clef, expressions, harmony, instrument, interval, key, layout, meter, note,
                      pitch, stream, tempo)
 
-from . import drums
+from . import drums, styles
 from .song import INSTRUMENTS, Song
-
-# Each pattern: role -> list of (start, length, tone). Starts and lengths are
-# in quarter notes from the start of a full bar. Tones: "chord", "root", "fifth".
-STYLES: dict[str, dict] = {
-    "waltz": {
-        "meter": "3/4",
-        "rh": [(1, 1, "chord"), (2, 1, "chord")],
-        "lh": [(0, 1, "root")],
-        "bass": [(0, 2, "root"), (2, 1, "fifth")],
-    },
-    "ballad": {
-        "meter": "4/4",
-        "rh": [(0, 4, "chord")],
-        "lh": [(0, 4, "root")],
-        "bass": [(0, 2, "root"), (2, 2, "fifth")],
-    },
-    "straight": {
-        "meter": "4/4",
-        "rh": [(0, 1, "chord"), (1, 1, "chord"), (2, 1, "chord"), (3, 1, "chord")],
-        "lh": [(0, 2, "root"), (2, 2, "root")],
-        "bass": [(0, 1, "root"), (1, 1, "fifth"), (2, 1, "root"), (3, 1, "fifth")],
-    },
-}
-DEFAULT_STYLE_FOR_METER = {"3/4": "waltz", "4/4": "ballad"}
 
 # Ranges as MIDI numbers.
 RH_LOW, RH_TOP_MAX = pitch.Pitch("G3").midi, pitch.Pitch("D5").midi
 LH_LOW, LH_HIGH = pitch.Pitch("E2").midi, pitch.Pitch("D#3").midi
 BASS_WRITTEN_LOW, BASS_WRITTEN_HIGH = pitch.Pitch("E2").midi, pitch.Pitch("D3").midi  # sounds an octave lower
+
+SHELL_LOW = pitch.Pitch("E3").midi
+WALK_LOW, WALK_HIGH = pitch.Pitch("E2").midi, pitch.Pitch("A3").midi  # written; sounds an octave lower
 
 VELOCITY = {"voice": 100, "rh": 58, "lh": 64, "bass": 80}
 PROGRAM = {"voice": 53, "piano": 0, "bass": 33}  # GM: Voice Oohs, Acoustic Grand, Fingered Bass
@@ -72,15 +51,19 @@ class Arrangement:
 
 
 def pattern_for(song: Song) -> tuple[str, dict, list[str]]:
+    """(style id, what each part plays in one bar, notes for the report)."""
     notes = []
-    style = song.style or DEFAULT_STYLE_FOR_METER.get(song.meter)
-    if style in STYLES and STYLES[style]["meter"] == song.meter:
-        return style, STYLES[style], notes
-    full = meter.TimeSignature(song.meter).barDuration.quarterLength
-    if style:
-        notes.append(f"Style {style!r} has no pattern for {song.meter}; used whole-bar chords instead.")
-    generic = {"meter": song.meter, "rh": [(0, full, "chord")], "lh": [(0, full, "root")],
-               "bass": [(0, full, "root")]}
+    style_id = song.style or styles.default_for(song.meter)
+    style = styles.get(style_id)
+    if style and style.pattern(song.meter):
+        return style_id, style.pattern(song.meter), notes
+    full = float(meter.TimeSignature(song.meter).barDuration.quarterLength)
+    if style_id and not style:
+        notes.append(f"There's no style called {style_id!r}; used whole-bar chords instead.")
+    elif style_id:
+        notes.append(f"Style {style_id!r} has no pattern for {song.meter}; used whole-bar chords instead.")
+    generic = {"rh": [(0, full, "chord")], "lh": [(0, full, "root")], "bass": [(0, full, "root")],
+               "drums": None}
     return "generic", generic, notes
 
 
@@ -170,12 +153,42 @@ def choose_voicing(cs: harmony.ChordSymbol, previous: list[pitch.Pitch] | None) 
     return min(options, key=movement)
 
 
-def tone(cs: harmony.ChordSymbol, which: str, low: int, high: int) -> pitch.Pitch:
-    root = cs.bass() if which == "root" else cs.root()  # slash chords: the bass note
+def chord_tone(cs: harmony.ChordSymbol, which: str) -> pitch.Pitch:
+    """A chord tone by name; a 7th that isn't in the chord is the minor 7th (the blues 7th)."""
+    root = cs.root()
+    if which == "root":
+        return cs.bass()                     # slash chords: the bass note
+    if which == "third":
+        return cs.getChordStep(3) or root.transpose("M3")
     if which == "fifth":
-        fifth = cs.getChordStep(5) or root.transpose("P5")
-        return place(fifth, low, high)
-    return place(root, low, high)
+        return cs.getChordStep(5) or root.transpose("P5")
+    if which == "sixth":
+        return root.transpose("M6")
+    if which == "seventh":
+        return cs.getChordStep(7) or root.transpose("m7")
+    return root
+
+
+def tone(cs: harmony.ChordSymbol, which: str, low: int, high: int,
+         next_cs: harmony.ChordSymbol | None = None) -> pitch.Pitch:
+    if which == "octave":
+        return place(cs.bass(), low, high).transpose(12)
+    if which == "approach":
+        target = place((next_cs or cs).bass(), low + 1, high + 1)
+        return target.transpose(-1)          # a half step below the next chord's root
+    return place(chord_tone(cs, which), low, high)
+
+
+def shell(cs: harmony.ChordSymbol) -> list[pitch.Pitch]:
+    """The 3rd and the 7th (the 6th on a plain major chord): the two notes that say what a chord is."""
+    third = cs.getChordStep(3) or cs.root().transpose("M3")
+    seventh = cs.getChordStep(7)
+    if seventh is None:
+        minor = third.midi % 12 == (cs.root().midi + 3) % 12
+        seventh = cs.root().transpose("m7" if minor else "M6")
+    low = place(third, SHELL_LOW, SHELL_LOW + 11)
+    high = place(seventh, low.midi + 1, low.midi + 12)
+    return [low, high]
 
 
 # ---------------------------------------------------------------- building parts
@@ -227,15 +240,22 @@ def build_role(song: Song, role: str, pattern: list, timeline, velocity: int) ->
             if off > t + 1e-9:
                 m.insert(t, note.Rest(quarterLength=off - t))
             cs = chord_at(timeline, start_abs + off)
+            next_cs = chord_at(timeline, start_abs + off + dur)
             if cs is None:
                 el = note.Rest(quarterLength=dur)
+            elif role == "rh" and which == "shell":
+                el = chord.Chord(shell(cs), quarterLength=dur)
             elif role == "rh":
                 previous_voicing = choose_voicing(cs, previous_voicing)
-                el = chord.Chord(previous_voicing, quarterLength=dur)
+                if which.startswith("arp"):
+                    ordered = sorted(previous_voicing, key=lambda q: q.midi)
+                    el = note.Note(ordered[(int(which[3:]) - 1) % len(ordered)], quarterLength=dur)
+                else:
+                    el = chord.Chord(previous_voicing, quarterLength=dur)
             elif role == "lh":
-                el = note.Note(tone(cs, which, LH_LOW, LH_HIGH), quarterLength=dur)
+                el = note.Note(tone(cs, which, LH_LOW, LH_HIGH, next_cs), quarterLength=dur)
             else:
-                el = note.Note(tone(cs, which, BASS_WRITTEN_LOW, BASS_WRITTEN_HIGH), quarterLength=dur)
+                el = note.Note(tone(cs, which, BASS_WRITTEN_LOW, BASS_WRITTEN_HIGH, next_cs), quarterLength=dur)
             if not isinstance(el, note.Rest):
                 el.volume.velocity = velocity
             m.insert(off, el)
@@ -246,6 +266,125 @@ def build_role(song: Song, role: str, pattern: list, timeline, velocity: int) ->
             m.rightBarline = copy.deepcopy(mb.rightBarline)
         bars.append(m)
     return bars
+
+
+WALK_PLANS = {1: [["root"]], 2: [["root", "approach"]],
+              3: [["root", "third", "approach"], ["root", "fifth", "approach"]],
+              4: [["root", "third", "fifth", "approach"], ["root", "fifth", "sixth", "approach"]]}
+
+
+def walk_bars(song: Song, timeline, velocity: int) -> list[stream.Measure]:
+    """A walking bass, a note a beat. Each stretch of one chord starts on its root, climbs
+    through chord tones (3rd and 5th, or 5th and 6th, alternating so it doesn't repeat itself),
+    and ends a half step from the next root; every note sits in the octave nearest the last."""
+    melody_bars = list(song.melody.getElementsByClass(stream.Measure))
+    full = melody_bars[0].barDuration.quarterLength
+    beat = float(meter.TimeSignature(song.meter).beatDuration.quarterLength)
+    previous = None
+    bars = []
+    stretch = 0
+    for i, mb in enumerate(melody_bars):
+        lo, hi, length = bar_window(mb, full, first=i == 0)
+        start_abs = float(mb.getOffsetInHierarchy(song.melody))
+        m = stream.Measure(number=mb.number)
+        m.paddingLeft = mb.paddingLeft
+        if i == len(melody_bars) - 1:                       # the last bar: the root, held
+            cs = chord_at(timeline, start_abs)
+            if cs is None:
+                m.insert(0, note.Rest(quarterLength=length))
+            else:
+                el = note.Note(near(chord_tone(cs, "root"), previous), quarterLength=length)
+                el.volume.velocity = velocity
+                m.insert(0, el)
+            bars.append(m)
+            continue
+        beats = [k * beat for k in range(int(round(length / beat)))]
+        groups: list[list[float]] = []
+        for b in beats:
+            if groups and same_chord(chord_at(timeline, start_abs + groups[-1][0]), chord_at(timeline, start_abs + b)):
+                groups[-1].append(b)
+            else:
+                groups.append([b])
+        for group in groups:
+            cs = chord_at(timeline, start_abs + group[0])
+            plans = WALK_PLANS[min(len(group), 4)]
+            plan = plans[stretch % len(plans)] + ["fifth"] * (len(group) - 4)
+            stretch += 1
+            for b, which in zip(group, plan):
+                if cs is None:
+                    m.insert(b, note.Rest(quarterLength=beat))
+                    continue
+                if which == "approach":
+                    after = chord_at(timeline, start_abs + b + beat) or cs
+                    target = near(chord_tone(after, "root"), previous)
+                    below, above = target.transpose(-1), target.transpose(1)
+                    p = min((below, above), key=lambda q: (previous is not None and q.midi == previous.midi,
+                                                           not WALK_LOW <= q.midi <= WALK_HIGH,
+                                                           abs(q.midi - previous.midi) if previous else 0))
+                else:
+                    p = near(chord_tone(cs, which), previous)
+                el = note.Note(p, quarterLength=beat)
+                el.volume.velocity = velocity
+                m.insert(b, el)
+                previous = p
+        if mb.rightBarline is not None:
+            m.rightBarline = copy.deepcopy(mb.rightBarline)
+        bars.append(m)
+    return bars
+
+
+def line_bars(song: Song, timeline, velocity: int, line: list[str], every: float) -> list[stream.Measure]:
+    """A bass line of chord tones climbing from the root, one every `every` quarters (a boogie,
+    octaves): the root low in the bass's range, the other tones above it."""
+    melody_bars = list(song.melody.getElementsByClass(stream.Measure))
+    full = melody_bars[0].barDuration.quarterLength
+    bars = []
+    for i, mb in enumerate(melody_bars):
+        lo, hi, length = bar_window(mb, full, first=i == 0)
+        start_abs = float(mb.getOffsetInHierarchy(song.melody))
+        m = stream.Measure(number=mb.number)
+        m.paddingLeft = mb.paddingLeft
+        t, k = 0.0, 0
+        while k * every < hi - 1e-9:
+            s = k * every
+            if s >= lo - 1e-9:
+                at = start_abs + s - lo
+                cs = chord_at(timeline, at)
+                dur = min(every, hi - s)
+                if cs is None:
+                    el = note.Rest(quarterLength=dur)
+                else:
+                    root = place(cs.bass(), BASS_WRITTEN_LOW, BASS_WRITTEN_LOW + 11)
+                    which = line[k % len(line)]
+                    if which == "octave":
+                        p = root.transpose(12)
+                    else:
+                        p = place(chord_tone(cs, which), root.midi, root.midi + 11)
+                    el = note.Note(p, quarterLength=dur)
+                    el.volume.velocity = velocity
+                m.insert(s - lo, el)
+            k += 1
+        if mb.rightBarline is not None:
+            m.rightBarline = copy.deepcopy(mb.rightBarline)
+        bars.append(m)
+    return bars
+
+
+def same_chord(a, b) -> bool:
+    return a is not None and b is not None and a.figure == b.figure
+
+
+def near(p: pitch.Pitch, previous: pitch.Pitch | None) -> pitch.Pitch:
+    """p in the walking range, in the octave closest to the previous note."""
+    if previous is None:
+        return place(p, WALK_LOW, WALK_LOW + 11)
+    options = []
+    for octave in range(1, 5):
+        q = copy.deepcopy(p)
+        q.octave = octave
+        if WALK_LOW <= q.midi <= WALK_HIGH:
+            options.append(q)
+    return min(options, key=lambda q: abs(q.midi - previous.midi)) if options else place(p, WALK_LOW, WALK_HIGH)
 
 
 def start_bar(m: stream.Measure, song: Song, the_clef) -> None:
@@ -328,19 +467,28 @@ def arrange_band(song: Song) -> Arrangement:
         parts["piano"] = single(rh, lh, group=True)
         add_chord_symbols(parts["piano"].parts[0], timeline)  # chords above the right hand
 
-    if "bass" in wanted:
+    if "bass" in wanted and pat["bass"] == "none":
+        notes.append(f"The {style} style has no bass, so there's no bass part.")
+    elif "bass" in wanted:
         bass = new_part(stream.Part, "Bass", instrument.ElectricBass(), PROGRAM["bass"])
         bass.getElementsByClass(instrument.Instrument).first().transposition = interval.Interval("-P8")
         bass.atSoundingPitch = False
-        bars = build_role(song, "bass", pat["bass"], timeline, VELOCITY["bass"])
+        if pat["bass"] == "walk":
+            bars = walk_bars(song, timeline, VELOCITY["bass"])
+        elif isinstance(pat["bass"], dict):
+            bars = line_bars(song, timeline, VELOCITY["bass"], pat["bass"]["line"], pat["bass"]["every"])
+        else:
+            bars = build_role(song, "bass", pat["bass"], timeline, VELOCITY["bass"])
         start_bar(bars[0], song, clef.BassClef())
         for m in bars:
             bass.append(m)
         order.append(bass)
         parts["bass"] = single(bass, chords=True)
 
-    if "drums" in wanted:
-        kit, kit_perf = drums.build(song, style, bar_window)
+    if "drums" in wanted and pat.get("drums") == "none":
+        notes.append(f"The {style} style has no drums, so there's no drum part.")
+    elif "drums" in wanted:
+        kit, kit_perf = drums.build(song, pat.get("drums"), bar_window)
         order.append(kit)
         perf_extra.append(kit_perf)
         parts["drums"] = single(kit)
@@ -349,8 +497,24 @@ def arrange_band(song: Song) -> Arrangement:
         full.insert(0, part)
     if order:
         add_tempo(full, song)
-    excluded = [i for i in INSTRUMENTS if i not in wanted]
-    return Arrangement(style, full, parts, notes, list(wanted), excluded, perf_extra)
+    feel = styles.get(style).feel if styles.get(style) else "straight"
+    if feel != "straight":
+        for s in [full, *parts.values()]:
+            mark_feel(s, feel)
+    excluded = [i for i in INSTRUMENTS if i not in parts]
+    return Arrangement(style, full, parts, notes, [i for i in wanted if i in parts], excluded, perf_extra)
+
+
+def mark_feel(s: stream.Score, feel: str) -> None:
+    """"Swing" or "Shuffle" over the first bar of the top staff: play the eighths long-short."""
+    if not s.parts:
+        return
+    first = s.parts[0].getElementsByClass(stream.Measure).first()
+    if first is not None:
+        text = expressions.TextExpression(feel.title())
+        text.style.fontStyle = "bold"
+        text.placement = "above"
+        first.insert(0, text)
 
 
 def add_tempo(s: stream.Score, song: Song) -> None:

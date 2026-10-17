@@ -1,0 +1,16 @@
+format: copyist-style/0
+name: Celtic jig
+family: Country and folk
+about: A lively jig in two. Bass and left hand on the big beats, quick chords after them, toms standing in for a bodhrán.
+tempo: [96, 132]
+instruments: {bass: upright-bass}
+production: lively Celtic jig, fiddle, tin whistle, bodhran, acoustic guitar, Irish folk, dancing
+meters:
+  "6/8":
+    rh: [[1, 0.5, chord], [2.5, 0.5, chord]]
+    lh: [[0, 1, root], [1.5, 1, fifth]]
+    bass: [[0, 1.5, root], [1.5, 1.5, fifth]]
+    drums:
+      hands: [[0, 0.5, [floor-tom]], [0.5, 0.5, [tom]], [1, 0.5, [tom]], [1.5, 0.5, [floor-tom]], [2, 0.5, [tom]], [2.5, 0.5, [tom]]]
+      feet: []
+      fill: [[1.5, 0.5, [floor-tom]], [2, 0.5, [floor-tom]], [2.5, 0.5, [tom]]]

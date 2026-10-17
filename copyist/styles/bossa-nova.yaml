@@ -1,0 +1,17 @@
+format: copyist-style/0
+name: Bossa nova
+family: Latin and Caribbean
+about: Cool and gentle. The bass plays root and fifth in the bossa rhythm, the piano comps on the syncopations, side-stick and soft hi-hat.
+tempo: [112, 144]
+instruments: {bass: upright-bass}
+production: bossa nova, nylon-string guitar, soft brushed drums, upright bass, gentle, Brazilian, cool and relaxed
+meters:
+  "4/4":
+    rh: [[0, 1, chord], [1.5, 1.5, chord], [3.5, 0.5, chord]]
+    lh: []
+    bass: [[0, 1.5, root], [1.5, 0.5, fifth], [2, 1.5, fifth], [3.5, 0.5, root]]
+    drums:
+      hands: [[0, 0.5, [hihat, sidestick]], [0.5, 0.5, [hihat]], [1, 0.5, [hihat]], [1.5, 0.5, [hihat, sidestick]],
+              [2, 0.5, [hihat]], [2.5, 0.5, [hihat]], [3, 0.5, [hihat, sidestick]], [3.5, 0.5, [hihat]]]
+      feet: [[0, 1.5, [kick]], [1.5, 0.5, [kick]], [2, 1.5, [kick]], [3.5, 0.5, [kick]]]
+      fill: [[3, 0.5, [sidestick]], [3.5, 0.5, [sidestick]]]

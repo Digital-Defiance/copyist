@@ -174,6 +174,22 @@ class WebTests(unittest.TestCase):
         self.assertEqual([(p["part"], p["path"]) for p in band["parts"]],
                          [("piano", "out/amazing-grace/stems/piano.wav"), ("bass", None)])   # no bass stem on disk
 
+    def test_styles_for_the_songs_meter_and_the_actions_that_use_them(self):
+        from copyist.web.server import job_args
+        song = json.loads(self.request("GET", "/api/songs/amazing-grace")[1])
+        self.assertIn("waltz", [s["id"] for s in song["styles"]])
+        self.assertNotIn("rock", [s["id"] for s in song["styles"]])              # rock is 4/4; this is 3/4
+        self.assertEqual(song["style_in_use"], "waltz")
+        project = self.server.RequestHandlerClass.project
+        self.assertEqual(job_args(project, {"action": "gallery", "song": "amazing-grace"})[2],
+                         ["gallery", "songs/amazing-grace.yaml"])
+        self.assertEqual(job_args(project, {"action": "use-style", "song": "amazing-grace", "style": "hymn",
+                                            "tempo": 72})[2],
+                         ["use-style", "songs/amazing-grace.yaml", "hymn", "--tempo", "72"])
+        for bad in ({"style": "rock"}, {"style": "no-such-style"}, {"style": "hymn", "tempo": 900}):
+            with self.assertRaises(ValueError):
+                job_args(project, {"action": "use-style", "song": "amazing-grace", **bad})
+
     def test_an_instrument_download_needs_no_licence_box(self):
         from copyist import instruments
 

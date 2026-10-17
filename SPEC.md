@@ -88,7 +88,8 @@ tempo: 80              # quarter notes per minute, or an ABC tempo string like "
 voice:
   name: Melody
   range: [D4, E5]      # optional; the range check uses it
-style: waltz           # optional; picks the arrangement pattern (see section 7)
+  clef: treble         # optional: treble (default), treble-8vb or bass
+style: waltz           # optional; a style from copyist/styles/ (section 8.2, docs/styles.md); default by meter
 instruments: [voice, piano, bass, drums]   # optional; default all four. Left out = no part at all
 melody: |
   D | "G"G2 B/G/ | B2 A | "C"G2 E | "G"D2 D |
@@ -158,7 +159,7 @@ Planned: `breath` (singers get a breath at least every N bars), `tessitura` (whe
 
 Arrangement templates are data, not code: a list of instruments with ranges, clefs, transpositions and patterns per `style`.
 
-M1 template **band** (instruments chosen by the song file's `instruments`; anything left out gets no part and is never heard):
+M1 template **band** (instruments chosen by the song file's `instruments`; anything left out gets no part and is never heard). What each part plays comes from the song's style, a data file (section 8.2, docs/styles.md); there are 23 styles, from waltz, hymn and lullaby to swing, bossa nova, reggae, disco and Broadway. The three original patterns, as examples:
 
 - **Voice**: the melody and lyrics.
 - **Piano**: right hand plays close-position chords between G3 and D5, choosing each voicing to move as little as possible from the last (for chords bigger than a triad: root, 3rd and 7th, dropping the 5th); left hand plays the root between E2 and D♯3. Pattern by style (`waltz`: bass on 1, chords on 2 and 3; `ballad`: whole-bar chords; `straight`: chords on every beat). A chord change inside a pattern note splits it.
@@ -202,12 +203,15 @@ Rules:
 
 ### 8.2 Style profiles
 
-A style is a data file in `styles/`, not an adjective in a prompt. Each profile defines:
+A style is a data file in `copyist/styles/` (format `copyist-style/0`, docs/styles.md), not an adjective in a prompt. Copyist aims to arrange in as many styles as can be written as correct scores in twelve-note notation: everyone's music, from music boxes to Broadway, gospel, bluegrass and synth pop. Music built on notes between the piano keys (maqam, raga) and rap verses are out of scope for now.
+
+**Today** a style file gives: its name, family and description; its feel (straight, swing or shuffle, which the performance plays); its usual tempo range; which instrument plays each part; the words YuE2 gets for a finished take; and, for every meter it supports, what each part plays in one bar (chords, shells, arpeggios, chord tones, a walking or boogie bass, drum grooves and fills). `copyist gallery` plays a song in every style for its meter so a style can be chosen by ear, and `copyist use-style` switches a song to one.
+
+**In time**, each profile also defines:
 
 - harmony: typical chord vocabulary and progressions, how often chords change, cadences;
-- rhythm feel: straight, swing, shuffle, two-beat, train beat; tempo range;
 - melody habits: range and tessitura, rhythmic density, syncopation, typical intervals, how phrases end;
-- instrument palette: default instruments, optional ones, and what each one plays (patterns, voicings, fills);
+- the ensemble: more parts than piano, bass and drums (organ, guitars, strings, brass and reeds, a choir), default and optional instruments, and what each one plays;
 - form conventions: intro and outro shapes, typical section lengths.
 
 The arranger only plays what the profile and brief allow. New profiles can be drafted by an LLM from a description and reference notes, then reviewed by a person before use. Profiles describe conventions; they never copy specific songs.
@@ -295,7 +299,7 @@ Only transcribe recordings the user owns or has rights to. The fitted score of s
 
 ## 13. In a browser
 
-`copyist serve` (docs/web.md) is a local web page for everything above: the songs, their lyrics and checks, the score as pages, every take with a player, making a new take (voice, strength, verses, seed, style), checking a take's melody, the band playing the score (with each part, its instrument and its stem, and a download for the instruments), and the progress of a voice training run. It runs the same `copyist` commands, one at a time, on the machine with the GPU, listens on 127.0.0.1 only, and loads nothing from the internet. Choices are made by listening and pressing buttons; nothing on the page needs musical skills.
+`copyist serve` (docs/web.md) is a local web page for everything above: the songs, their lyrics and checks, the score as pages, every take with a player, making a new take (voice, strength, verses, seed, style), checking a take's melody, the band playing the score (with each part, its instrument and its stem, and a download for the instruments), and the progress of a voice training run. It also plays the song in every style that fits it and switches the song to the one you pick. It runs the same `copyist` commands, one at a time, on the machine with the GPU, listens on 127.0.0.1 only, and loads nothing from the internet. Choices are made by listening and pressing buttons; nothing on the page needs musical skills.
 
 The plan is for this page to become a free desktop app (Tauri, with the engine and yue2.cpp bundled, models downloaded on first run), so anyone can make songs on their own computer: docs/desktop-app.md.
 

@@ -7,7 +7,7 @@ from fractions import Fraction
 from pathlib import Path
 
 import yaml
-from music21 import converter, key as m21key, metadata, pitch, stream
+from music21 import clef, converter, key as m21key, metadata, pitch, stream
 
 from . import lyrics as lyr
 
@@ -106,6 +106,22 @@ def number_bars(part: stream.Part) -> None:
         m.number = start + i
 
 
+CLEFS = {"treble": clef.TrebleClef, "treble-8vb": clef.Treble8vbClef, "bass": clef.BassClef}
+
+
+def set_clef(part: stream.Part, name: str, path: Path) -> None:
+    """The voice's clef: treble unless the song file says otherwise (music21 would guess from the
+    notes, and put a low melody in the bass clef)."""
+    if name not in CLEFS:
+        raise SongError(f"{path.name}: voice clef {name!r} should be one of {', '.join(CLEFS)}.")
+    first = part.getElementsByClass(stream.Measure).first()
+    if first is None:
+        return
+    for c in list(first.recurse().getElementsByClass(clef.Clef)):
+        c.activeSite.remove(c)
+    first.insert(0, CLEFS[name]())
+
+
 def build_abc(data: dict) -> str:
     tempo = data.get("tempo", 90)
     tempo = f"1/4={tempo}" if isinstance(tempo, (int, float)) else str(tempo)
@@ -166,6 +182,7 @@ def load_song(path: str | Path) -> Song:
     part = score.parts[0]
     # No instrument name on a lead sheet; arrangements name their parts.
     part.partName = None
+    set_clef(part, str(voice.get("clef", "treble")), path)
     number_bars(part)
 
     instruments = data.get("instruments") or list(INSTRUMENTS)
@@ -202,3 +219,37 @@ def load_song(path: str | Path) -> Song:
         lyric_fits=fits,
         pronunciations={str(k): str(v) for k, v in (data.get("pronunciations") or {}).items()},
     )
+
+
+def set_style(path: Path, style: str, beat_bpm: float | None = None) -> None:
+    """Change a song file's `style:` (and, if given, its tempo, in beats a minute), leaving every
+    other line, comment and spacing as it was."""
+    from music21 import meter as m21meter
+    text = path.read_text(encoding="utf-8")
+    data = yaml.safe_load(text)
+    lines = text.splitlines(keepends=True)
+    style_line = f"style: {style}\n"
+    at = next((i for i, l in enumerate(lines) if re.match(r"style\s*:", l)), None)
+    if at is not None:
+        lines[at] = style_line
+    else:
+        after = next((i for i, l in enumerate(lines) if re.match(r"(tempo|meter)\s*:", l)), len(lines) - 1)
+        lines.insert(after + 1, style_line)
+    if beat_bpm:
+        beat_ql = float(m21meter.TimeSignature(str(data["meter"])).beatDuration.quarterLength)
+        tempo = data.get("tempo", 90)
+        if isinstance(tempo, (int, float)):
+            new = f"tempo: {round(beat_bpm * beat_ql)}\n"
+        else:
+            unit, _, _ = str(tempo).partition("=")
+            num, _, den = unit.partition("/")
+            unit_ql = 4 * int(num) / int(den or 1)
+            new = f'tempo: "{unit}={round(beat_bpm * beat_ql / unit_ql)}"\n'
+        at = next((i for i, l in enumerate(lines) if re.match(r"tempo\s*:", l)), None)
+        if at is not None:
+            lines[at] = new
+        else:
+            lines.insert(next(i for i, l in enumerate(lines) if re.match(r"meter\s*:", l)) + 1, new)
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    tmp.write_text("".join(lines), encoding="utf-8")
+    tmp.replace(path)

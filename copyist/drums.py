@@ -18,33 +18,25 @@ KIT = {
     "sidestick": ("C", 5, "x", 37, 70),
     "hihat": ("G", 5, "x", 42, 62),
     "crash": ("A", 5, "x", 49, 100),
+    "hihat-open": ("G", 5, "circle-x", 46, 70),
+    "hihat-pedal": ("D", 4, "x", 44, 60),
+    "ride": ("F", 5, "x", 51, 66),
+    "tom": ("E", 5, None, 45, 84),
+    "floor-tom": ("A", 4, None, 41, 86),
+    "tambourine": ("B", 5, "x", 54, 60),
+    "clap": ("D", 5, "x", 39, 80),
 }
 
-# Grooves: hands and feet as (start, length, pieces) within a full bar, in
-# quarter notes, plus a fill that replaces the end of the bar.
-GROOVES: dict[str, dict] = {
-    "waltz": {
-        "hands": [(0, 1, ["hihat"]), (1, 1, ["hihat", "sidestick"]), (2, 1, ["hihat", "sidestick"])],
-        "feet": [(0, 1, ["kick"])],
-        "fill": [(2, 0.5, ["snare"]), (2.5, 0.5, ["snare"])],
-    },
-    "ballad": {
-        "hands": [(i / 2, 0.5, ["hihat", "sidestick"] if i in (2, 6) else ["hihat"]) for i in range(8)],
-        "feet": [(0, 1, ["kick"]), (2, 1, ["kick"])],
-        "fill": [(2 + i / 2, 0.5, ["snare"]) for i in range(4)],
-    },
-    "straight": {
-        "hands": [(i / 2, 0.5, ["hihat", "snare"] if i in (2, 6) else ["hihat"]) for i in range(8)],
-        "feet": [(0, 1, ["kick"]), (1.5, 0.5, ["kick"]), (2, 1, ["kick"])],
-        "fill": [(2 + i / 4, 0.25, ["snare"]) for i in range(8)],
-    },
-}
+# Grooves come from the style (copyist/styles/): hands and feet as (start,
+# length, pieces) within a full bar, in quarter notes, plus a fill that
+# replaces the end of the bar.
 FILL_EVERY = 8  # bars
 
 
-def groove_for(style: str, ts: meter.TimeSignature) -> dict:
-    if style in GROOVES:
-        return GROOVES[style]
+def groove_for(spec: dict | None, ts: meter.TimeSignature) -> dict:
+    """The style's groove, or a plain one: the hi-hat on every beat, the kick on one."""
+    if spec:
+        return {k: [(s, d, list(pieces)) for s, d, pieces in spec[k]] for k in ("hands", "feet", "fill")}
     beats = ts.beatCount
     beat = ts.beatDuration.quarterLength
     return {
@@ -114,12 +106,12 @@ def voice_from(hits: list[Hit], length: float, stem: str, voice_id: str) -> stre
     return v
 
 
-def build(song, style: str, bar_window) -> tuple[stream.Part, stream.Part]:
-    """(notation part, performance part) for the drum kit."""
+def build(song, spec: dict | None, bar_window) -> tuple[stream.Part, stream.Part]:
+    """(notation part, performance part) for the drum kit, playing the style's groove (`spec`)."""
     melody_bars = list(song.melody.getElementsByClass(stream.Measure))
     ts = meter.TimeSignature(song.meter)
     full = ts.barDuration.quarterLength
-    groove = groove_for(style, ts)
+    groove = groove_for(spec, ts)
 
     notation = stream.Part()
     notation.partName, notation.partAbbreviation = "Drums", "Dr."

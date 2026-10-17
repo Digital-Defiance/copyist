@@ -1,0 +1,17 @@
+format: copyist-style/0
+name: Lullaby
+family: Children's
+about: Soft and rocking. The piano alone, a slow broken chord over a low root. No bass, no drums.
+tempo: [56, 80]
+production: gentle lullaby, soft piano, music box, celesta, warm strings, tender and quiet
+meters:
+  "3/4":
+    rh: [[0, 1, arp1], [1, 1, arp2], [2, 1, arp3]]
+    lh: [[0, 3, root]]
+    bass: none
+    drums: none
+  "6/8":
+    rh: [[0, 0.5, arp1], [0.5, 0.5, arp2], [1, 0.5, arp3], [1.5, 0.5, arp2], [2, 0.5, arp3], [2.5, 0.5, arp2]]
+    lh: [[0, 1.5, root], [1.5, 1.5, fifth]]
+    bass: none
+    drums: none

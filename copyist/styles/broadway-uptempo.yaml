@@ -1,0 +1,16 @@
+format: copyist-style/0
+name: Broadway uptempo
+family: Musical theatre
+about: A show tune in two. The bass walks root, third, fifth into the next chord, the piano plays oom-pah, snare on two and four.
+tempo: [112, 168]
+instruments: {bass: upright-bass}
+production: Broadway show tune, uptempo, theatrical, pit orchestra, brass, bright piano, energetic cast recording
+meters:
+  "4/4":
+    rh: [[1, 1, chord], [3, 1, chord]]
+    lh: [[0, 1, root], [2, 1, fifth]]
+    bass: [[0, 1, root], [1, 1, third], [2, 1, fifth], [3, 1, approach]]
+    drums:
+      hands: [[0, 1, [hihat]], [1, 1, [hihat, snare]], [2, 1, [hihat]], [3, 1, [hihat, snare]]]
+      feet: [[0, 1, [kick]], [2, 1, [kick]]]
+      fill: [[2, 0.5, [snare]], [2.5, 0.5, [tom]], [3, 0.5, [snare]], [3.5, 0.5, [floor-tom]]]

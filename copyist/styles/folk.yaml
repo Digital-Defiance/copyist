@@ -1,0 +1,13 @@
+format: copyist-style/0
+name: Folk
+family: Country and folk
+about: Fingerpicked. The left hand alternates root and fifth on the beats like a guitarist's thumb, the right hand picks chord tones between them. No drums.
+tempo: [80, 120]
+instruments: {bass: upright-bass}
+production: acoustic folk, fingerpicked acoustic guitar, upright bass, harmonica, warm and intimate, storytelling
+meters:
+  "4/4":
+    rh: [[0.5, 0.5, arp3], [1.5, 0.5, arp2], [2.5, 0.5, arp3], [3.5, 0.5, arp2]]
+    lh: [[0, 1, root], [1, 1, fifth], [2, 1, octave], [3, 1, fifth]]
+    bass: [[0, 2, root], [2, 2, fifth]]
+    drums: none

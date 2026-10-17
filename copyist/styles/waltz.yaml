@@ -1,0 +1,16 @@
+format: copyist-style/0
+name: Waltz
+family: Hymns and classical
+about: A gentle 3/4. The bass on one, the piano's chords on two and three.
+tempo: [72, 180]
+instruments: {bass: upright-bass}
+production: gentle 3/4 waltz, acoustic piano, soft strings, warm bass, light brushed drums, intimate and heartfelt
+meters:
+  "3/4":
+    rh: [[1, 1, chord], [2, 1, chord]]
+    lh: [[0, 1, root]]
+    bass: [[0, 2, root], [2, 1, fifth]]
+    drums:
+      hands: [[0, 1, [hihat]], [1, 1, [hihat, sidestick]], [2, 1, [hihat, sidestick]]]
+      feet: [[0, 1, [kick]]]
+      fill: [[2, 0.5, [snare]], [2.5, 0.5, [snare]]]

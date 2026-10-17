@@ -227,6 +227,33 @@ function bandSection(song) {
     ${body}${offer}<div class="job" data-job-panel="band"></div></section>`;
 }
 
+function stylesSection(song) {
+  if (!song.styles.length) return "";
+  const made = Object.fromEntries(song.gallery.map((g) => [g.style, g]));
+  const families = [...new Set(song.styles.map((s) => s.family))];
+  const n = song.styles.length;
+  const item = (s) => {
+    const g = made[s.id], current = s.id === song.style_in_use;
+    const feel = s.feel !== "straight" ? `, ${s.feel}` : "";
+    const action = current ? '<span class="tag">This song\'s style</span>'
+      : g ? `<button class="small" data-use="${esc(s.id)}" data-tempo="${g.tempo}">Use this style</button>` : "";
+    return `<li class="${current ? "current" : ""}"><div class="style-head"><h4>${esc(s.name)}</h4>
+        ${g ? `<span class="meta">${g.tempo} beats a minute${esc(feel)}</span>` : ""}${action}</div>
+      <p class="hint">${esc(s.about)}</p>
+      ${g ? `<audio controls preload="none" src="${fileUrl(g.path)}"></audio>` : ""}</li>`;
+  };
+  return `<section class="section-gap"><h2>Styles</h2>
+    <p class="hint">The same song in every style that fits its ${esc(song.meter)} time, each at a tempo that suits
+      it, played by the band. Listen, and use the one you like: the score and parts are written again in that style.</p>
+    <div class="actions"><button class="go" data-job="gallery" data-panel="styles">${song.gallery.length
+      ? "Play them all again" : `Hear it in all ${n} styles`}</button>
+      <span class="hint">A few seconds a style.</span></div>
+    <div class="job" data-job-panel="styles"></div>
+    ${families.map((f) => `<h3 class="family">${esc(f)}</h3>
+      <ul class="styles">${song.styles.filter((s) => s.family === f).map(item).join("")}</ul>`).join("")}
+  </section>`;
+}
+
 function soundTab(song) {
   const takes = song.recordings.filter((r) => r.kind === "take");
   const tests = song.recordings.filter((r) => r.kind !== "take" && r.kind !== "preview");
@@ -260,6 +287,7 @@ function soundTab(song) {
         : '<p class="hint">No takes yet. Choose a voice above and make the first one.</p>'}
     </section>
     ${bandSection(song)}
+    ${stylesSection(song)}
     ${tests.length ? `<section class="section-gap"><h2>Earlier tests</h2><ul class="recordings">${tests.map(testItem).join("")}</ul></section>` : ""}`;
 }
 
@@ -282,6 +310,10 @@ function testItem(r) {
 function wireSound(song) {
   const getBand = $("#get-band");
   if (getBand) getBand.addEventListener("click", () => start({ action: "download", group: "instruments-band" }, "band"));
+  for (const b of document.querySelectorAll("button[data-use]")) {
+    b.addEventListener("click", () => start({ action: "use-style", song: song.slug, style: b.dataset.use,
+      tempo: Number(b.dataset.tempo) }, "styles"));
+  }
   if (!singerReady()) {
     const accept = $("#accept"), install = $("#install");
     accept.addEventListener("change", () => { install.disabled = !accept.checked; });
@@ -343,7 +375,7 @@ function showJob(job) {
     ? `<p><progress max="${pr[1]}" value="${pr[0]}"></progress> ${(pr[0] / 1e9).toFixed(2)} of ${(pr[1] / 1e9).toFixed(1)} GB</p>` : "";
   panel.innerHTML = `<p class="status ${job.status}">${esc(job.label)}: ${words[job.status] || job.status}</p>${bar}
     <details ${job.status === "failed" ? "open" : ""}><summary>Output</summary><pre>${esc(job.output || "")}</pre></details>`;
-  for (const b of document.querySelectorAll("button[data-job], #make, #install, #get-band")) b.disabled = job.status === "running";
+  for (const b of document.querySelectorAll("button[data-job], button[data-use], #make, #install, #get-band")) b.disabled = job.status === "running";
 }
 
 // The "Make a take" choices survive the page redrawing after a job.

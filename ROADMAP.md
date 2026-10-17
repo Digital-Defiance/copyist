@@ -32,7 +32,7 @@ Take the first unchecked item in the current milestone. Tick items when they're 
 - [x] `instruments:` in the song file; left-out instruments get no part (first direction check in the report)
 - [ ] Drum key (which line is which piece) on the first page of the drum part
 - [ ] Repeated grooves written with repeat (simile) marks instead of every bar in full
-- [ ] A second test song in 4/4 with a different form (verse/chorus)
+- [x] A second test song in 4/4: *When the Saints Go Marching In* (and *Silent Night* in 6/8); a verse/chorus song still to come
 
 ## MT: Transcription from recordings (SPEC section 12)
 
@@ -122,6 +122,24 @@ A free, open-source Tauri app: the page as its window, the engine and yue2.cpp a
 - [ ] Voice presets: style lines and seeds that stay one singer across songs
 - [ ] Synthetic voice LoRAs: many takes per preset, grouped by speaker embedding, trained with scripts/yue-lora
 - [ ] Mastering step for takes: loudness to streaming level, gentle limiter (reuse `mixdown.loudness` and `mixdown.limit`)
+
+## ST: Styles (docs/styles.md, SPEC 8.2)
+
+Copyist arranges in as many styles as can be written as correct scores: everyone's music, not one songwriter's.
+
+- [x] Styles as data: `copyist/styles/*.yaml` (`copyist-style/0`), checked on load; the arranger and drum kit read them; the three original styles ported note for note
+- [x] Pattern vocabulary: chords, jazz shells, arpeggios, chord tones and approach notes, a walking bass, climbing bass lines (boogie, octaves), more drums (ride, open and pedal hi-hat, toms, tambourine, clap), triplets, `none` for bass or drums
+- [x] Swing and shuffle feel in the performance (and in `--plain`), "Swing" or "Shuffle" on the score
+- [x] 23 styles in 3/4, 4/4 and 6/8 across nine families; YuE2's style words come from the style
+- [x] `copyist gallery` (every style for the song's meter, each at a fitting tempo), `copyist use-style`, `copyist styles`; the page's Styles section with a player per style and "Use this style"
+- [x] Test songs in 4/4 and 6/8: *When the Saints Go Marching In*, *Silent Night* (public domain)
+- [ ] More parts in the arranger: organ, guitar (strummed and picked, chord shapes), strings, brass and reeds, a lead line, choir; the ensemble chosen by the style
+- [ ] Wave 1, finished with real parts: music box (for *I Left the Lights On*), gospel and hymn with organ, country with acoustic guitar and fiddle, folk with fingerpicked guitar, pop and rock with guitars
+- [ ] Wave 2: salsa, cumbia, bolero, tango, Western swing, bluegrass, Motown, funk, Celtic reel and air, polka, calypso, 12/8 doo-wop
+- [ ] Wave 3: big band, orchestral and cinematic, string quartet, SATB choir, electronic (house, synthwave, lo-fi, ambient)
+- [ ] A melody voice per style for previews (flute, sax, violin, synth lead)
+- [ ] Harmony, melody habits and form conventions in each profile (for melody proposals, M3)
+- [ ] The prosody check reads compound meters (6/8) by dotted-quarter beats
 
 ## M4 and later
 

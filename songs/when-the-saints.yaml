@@ -1,0 +1,20 @@
+format: copyist-song/0
+title: When the Saints Go Marching In
+credits:
+  words: Traditional (African American spiritual)
+  music: Traditional
+key: C
+meter: 4/4
+tempo: 112
+voice:
+  name: Melody
+  range: [C4, C5]
+style: straight
+# Public domain: a traditional spiritual, sung long before its first recordings in the 1920s.
+melody: |
+  "C"z C E F | G4 | z C E F | G4 | z C E F | G2 E2 | C2 E2 | "G7"D4 |
+  "C"z E E D | C3 C | E2 G2 | "C7"G2 "F"F2 | F "C"z E F | G2 E2 | C2 "G7"D2 | "C"C4 |]
+lyrics:
+  - Oh when the saints go march-ing in, oh when the saints go march-ing in, oh Lord I want to be in that num-ber, when the saints go march-ing in.
+  - Oh when the sun re-fuse to shine, oh when the sun re-fuse to shine, oh Lord I want to be in that num-ber, when the sun re-fuse to shine.
+  - Oh when the trum-pet sounds the call, oh when the trum-pet sounds the call, oh Lord I want to be in that num-ber, when the trum-pet sounds the call.

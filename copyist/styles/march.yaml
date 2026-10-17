@@ -1,0 +1,18 @@
+format: copyist-style/0
+name: March
+family: Hymns and classical
+about: A parade. Oom-pah in the bass and piano, the snare drum's march rhythm, the bass drum on one and three.
+tempo: [104, 128]
+instruments: {bass: upright-bass}
+production: brass band march, sousaphone, snare drum, cymbals, trumpets, festive, parade
+meters:
+  "4/4":
+    rh: [[1, 1, chord], [3, 1, chord]]
+    lh: [[0, 1, root], [2, 1, fifth]]
+    bass: [[0, 1, root], [2, 1, fifth]]
+    drums:
+      hands: [[0, 0.5, [snare]], [0.5, 0.25, [snare]], [0.75, 0.25, [snare]], [1, 1, [snare]],
+              [2, 0.5, [snare]], [2.5, 0.25, [snare]], [2.75, 0.25, [snare]], [3, 1, [snare]]]
+      feet: [[0, 1, [kick]], [2, 1, [kick]]]
+      fill: [[2, 0.25, [snare]], [2.25, 0.25, [snare]], [2.5, 0.25, [snare]], [2.75, 0.25, [snare]],
+             [3, 0.25, [snare]], [3.25, 0.25, [snare]], [3.5, 0.25, [snare]], [3.75, 0.25, [snare]]]

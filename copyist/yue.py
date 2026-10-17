@@ -233,10 +233,13 @@ def lyrics_text(song: Song, verses: int, intro: bool = True) -> str:
 
 
 def default_style(song: Song) -> str:
+    """The style line for a take when the song gives none: the style's own words (copyist/styles/)."""
+    from . import styles
     bpm = round(song.melody.recurse().getElementsByClass("MetronomeMark").first().getQuarterBPM())
-    feel = {"waltz": "gentle 3/4 waltz", "ballad": "slow ballad", "straight": "steady groove"}.get(song.style or "", "")
-    return f"English, {feel + ', ' if feel else ''}warm expressive female vocal, acoustic piano, soft strings, " \
-           f"warm bass, light brushed drums, intimate and heartfelt, {bpm} BPM"
+    style = styles.get(song.style or styles.default_for(song.meter))
+    words = style.production if style else ("acoustic piano, soft strings, warm bass, light brushed drums, "
+                                            "intimate and heartfelt")
+    return f"English, {words}, warm expressive female vocal, {bpm} BPM"
 
 
 def _placed(song: Song, intro_bars: int) -> tuple[Fraction, Fraction, Fraction]:
