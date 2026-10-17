@@ -2,7 +2,7 @@
 
 **Goal:** someone who can't read or write music gives Copyist lyrics and a few words of direction, and gets back several finished songs to choose between by ear. Each one has a real melody and chords, the lyrics placed correctly under the notes, and every Copyist output: lead sheet, score, parts, band preview, YuE2 take. This is milestone MW in ROADMAP.md. The owner's stated goal for Copyist is "really good melodies and solid themes", so this is the heart of the product.
 
-Status, 17 October 2026: designed, and the planner tested by hand (below). The code isn't written yet; TASKS.md section 3g lists the steps in order.
+Status, 17 October 2026, evening: the planner tested by hand (below). Built: syllables (`copyist/syllables.py`), plan reading, range placement and respelling (`copyist/abcplan.py`), the lyric fit (`copyist/fit.py`), plan to song file (`copyist/write.py`, `song_from_plan`), and the `sections:` / `written_with:` song fields. Still to do: the tests, the `copyist write` command (planner runs, candidates, ranking, previews, `--keep`) and the page. TASKS.md section 3g lists them in order.
 
 ## The idea in one paragraph
 
@@ -114,6 +114,7 @@ Plus `candidates.json`, the index the page reads, ranked.
    - Then shift by whole octaves to put the most notes inside the voice preset's range, preferring the shift whose median is closest to the middle of the range.
    - If more than 10% of notes are still outside, transpose by the fewest semitones that fit, change `K:` to match, and say so in the report.
    - Write octaves in ABC as uppercase = octave 4, lowercase = 5, `'` adds one, `,` takes one away.
+   - **Accidentals:** YuE2's plans carry an accidental through the bar for that letter in every octave; music21, which reads Copyist's song files, carries none (measured: `^F f F` reads F#4 F5 F4). So the song file writes every accidental explicitly, and repeats it after another accidental on the same letter in the bar (`abcplan.respell`).
 4. **Units:** pick the largest unit (1/4, 1/8 or 1/16) that makes every length a whole number, and rescale. Readable files matter, because people open them.
 5. **Tempo, key and meter** come from `Q:`, `K:` and `M:`. A `Q:1/4=n` becomes `tempo: n`; anything else stays a string (as in songs/silent-night.yaml).
 6. **Sections:** record `sections: [{name: verse, bar: 1}, {name: chorus, bar: 17}]` in the song file.
@@ -128,7 +129,7 @@ Plus `candidates.json`, the index the page reads, ranked.
   - vowel groups;
   - a silent final e;
   - V-CV for one consonant between vowels, VC-CV for two;
-  - keep `th`, `sh`, `ch`, `ph` and `wh` with the following vowel, and `ck`, `ng` and `gh` with the preceding one;
+  - keep `th`, `sh`, `ch`, `ph` and `wh` with the following vowel, and `ck`, `gh` and `tch` with the preceding one; `-est` and `-ing` keep their own syllable ("sweet-est", "morn-ing"), but a doubled consonant splits ("run-ning");
   - split vowel pairs when the dictionary has more syllables than the spelling shows ("be-ing", "li-on", "al-le-lu-ia").
 - Stress comes from the dictionary's digits:
   - primary stress 2, secondary 1, unstressed 0;
@@ -153,6 +154,7 @@ Plus `candidates.json`, the index the page reads, ranked.
 | A held syllable that spans a rest | 5 |
 | The last syllable of a line on a note with no rest after it and shorter than a beat | 1.5 |
 | A rest after a syllable in the middle of a line | 0.8; 2.0 in the middle of a word |
+| Neighbouring syllables of one word with the stressed one on the weaker beat ("a-BASH" sung "A-bash") | 1.5 (added after the first real test: `copyist check` warned about it) |
 | The first syllable of a line not after a rest or a note at least a beat long | 0.5 |
 
 More syllables than notes: before aligning, split the longest notes (a beat or longer, not ending a line) into two equal notes of the same pitch, one per missing syllable. Each split costs 2.0 and is listed in the report. If it would take more than 10% splits, reject the candidate: it was written for different words.

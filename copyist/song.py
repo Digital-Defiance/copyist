@@ -38,6 +38,16 @@ class Song:
     score: stream.Score = field(repr=False)
     lyric_fits: list[lyr.VerseFit] = field(default_factory=list, repr=False)
     pronunciations: dict = field(default_factory=dict)
+    sections: list[dict] = field(default_factory=list)     # [{name, bar}], where each section starts
+    written_with: dict = field(default_factory=dict)       # how `copyist write` made it (provenance)
+
+    def section_at(self, bar: int) -> str | None:
+        """The section a bar belongs to, by the song's `sections:`; None if it has none."""
+        name = None
+        for sec in self.sections:
+            if sec["bar"] <= bar:
+                name = sec["name"]
+        return name if name is not None else (self.sections[0]["name"] if self.sections else None)
 
     @property
     def slug(self) -> str:
@@ -200,6 +210,10 @@ def load_song(path: str | Path) -> Song:
         verses = [verses]
     fits = lyr.align(part, [str(v) for v in verses])
     lyr.melisma_slurs(part, fits)
+    sections = read_sections(data.get("sections"), path)
+    written_with = data.get("written_with") or {}
+    if not isinstance(written_with, dict):
+        raise SongError(f"{path.name}: written_with should be a mapping (planner:, model:, seed:, style:).")
 
     return Song(
         path=path,
@@ -218,7 +232,27 @@ def load_song(path: str | Path) -> Song:
         score=score,
         lyric_fits=fits,
         pronunciations={str(k): str(v) for k, v in (data.get("pronunciations") or {}).items()},
+        sections=sections,
+        written_with=written_with,
     )
+
+
+def read_sections(raw, path: Path) -> list[dict]:
+    """`sections: [{name: verse, bar: 1}, {name: chorus, bar: 17}]`, checked: names are words, bars
+    are whole numbers in order."""
+    if not raw:
+        return []
+    if not isinstance(raw, list):
+        raise SongError(f"{path.name}: sections should be a list like [{{name: verse, bar: 1}}].")
+    out = []
+    for item in raw:
+        if not isinstance(item, dict) or not item.get("name") or not isinstance(item.get("bar"), int) \
+                or isinstance(item.get("bar"), bool) or item["bar"] < 0:
+            raise SongError(f"{path.name}: each section needs a name and a bar number, like {{name: chorus, bar: 17}}.")
+        if out and item["bar"] <= out[-1]["bar"]:
+            raise SongError(f"{path.name}: sections should be in bar order ({item['name']} at bar {item['bar']}).")
+        out.append({"name": str(item["name"]).strip().lower(), "bar": item["bar"]})
+    return out
 
 
 def set_style(path: Path, style: str, beat_bpm: float | None = None) -> None:

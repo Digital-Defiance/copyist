@@ -20,7 +20,7 @@ The work moved fast and may change hands at any moment. Here is where things sta
 - MIT licence and GitHub Actions.
 
 **Next, in this order:**
-1. **Melody writing:** TASKS.md section 3g, spec in [docs/melody-writing.md](docs/melody-writing.md). Lyrics and a style go in; YuE2's planner (`yue-plan`) writes several melodies; Copyist turns each into a correct song file and the person picks by ear. Nothing is written yet; the spec covers the file format, the algorithm and the tests.
+1. **Melody writing:** TASKS.md section 3g, spec in [docs/melody-writing.md](docs/melody-writing.md). Lyrics and a style go in; YuE2's planner (`yue-plan`) writes several melodies; Copyist turns each into a correct song file and the person picks by ear. Built so far (17 October 2026, evening): `copyist/syllables.py`, `copyist/abcplan.py`, `copyist/fit.py`, `copyist/write.py` (`song_from_plan`, the plan-to-song-file core), and the `sections:` / `written_with:` song fields. **Next:** `tests/test_write.py`, then the `copyist write` command loop and CLI, then the page. TASKS.md section 3g has the exact list.
 2. **The open singer (plan B):** TASKS.md section 3h, spec in [docs/open-singer.md](docs/open-singer.md). Teach HeartMuLa-oss-3B (Apache-2.0) to follow Copyist's score, using MuLaCover's Apache-2.0 conditioning code and our own training. Start with phase B0 (feasibility).
 3. The less-cheesy band preview, the organ and guitar parts, and the music box: TASKS.md section 3f.
 

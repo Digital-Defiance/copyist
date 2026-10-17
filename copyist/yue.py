@@ -187,10 +187,14 @@ def score_abc(song: Song, verses: int, intro_bars: int = 4,
     n_bars = int(-(-end // full))
     bars_per_verse = int(period // full)
 
+    first_number = 0 if pickup else 1                 # the song's number for the tune's first bar
+
     def section_of(bar: int) -> tuple[str, int | None]:
         if bar < intro_bars:
             return ("intro", None)
-        return ("verse", min((bar - intro_bars) // bars_per_verse, verses - 1))
+        verse = min((bar - intro_bars) // bars_per_verse, verses - 1)
+        name = song.section_at(first_number + bar - intro_bars - verse * bars_per_verse) or "verse"
+        return (name, verse)
 
     alters = key_alters(song)
     blocks, labels = [], []
@@ -218,17 +222,27 @@ def score_abc(song: Song, verses: int, intro_bars: int = 4,
 
 
 def lyrics_text(song: Song, verses: int, intro: bool = True) -> str:
-    """YuE2 lyrics: [Intro] then one [Verse] per verse, one line per phrase."""
+    """YuE2 lyrics: [Intro], then each verse, one line per phrase. A verse is one [Verse] block,
+    or, when the song marks its sections (`sections:`), one block per section ([Chorus] where the
+    song has its chorus)."""
     from .sing import ONSET, soulx_segments, sung_notes
     parts = ["[Intro]", ""] if intro else []
     for v in range(1, verses + 1):
         notes = sung_notes(song, v)
-        lines = []
-        for seg in soulx_segments(notes):
-            texts, types = seg["text"].split(), seg["note_type"].split()
-            words = [t for t, ty in zip(texts, types) if int(ty) == ONSET]
-            lines.append(" ".join(words))
-        parts += ["[Verse]"] + lines + [""]
+        runs: list[tuple[str, list]] = []
+        for n in notes:
+            name = (song.section_at(n.bar) if n.bar is not None else None) or "verse"
+            if not runs or (name != runs[-1][0] and n.kind == ONSET):
+                runs.append((name if n.kind == ONSET or not runs else runs[-1][0], []))
+            runs[-1][1].append(n)
+        for name, run in runs:
+            lines = []
+            for seg in soulx_segments(run):
+                texts, types = seg["text"].split(), seg["note_type"].split()
+                words = [t for t, ty in zip(texts, types) if int(ty) == ONSET]
+                lines.append(" ".join(words))
+            if lines:
+                parts += [f"[{name.capitalize()}]"] + lines + [""]
     return "\n".join(parts).strip() + "\n"
 
 

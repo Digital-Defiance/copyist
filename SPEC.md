@@ -93,13 +93,21 @@ style: waltz           # optional; a style from copyist/styles/ (section 8.2, do
 instruments: [voice, piano, bass, drums]   # optional; default all four. Left out = no part at all
 melody: |
   D | "G"G2 B/G/ | B2 A | "C"G2 E | "G"D2 D |
-lyrics:                # one entry per verse
+lyrics:                # one entry per verse; line breaks inside an entry are just spaces
   - A-maz-ing_ grace, how sweet the sound
+sections:              # optional: where each section starts, by bar number (copyist write records them)
+  - {name: verse, bar: 1}
+  - {name: chorus, bar: 17}
+written_with:          # optional, kept but not used: how copyist write made the melody
+  planner: yue-plan
+  seed: 3
 ```
+
+`sections:` names are words (verse, chorus, bridge, ...), in bar order. A YuE2 take labels its score and lyrics with them, so the singer sings a chorus where the song has one.
 
 ### Melody (ABC subset)
 
-- Notes `C D E F G A B c d e f g a b`, octave marks `,` (down) and `'` (up). `C` is middle C (C4). Accidentals `^` sharp, `_` flat, `=` natural.
+- Notes `C D E F G A B c d e f g a b`, octave marks `,` (down) and `'` (up). `C` is middle C (C4). Accidentals `^` sharp, `_` flat, `=` natural. An accidental applies to its own note only (music21 reads it that way), so write it on every altered note in the bar.
 - Lengths are multiples of `unit`: `A2` = two units, `A/` = half a unit, `A3/2` = one and a half.
 - Rests `z`. Ties `-` (e.g. `d3- | d2`). Bar lines `|`.
 - Chord symbols in double quotes before the note they start on: `"G"`, `"D7"`, `"Am/C"`. A chord lasts until the next chord symbol.
