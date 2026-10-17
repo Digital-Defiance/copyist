@@ -242,6 +242,7 @@ A score is "good" when a professional player could sight-read it:
 
 ## 10. Data and licensing
 
+- Copyist's code is MIT-licensed (LICENSE), stewarded by Digital Defiance, and open to contributors (CONTRIBUTING.md).
 - Test songs in `songs/` must be public domain or written for this project. Never commit copyrighted lyrics or melodies.
 - Training data (later milestones): public-domain scores, licensed or commissioned recordings, synthetic data, and contributions with explicit opt-in. Keep a manifest of every source and its license.
 - LoRAs and voices are trained or made locally from the person's own recordings, kept in `.cache/` and `voices/`, and never committed or published (section 6).
@@ -305,7 +306,6 @@ The plan is for this page to become a free desktop app (Tauri, with the engine a
 
 ## 14. Open questions
 
-- License for the code (MIT, Apache-2.0, or GPL to match tools like Seed-VC).
 - Which local LLM or API drafts song plans (M2), and how prompts are versioned.
 - How users edit notes: YAML by hand, MuseScore round-trip via MusicXML, or editing on the web page.
 - Hosting for other people: accounts, a GPU queue, and which renderer licence allows it (YuE2's weights don't, for a company).

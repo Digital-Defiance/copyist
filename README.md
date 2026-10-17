@@ -21,6 +21,15 @@ copyist build songs/amazing-grace.yaml
 
 Outputs land in `out/<song>/`: the lead sheet and band score as PDF, every part, MusicXML, MIDI, the band recording and its stems, and a validation report. Without sfizz or the instruments, a SoundFont plays instead, and the report says so.
 
+## Licence and contributing
+
+Copyist is free and open source under the [MIT licence](LICENSE), stewarded by [Digital Defiance](https://github.com/Digital-Defiance), a nonprofit. Contributions are welcome, styles and instruments especially: see [CONTRIBUTING.md](CONTRIBUTING.md).
+
+What Copyist downloads has its own terms:
+- **YuE2, the singer:** CC BY-NC 4.0, with a permission for individual creators to sell their songs.
+- **The sampled instruments:** CC0, CC BY 3.0 or CC BY-SA 3.0, with the credits owed shown in every song's report.
+- **The page's fonts:** SIL Open Font License.
+
 ## Read next
 
 - [SPEC.md](SPEC.md): what Copyist is, how it works, the song file format, the quality bar.

@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=64"]
+requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -7,7 +7,20 @@ name = "copyist"
 version = "0.0.1"
 description = "The song, the score, the sound: score-first songwriting, arranging, engraving and rendering."
 readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
 requires-python = ">=3.10"
+authors = [{ name = "Digital Defiance and Copyist contributors" }]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: MacOS",
+    "Operating System :: POSIX :: Linux",
+    "Topic :: Multimedia :: Sound/Audio",
+    "Topic :: Artistic Software",
+]
+
+[project.urls]
+Homepage = "https://github.com/Digital-Defiance/copyist"
 dependencies = [
     "music21>=9.1",
     "verovio>=4.3",

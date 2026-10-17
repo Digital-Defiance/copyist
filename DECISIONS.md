@@ -2,6 +2,12 @@
 
 Newest first. One entry per decision: what, why, and what we gave up.
 
+## 2026-10-17 (open source)
+
+- **MIT licence, open to contributors now.** The copyright line reads "Digital Defiance and Copyist contributors". MIT is the most permissive choice and the easiest for anyone to build on. Gave up: GPL's guarantee that forks stay open.
+- **Contributions are welcome from the start,** with tests running on GitHub (Linux and macOS) on every push and pull request. Styles and instrument packs are data files, so they're the natural first contributions.
+- **The model and sample licences stay separate from the code's.** Nothing licensed differently is committed; it downloads from its own source with its licence shown.
+
 ## 2026-10-17 (styles)
 
 - **As many styles as make sense: anything that can be written as a correct score in twelve-note notation.** Correct sheet music is what sets Copyist apart, so that's the line. Music built on notes between the piano keys (maqam, raga, gamelan) and rap verses are out for now, because the score would be wrong or empty.

@@ -29,6 +29,13 @@ Last updated: 2026-10-17.
 - [x] `git push`: everything through the expressive performance is pushed (2026-10-17)
 - [ ] `git push` the sound-set commit (sampled band, instruments download, mixdown, docs)
 
+## 1b. Open source
+
+- [x] MIT licence (LICENSE), CONTRIBUTING.md, CODE_OF_CONDUCT.md, issue templates, tests on GitHub Actions (Linux and macOS, Python 3.11 and 3.12), `copyist --version`
+- [ ] Push, then check the first GitHub Actions run passes
+- [ ] A short demo (video or page) for the README
+- [ ] Label a few good first issues: tango, polka, bluegrass and salsa styles; an instrument library search
+
 ## 2. Production-quality sound (YuE2)
 
 The goal: Suno-level audio that follows our score.

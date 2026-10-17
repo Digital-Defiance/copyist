@@ -62,5 +62,4 @@ Where it may fall short, so measure: speed on smaller machines, the hardware it 
 
 ## Open questions
 
-- The licence for Copyist's own code (SPEC section 14); Apache-2.0 suits an app that bundles Apache and MIT parts.
 - Whether to ship a voice: only one recorded with a singer's consent, never `lightson` (SPEC section 6).

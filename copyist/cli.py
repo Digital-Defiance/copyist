@@ -337,7 +337,9 @@ def cmd_voice(args) -> int:
 
 
 def main(argv: list[str] | None = None) -> int:
+    from . import __version__
     parser = argparse.ArgumentParser(prog="copyist", description="The song, the score, the sound.")
+    parser.add_argument("--version", action="version", version=f"copyist {__version__}")
     sub = parser.add_subparsers(dest="command", required=True)
 
     b = sub.add_parser("build", help="build every output for a song")
