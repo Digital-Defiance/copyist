@@ -145,7 +145,9 @@ Planned: `breath` (singers get a breath at least every N bars), `tessitura` (whe
 
    **Status (2026-10-16): SoulX-Singer is integrated** (`copyist sing`, `copyist/sing.py`, docs/singing.md). First test, Amazing Grace bars 0–4 with SoulX-Singer's example voice on a 2-core CPU: 10 of 10 notes within ±50 cents, and Whisper heard every word in order. Speed on that machine: about 25 seconds of computing per second of singing.
 
-   **Voices come from consenting people, never from other AI generators.** A voice is a 10–30 second reference recording, not a training run. Suno's terms (September 2026) forbid using its output to "power, enable or train other artificial intelligence and machine learning models" or to build competing products.
+   **YuE2 production** (`copyist produce`, `copyist/yue.py`, docs/production.md) sends the same score, written in YuE2's ABC, to yue2.cpp. First render, Amazing Grace verse 1 on an M4 Max: 47 seconds of audio in 45 seconds. A pitch check of that full mix followed the band (0 of 32 notes within ±50 cents), so it did not show whether the voice sang the tune. The weights are CC BY-NC 4.0 with an individual-creator permission; a company needs its own licence before commercial use. Copyist does not ship the weights.
+
+   **Copyist ships no voices.** A voice is a 10–30 second reference recording in the git-ignored `voices/` folder, not a training run. A voice Copyist ever ships or sells must come from a consenting person, never from another AI generator. Suno's terms (September 2026) forbid using its output to "power, enable or train other artificial intelligence and machine learning models" or to build competing products.
 
 ## 7. Arrangement (M1 and later)
 

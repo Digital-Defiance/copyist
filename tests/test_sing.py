@@ -97,6 +97,19 @@ class PitchCheckTests(unittest.TestCase):
         self.assertFalse(any(r.ok for r in results))
         self.assertIn("sharp", results[0].describe())
 
+    def test_late_and_an_octave_low_passes_with_allowances(self):
+        from copyist import pitch
+        low = [sing.SungNote(n.start, n.dur, n.midi - 12 if n.midi else n.midi, n.kind, n.word, n.phones, n.bar, n.beat)
+               for n in self.notes]
+        wav = tone_file(low, offset=0.9)
+        strict = pitch.check(wav, self.notes, offset=0.5)
+        self.assertFalse(any(r.ok for r in strict))
+        loose = pitch.check(wav, self.notes, offset=0.5, search=0.6, any_octave=True)
+        self.assertTrue(loose and all(r.ok for r in loose), [r.describe() for r in loose if not r.ok])
+        self.assertTrue(all(r.octave == -1 for r in loose))
+        self.assertTrue(all(abs(r.shift - 0.4) < 0.1 for r in loose), [r.shift for r in loose])
+        self.assertIn("an octave below", pitch.summary(loose))
+
 
 class HearTests(unittest.TestCase):
     def test_compare_counts_words_in_order(self):

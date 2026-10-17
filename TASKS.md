@@ -25,31 +25,29 @@ Last updated: 2026-10-16.
 
 ## 1. Push
 
-- [ ] `git push -u origin main` (all commits are local only so far)
+- [x] `git push -u origin main`. Push again after each commit
 
 ## 2. Production-quality sound (YuE2)
 
 The goal: Suno-level audio that follows our score.
 
-- [ ] Install a YuE2 runtime on the Mac. Either of these:
-  - mlx-Yue (github.com/vanch007/mlx-Yue): code is Apache-2.0, a native Metal port
-  - yue2.cpp (github.com/ServeurpersoCom/yue2.cpp): build with Metal and run with `--device MTL0`. Its weights are on Hugging Face at `Serveurperso/YuE2-GGUF` (`YuE2-3B-Q6_K.gguf` and `YuE2-Vae-F32.gguf`)
-  - The YuE2 weights are CC BY-NC 4.0, but individual creators may sell their songs. Record the terms in DECISIONS.md
-- [ ] Render `.cache/yue/ag-v1-request.json` (Amazing Grace, verse 1, with a 4-bar intro). Check `yue-synth --help` for the exact flags
-- [ ] Check that the render follows the melody: run `copyist.pitch.check` on it, using the intro length as the offset
-- [ ] Add a `copyist produce` command that wraps `yue.request` and `yue.run_yue2cpp`. It reads its paths from `COPYIST_YUE_SYNTH`, `COPYIST_YUE_MODEL` and `COPYIST_YUE_VAE`
-- [ ] Write `docs/production.md`, which `yue.py`'s error message already points to
-- [ ] Add tests for `yue.py`: the header, allowed durations only, bar count, the pickup, and the intro chords
+- [x] Install a YuE2 runtime on the Mac. yue2.cpp is built in `.cache/yue2.cpp` (Metal on by itself; run with `--device MTL0`). Weights in `.cache/yue/`: `YuE2-3B-Q6_K.gguf` and `YuE2-Vae-F32.gguf`. Terms are in DECISIONS.md. `scripts/setup-yue.sh` repeats the install
+- [x] Render Amazing Grace, verse 1, 4-bar intro. `copyist produce` wrote `out/amazing-grace/production/production.wav` (47.1 s, seed 831001) and the same request is `.cache/yue/ag-v1-request.json`. On an M4 Max this took 45 s. Flags match `yue-synth --help`: `--model`, `--vae`, `--request`, `--out`, `--device`
+- [x] Check that the render follows the melody: `copyist follow` on the separated vocal. It sang 32 of 32 notes, an octave low, 0.4–0.9 s early
+- [x] Fix the octave: YuE2 sings an octave below the ABC, so `yue.py` now writes the vocal an octave up (`SUNG_OCTAVE_BELOW`; `produce --octave`). Tested on CPU: 30 of 32, 29 of them in the written octave
+- [ ] Re-render Amazing Grace on the Mac with the octave fix (`copyist produce songs/amazing-grace.yaml`, about 45 s), then separate and `copyist follow` it. Listen
+- [ ] `copyist produce --check`: after rendering, separate the vocal (Demucs) and run `follow` automatically
+- [ ] Find out why YuE2 shortens the intro (0.9–1.9 s early). Try `[Intro]` lyrics with an instrumental tag, or a Vocal intro written as rests in the Ins voice
+- [ ] Render all four verses and check each with `follow --verses 4`
+- [x] `copyist produce` wraps `yue.request` and `yue.run_yue2cpp`. Paths come from `COPYIST_YUE_SYNTH`, `COPYIST_YUE_MODEL` and `COPYIST_YUE_VAE`; the device from `COPYIST_YUE_DEVICE` or `--device`
+- [x] `docs/production.md`
+- [x] Tests for `yue.py`: the header, allowed durations only, bar count, the pickup, and the intro chords
 
 ## 3. Singer voices
 
 - [ ] Compare the three voice prompts by ear, each singing Amazing Grace bars 0–4:
   `copyist sing songs/amazing-grace.yaml --bars 0-4 --voice voices/<name>.wav --out out-<name>`
-- [ ] Separate a solo vocal from a full mix that has no stems:
-  - Model: Hugging Face `Soul-AILab/SoulX-Singer-Preprocess`, using `mel-band-roformer-karaoke/mel_band_roformer_karaoke_becruily.ckpt` and `config_karaoke_becruily.yaml`. Dereverb (`dereverb_mel_band_roformer/`) is optional
-  - Code: `preprocess/tools/vocal_separation/model.py` (`VocalSeparator`) in the SoulX-Singer repo
-  - Extra dependencies for the SoulX venv: `beartype rotary_embedding_torch ml_collections loralib matplotlib einops omegaconf`
-  - Demucs would also work, if its weights can be downloaded
+- [ ] Separate a solo vocal from a full mix that has no stems. Demucs 4.1.0 is installed in `.cache/demucs` (`-d mps --two-stems vocals`). Amazing Grace's production vocal is separated. Still to separate: the Lights On mixes and the experimental songs that have no `Lead Vocals` stem. Voices stay in `voices/` and are never committed or shipped (see DECISIONS.md)
 - [ ] Make a voice from the separated vocal: `copyist voice separated.wav --name <name> --lyrics <lyrics file>`, then sing with it
 - [ ] Add tests for `voiceprompt.py`: `smooth_contour` octave folding, `split_notes` on a synthetic contour, `clean_hint`
 - [ ] Choose a default voice and record the choice in DECISIONS.md

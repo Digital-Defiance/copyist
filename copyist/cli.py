@@ -2,6 +2,7 @@
 
     copyist build songs/amazing-grace.yaml   # every output into out/amazing-grace/
     copyist check songs/amazing-grace.yaml   # validators only; exit code 1 if anything fails
+    copyist produce songs/amazing-grace.yaml # a YuE2 recording from the score
 """
 from __future__ import annotations
 
@@ -130,6 +131,49 @@ def cmd_sing(args) -> int:
     return 0
 
 
+def cmd_produce(args) -> int:
+    """Render a production with YuE2 from the song's own score (see docs/production.md)."""
+    from . import yue
+    song = load_song(args.song)
+    octave = yue.SUNG_OCTAVE_BELOW if args.octave is None else args.octave
+    req = yue.request(song, verses=args.verses, style=args.style, seed=args.seed, intro_bars=args.intro_bars,
+                      octave=octave)
+    req["output_format"] = "wav16"
+    out = Path(args.out) / song.slug / "production"
+    audio = yue.run_yue2cpp(req, out, device=args.device)
+    offset = yue.vocal_offset(song, args.intro_bars)
+    print(f"Wrote {audio}")
+    print(f"Verse 1's first note is {offset:.2f} seconds into the recording.")
+    return 0
+
+
+def cmd_follow(args) -> int:
+    """Check that a recording sings the song's melody: each phrase's timing is found, any octave counts."""
+    from . import pitch, sing, yue
+    song = load_song(args.song)
+    recording = Path(args.recording)
+    tracked = pitch.track(recording)
+    lines = [f"# {song.title}: does the recording follow the score?", "",
+             f"Recording: `{recording.name}`. The recording may sit up to {args.search:g} s early or late, each phrase"
+             f" {pitch.LOCAL_SEARCH:g} s more"
+             + ("." if args.written_octave else "; any octave counts."), ""]
+    good = total = 0
+    for v in range(1, args.verses + 1):
+        notes = sing.sung_notes(song, v, pronunciations=song.pronunciations)
+        at = yue.verse_offset(song, v, args.intro_bars)
+        results = pitch.check(recording, notes, offset=at, search=args.search,
+                              any_octave=not args.written_octave, tracked=tracked)
+        good += sum(r.ok for r in results)
+        total += len(results)
+        body = pitch.report_lines(results)
+        lines += [f"## Verse {v}"] + body[1:] + [""]
+        print(f"Verse {v}: {pitch.summary(results)}")
+    out = recording.with_name(recording.stem + "-follow.md")
+    out.write_text("\n".join(lines), encoding="utf-8")
+    print(f"Wrote {out}")
+    return 0 if total and good / total >= args.pass_share else 1
+
+
 def cmd_voice(args) -> int:
     """Make a SoulX-Singer voice from a recording of one person singing."""
     from . import voiceprompt
@@ -172,6 +216,28 @@ def main(argv: list[str] | None = None) -> int:
     g.add_argument("--cache", default=".cache")
     g.add_argument("--no-mix", action="store_true", help="don't mix the vocal with the band")
     g.set_defaults(func=cmd_sing)
+
+    p = sub.add_parser("produce", help="render a production with YuE2 from the score (see docs/production.md)")
+    p.add_argument("song", help="path to a song file (.yaml)")
+    p.add_argument("--verses", type=int, default=1, help="how many verses to render (default 1)")
+    p.add_argument("--intro-bars", type=int, default=4, help="instrumental bars before verse 1 (default 4)")
+    p.add_argument("--seed", type=int, default=831001, help="seed for the render (default 831001)")
+    p.add_argument("--style", help="style tags; default comes from the song")
+    p.add_argument("--device", help="yue-synth device, e.g. MTL0 (or set COPYIST_YUE_DEVICE)")
+    p.add_argument("--octave", type=int, help="octaves to write the melody above where it should sound "
+                   "(default 1: YuE2 sings an octave below what it's given)")
+    p.add_argument("--out", default="out")
+    p.set_defaults(func=cmd_produce)
+
+    f = sub.add_parser("follow", help="check that a recording (e.g. a production's vocal) sings the melody")
+    f.add_argument("song", help="path to a song file (.yaml)")
+    f.add_argument("recording", help="the recording; a separated vocal works best")
+    f.add_argument("--verses", type=int, default=1, help="how many verses the recording has (default 1)")
+    f.add_argument("--intro-bars", type=int, default=4, help="bars before verse 1, as in `produce` (default 4)")
+    f.add_argument("--search", type=float, default=3.0, help="seconds the recording may sit early or late (default 3)")
+    f.add_argument("--written-octave", action="store_true", help="count only notes in the written octave")
+    f.add_argument("--pass-share", type=float, default=0.8, help="share of notes that must match (default 0.8)")
+    f.set_defaults(func=cmd_follow)
 
     v = sub.add_parser("voice", help="make a singer voice for `copyist sing` from a recording")
     v.add_argument("recording", help="a recording of one person singing (a vocal stem works)")

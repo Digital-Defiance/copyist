@@ -71,7 +71,7 @@ Take the first unchecked item in the current milestone. Tick items when they're 
 - [ ] Auto-retry phrases that fail the pitch or lyric check (new seed), keep the best take
 - [ ] Sing every verse and stitch them with the band playing the tune once per verse
 - [ ] Duets and choruses: one voice part per singer, each with its own reference voice
-- [ ] Evaluate YuE2: feed it a Copyist ABC score; transcribe the result and compare to the score; confirm licence terms for Digital Defiance
+- [ ] Evaluate YuE2: feed it a Copyist ABC score; transcribe the result and compare to the score; confirm licence terms for Digital Defiance. Licence is recorded in DECISIONS.md, and `copyist produce` rendered Amazing Grace verse 1. Still open: transcribe a vocal stem and compare that to the score (a pitch check of the full mix followed the band, 0 of 32 notes)
 - [ ] Evaluate ACE-Step 1.5 as the fully open fallback
 - [x] Pitch check: per-note f0 (pYIN) vs score, ±50 cents on the middle of each note (SPEC 6)
 - [x] Lyric check: Whisper transcription compared with the sung words

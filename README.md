@@ -8,7 +8,7 @@ Tools like Suno and Mozart AI generate audio first. Their notes don't exist as d
 
 ## Status
 
-Early. Milestone 0 works: a song file becomes a validated lead sheet, a band arrangement (voice, piano, bass, drums) with full score and parts, MIDI, and a demo recording. `copyist sing` adds a sung vocal from SoulX-Singer, checked note by note against the score (see [docs/singing.md](docs/singing.md)). See [ROADMAP.md](ROADMAP.md).
+Early. Milestone 0 works: a song file becomes a validated lead sheet, a band arrangement (voice, piano, bass, drums) with full score and parts, MIDI, and a demo recording. `copyist sing` adds a sung vocal from SoulX-Singer, checked note by note against the score (see [docs/singing.md](docs/singing.md)). `copyist produce` asks YuE2 to perform the same score (see [docs/production.md](docs/production.md)). See [ROADMAP.md](ROADMAP.md).
 
 ## Quick start
 

@@ -2,12 +2,20 @@
 
 Newest first. One entry per decision: what, why, and what we gave up.
 
+## 2026-10-16 (YuE2)
+
+- **The vocal goes to YuE2 an octave above where it should sound.** YuE2 sang an octave below the ABC both times we measured (docs/production.md). Gave up: an ABC that matches the lead sheet note for note; the lead sheet and MusicXML still show the real octave.
+- **Productions are checked with allowances for timing and octave** (`copyist follow`). YuE2 shortens the intro and drifts, so a check at the planned time scored 0 of 32 on a render that sang every note. Gave up: a single strict number.
+- **Production audio goes through yue2.cpp, not the MLX port.** `copyist produce` already called `yue-synth`; the Mac build turns Metal on, and `--device MTL0` selects the GPU. Gave up: mlx-Yue, which is a native Metal port of the same model, for one engine rather than two.
+- **One seed drives both of yue2.cpp's seeds, and the requested length is the score.** `lm_seed` draws the performance and `seed` draws the noise; leaving `lm_seed` at its default (-1) would make a new recording every time. The length field defaults to 360 seconds, which would ask for a song far longer than the one written.
+- **YuE2 weights are CC BY-NC 4.0, plus an individual-creator permission dated 16 September 2026.** An individual may generate songs and sell those recordings. A company may not use the weights commercially without a separate licence (the YuE team, ryuanab@connect.ust.hk). The permission does not cover selling or redistributing the weights. The GGUF files from Serveurperso/YuE2-GGUF are those weights converted, so the same terms apply. yue2.cpp itself is MIT; the official YuE code is Apache-2.0. Digital Defiance is a company, so shipping these weights inside a product, or selling songs made with them as the company, needs that commercial licence. Using them locally to hear whether a Copyist score survives the render is the use recorded here. Copyist does not ship the weights.
+
 ## 2026-10-16 (singing)
 
 - **SoulX-Singer runs as a subprocess in its own Python 3.10 environment.** Its pinned PyTorch 2.2 and Transformers 4.41 shouldn't constrain Copyist, and Copyist stays installable without PyTorch.
 - **Score control, no auto-shift.** The model follows the written notes, at written pitch, so the pitch check can hold it to the score.
 - **Phrases of about 8 seconds, split at word starts;** a short last phrase folds into the one before. Each phrase is sung separately and placed on one timeline.
-- **Voices are reference recordings from consenting people.** No training is needed for a new voice. Output from Suno (and, until checked, any other generator) is never used as a voice or as training data: Suno's terms forbid it, and Copyist competes with it.
+- **Voices are reference recordings, kept out of the project.** No training is needed for a new voice. Voices live in the git-ignored `voices/` folder, chosen by whoever runs Copyist, and are never committed, shipped or published. Any voice Copyist ever ships or sells must come from a consenting person and not from another generator's output: Suno's terms, for one, forbid using its output to power other AI or to compete with it.
 - **The sung vocal is checked twice:** pitch per note (pYIN, ±50 cents, judged on the middle of the note so scoops and slides are allowed) and words (Whisper, base.en). Both are optional dependencies (`pip install -e ".[sing]"`).
 
 ## 2026-10-16 (drums, held syllables, vocals)

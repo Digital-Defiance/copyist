@@ -29,6 +29,12 @@ from music21 import harmony, note, pitch as m21pitch, stream
 from .song import Song, SongError
 
 ALLOWED = (48, 32, 24, 16, 12, 8, 6, 4, 3, 2, 1)
+
+# YuE2 sings one octave below the ABC it is given. Measured on Amazing Grace,
+# seed 831001: written D4-D5, it sang D3-D4 (32 of 32 notes, an octave low);
+# written an octave up, it sang D4-D5 (30 of 32, in the octave we wanted).
+# So the vocal is written this many octaves above where it should sound.
+SUNG_OCTAVE_BELOW = 1
 STEPS = "CDEFGAB"
 
 
@@ -137,28 +143,26 @@ def bar_text(events: list[Event], chords: list[tuple[Fraction, str]], bar_start:
     return "".join(out)
 
 
-def score_abc(song: Song, verses: int, intro_bars: int = 4) -> tuple[str, list[str]]:
+def score_abc(song: Song, verses: int, intro_bars: int = 4,
+              octave: int = SUNG_OCTAVE_BELOW) -> tuple[str, list[str]]:
     """YuE2 ABC for the song sung `verses` times, after an instrumental intro.
 
     Bar lines fall on whole bars: a pickup is padded with a rest before the
     first verse, each later verse's pickup shares a bar with the previous
     verse's last bar, and the final bar is padded at the end. The intro has the
     chords of the tune's first full bars and no melody, so YuE2 plays an
-    introduction over them. Returns the ABC and each block's section label.
+    introduction over them. The melody is written `octave` octaves above
+    where it should sound (see SUNG_OCTAVE_BELOW). Returns the ABC and each block's section label.
     """
-    events, chords, length, pickup, full = tune_events(song)
+    events, chords, _, pickup, full = tune_events(song)
     q = Fraction(4, unit_for(events))
-    if pickup and (length % full) != 0:
-        raise SongError("The pickup and the last bar should add up to one full bar, so that verses can "
-                        "follow each other; fix the melody first.")
-    period = length if pickup else (-(-length // full)) * full     # one verse, in quarter notes
-    pad = (full - pickup) if pickup else Fraction(0)
-    lead = intro_bars * full + pad                                   # where verse 1's first note falls
+    lead, period, full = _placed(song, intro_bars)
     all_events: list[Event] = []
     all_chords: list[tuple[Fraction, str]] = []
     for k in range(verses):
         base = lead + k * period
-        all_events += [Event(base + e.start, e.dur, e.pitch) for e in events]
+        all_events += [Event(base + e.start, e.dur, e.pitch.transpose(12 * octave) if e.pitch is not None else None)
+                       for e in events]
         all_chords += [(base + t, name) for t, name in chords]
 
     def chord_in_effect(t: Fraction) -> str | None:
@@ -235,13 +239,58 @@ def default_style(song: Song) -> str:
            f"warm bass, light brushed drums, intimate and heartfelt, {bpm} BPM"
 
 
+def _placed(song: Song, intro_bars: int) -> tuple[Fraction, Fraction, Fraction]:
+    """Where verse 1 starts, how long one verse is, and one bar, in quarter notes.
+
+    Same placement as `score_abc`: the intro, then a rest that fills the pickup
+    out to a bar, then the tune.
+    """
+    _, _, length, pickup, full = tune_events(song)
+    if pickup and (length % full) != 0:
+        raise SongError("The pickup and the last bar should add up to one full bar, so that verses can "
+                        "follow each other; fix the melody first.")
+    period = length if pickup else (-(-length // full)) * full
+    pad = (full - pickup) if pickup else Fraction(0)
+    lead = intro_bars * full + pad
+    return lead, period, full
+
+
+def vocal_offset(song: Song, intro_bars: int = 4) -> float:
+    """Seconds from the start of a render to verse 1's first note."""
+    from .sing import seconds_per_quarter
+    lead, _, _ = _placed(song, intro_bars)
+    return float(lead) * seconds_per_quarter(song)
+
+
+def verse_offset(song: Song, verse: int = 1, intro_bars: int = 4) -> float:
+    """Seconds from the start of a render to the first note of `verse` (1-based)."""
+    from .sing import seconds_per_quarter
+    lead, period, _ = _placed(song, intro_bars)
+    return float(lead + (verse - 1) * period) * seconds_per_quarter(song)
+
+
+def score_seconds(song: Song, verses: int, intro_bars: int = 4) -> float:
+    """Length of the written score, in seconds, including the padded final bar."""
+    from .sing import seconds_per_quarter
+    lead, period, full = _placed(song, intro_bars)
+    end = lead + verses * period
+    n_bars = int(-(-end // full))
+    return float(n_bars * full) * seconds_per_quarter(song)
+
+
 def request(song: Song, verses: int | None = None, style: str | None = None, seed: int = 831001,
-            intro_bars: int = 4) -> dict:
+            intro_bars: int = 4, octave: int = SUNG_OCTAVE_BELOW) -> dict:
     verses = verses or len(song.verses)
-    abc, _ = score_abc(song, verses, intro_bars)
+    abc, _ = score_abc(song, verses, intro_bars, octave)
+    # yue2.cpp draws the score's performance from `lm_seed` and the noise from
+    # `seed`. One seed drives both, so the same request renders the same song.
+    # `duration` is the score's length; the default (360 s) would ask for a
+    # song much longer than the one we wrote.
     return {"style": style or song_production_style(song) or default_style(song),
             "lyrics": lyrics_text(song, verses, intro=intro_bars > 0),
-            "cot": "full", "abc": abc, "seed": seed}
+            "cot": "full", "abc": abc,
+            "lm_seed": seed, "seed": seed,
+            "duration": score_seconds(song, verses, intro_bars)}
 
 
 def song_production_style(song: Song) -> str | None:
@@ -251,21 +300,32 @@ def song_production_style(song: Song) -> str | None:
 # ---------------------------------------------------------------- running YuE2
 
 def run_yue2cpp(req: dict, out_dir: Path, binary: str | None = None, model: str | None = None,
-                vae: str | None = None, extra: list[str] | None = None) -> Path:
+                vae: str | None = None, device: str | None = None, extra: list[str] | None = None) -> Path:
     """Render a request with yue2.cpp (`yue-synth`). Paths default to COPYIST_YUE_* variables."""
     binary = binary or os.environ.get("COPYIST_YUE_SYNTH")
     model = model or os.environ.get("COPYIST_YUE_MODEL")
     vae = vae or os.environ.get("COPYIST_YUE_VAE")
+    device = device or os.environ.get("COPYIST_YUE_DEVICE")
     if not (binary and model and vae):
         raise SongError("Set COPYIST_YUE_SYNTH, COPYIST_YUE_MODEL and COPYIST_YUE_VAE "
                         "(see docs/production.md).")
     out_dir.mkdir(parents=True, exist_ok=True)
     req_path = out_dir / "yue-request.json"
     req_path.write_text(json.dumps(req, ensure_ascii=False, indent=1), encoding="utf-8")
-    audio = out_dir / "production.mp3"
-    cmd = [binary, "--model", model, "--vae", vae, "--request", str(req_path), "--out", str(audio)] + (extra or [])
-    print("Rendering with YuE2 (yue2.cpp)...", file=sys.stderr)
-    r = subprocess.run(cmd)
+    ext = ".wav" if str(req.get("output_format", "")).startswith("wav") else ".mp3"
+    audio = out_dir / f"production{ext}"
+    cmd = [binary, "--model", model, "--vae", vae, "--request", str(req_path), "--out", str(audio)]
+    if device:
+        cmd += ["--device", device]
+    cmd += extra or []
+    where = f" on {device}" if device else ""
+    print(f"Rendering with YuE2 (yue2.cpp){where}...", file=sys.stderr)
+    try:
+        r = subprocess.run(cmd)
+    except FileNotFoundError:
+        raise SongError(f"Can't run {binary}. See docs/production.md.") from None
     if r.returncode != 0:
         raise RuntimeError(f"yue-synth failed (exit {r.returncode}).")
+    if not audio.is_file():
+        raise RuntimeError(f"yue-synth finished without writing {audio.name}.")
     return audio
