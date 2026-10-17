@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "The start page only. The engine's page gets no Tauri access at all.",
+  "windows": ["main"],
+  "permissions": ["core:default"]
+}

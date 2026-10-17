@@ -25,7 +25,7 @@ Last updated: 2026-10-17.
 
 ## 1. Push
 
-- [ ] `git push`: 9 commits are waiting (engine as a sidecar, the desktop plan, the docs, the web front end, the voice LoRA, follow and the octave fix)
+- [ ] `git push`: 10 commits are waiting (the app shell, engine as a sidecar, the desktop plan, the docs, the web front end, the voice LoRA, follow and the octave fix)
 
 ## 2. Production-quality sound (YuE2)
 
@@ -78,8 +78,14 @@ The SoundFont band plus a SoulX vocal will never sound like Suno: they're checki
 - [x] Decided: a free, open-source Tauri app running everything locally (fits YuE2's non-commercial licence: each user downloads the weights and may sell their own songs)
 - [x] Step 1, the engine as a sidecar: `--root`, `--port 0 --machine`, `/api/health`, `/api/models`, the model manager (`copyist/models.py`, `copyist/paths.py`), the install panel on the page, `copyist models`. 90 tests pass
 - [x] Apple Developer account: she has one
-- [ ] Step 2, the Tauri shell (needs the Mac: Rust, Xcode command-line tools): start the engine sidecar, read its JSON line, load the URL, stop it on quit
+- [x] Step 2, the Tauri shell: written (`app/`, app/README.md) and compiling on Linux
+- [ ] First run on the Mac: `xcode-select --install`, rustup, then `cd app && npm install && npm run dev`
 - [ ] Step 3, packaging: PyInstaller for the engine, yue2.cpp with Metal, `externalBin`, signing and notarization
+
+## 3e. Sound set and default voices (ROADMAP milestone S)
+
+- [x] Research: instrument libraries and licences (docs/sound-set.md); voice sources and licences (docs/default-voices.md). No hiring: voices come from presets, synthetic LoRAs and open data
+- [ ] Prototype: `sfizz_render` with the Salamander piano and an AVL drum kit on Amazing Grace
 
 ## 4. Singing that sounds performed
 

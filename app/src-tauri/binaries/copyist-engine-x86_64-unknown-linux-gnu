@@ -1,0 +1,7 @@
+#!/bin/sh
+# Development stand-in for the frozen engine (docs/desktop-app.md; step 3 replaces it
+# with a PyInstaller build). The desktop shell sets COPYIST_REPO to this checkout.
+repo="${COPYIST_REPO:?the development engine needs COPYIST_REPO}"
+py="${COPYIST_PYTHON:-$repo/.venv/bin/python}"
+[ -x "$py" ] || py="$(command -v python3)"
+exec "$py" -m copyist "$@"

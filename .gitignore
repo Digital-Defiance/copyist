@@ -14,3 +14,8 @@ dist/
 
 # macOS
 .DS_Store
+
+# Desktop app builds
+app/src-tauri/target/
+app/src-tauri/gen/
+app/node_modules/

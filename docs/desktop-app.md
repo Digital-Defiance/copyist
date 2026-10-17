@@ -50,7 +50,7 @@ Where it may fall short, so measure: speed on smaller machines, the hardware it 
    - Set `COPYIST_HOME` to the app's data folder (models go in `models/` there) and `COPYIST_BIN` to the folder holding the bundled `yue-synth` and `yue-tokenize`. `copyist/paths.py` says where everything is looked for.
    - `GET /api/health` returns the version, the library and which model groups are installed; `GET /api/models` returns the licence text and each group's files and state.
    - Downloads (`copyist/models.py`) are pinned to a repository revision with each file's size and SHA-256, resume from a `.part` file, and are thrown away if the checksum is wrong. The page asks the person to accept the licence, then shows progress. On the command line, `copyist models` and `copyist models download singer --accept-licence` do the same.
-2. **Tauri shell.** A window that waits for the engine and loads its page, starting and stopping the engine with the app, one instance only, menus.
+2. **Tauri shell (written and compiling, 17 October 2026; app/README.md).** A start page, the engine started as a sidecar and its page loaded when it's ready, links out opening in the browser, one instance only, the engine stopped on quit. The page gets no Tauri access. It compiles on Linux; the first Mac run is `npm install && npm run dev` in `app/`.
 3. **Packaging for the Mac.** Freeze the engine with PyInstaller; build yue2.cpp for Apple Silicon with Metal; bundle, sign and notarize. This needs an Apple Developer account ($99 a year, ideally Digital Defiance's).
 4. **First run.** Hardware check, model download, and a demo song rendered as the first thing you hear.
 5. **Best of several** (step 3 of "How it beats Suno") and **re-rendering one section.**

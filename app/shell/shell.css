@@ -1,0 +1,19 @@
+:root { --paper: #fafbf9; --staff: #9fb6a8; --ink: #1f2547; --soft: #5a6080; --red: #b8322b; color-scheme: light; }
+@media (prefers-color-scheme: dark) {
+  :root { --paper: #161a26; --staff: #3f5c4f; --ink: #e4e7f1; --soft: #a3a9c2; --red: #f0756c; color-scheme: dark; }
+}
+html, body { height: 100%; margin: 0; }
+body { background: var(--paper); color: var(--ink); font: 17px/1.55 "Iowan Old Style", Georgia, serif; display: grid; place-items: center; }
+main { text-align: center; padding: 2rem; max-width: 40rem; }
+.note { width: 9rem; height: auto; }
+.staff line { stroke: var(--staff); stroke-width: 1.4; }
+.head, .stem { fill: var(--ink); }
+.head { animation: breathe 1.6s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+@keyframes breathe { 50% { opacity: 0.45; } }
+@media (prefers-reduced-motion: reduce) { .head { animation: none; } }
+h1 { font: 700 1.9rem/1.2 "Comic Sans MS", system-ui, sans-serif; margin: 0.6rem 0 0.2rem; }
+#message { color: var(--soft); margin: 0; }
+.stopped #message { color: var(--red); }
+.stopped .head { animation: none; }
+pre { text-align: left; white-space: pre-wrap; font-size: 0.8rem; color: var(--soft); max-height: 40vh; overflow: auto;
+  border: 1.5px solid var(--staff); border-radius: 6px; padding: 0.75rem; margin-top: 1rem; }

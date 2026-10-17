@@ -95,11 +95,20 @@ Take the first unchecked item in the current milestone. Tick items when they're 
 A free, open-source Tauri app: the page as its window, the engine and yue2.cpp as sidecars, models downloaded on first run, everything on the person's own computer.
 
 - [x] Engine as a sidecar: `--root` library folder, `--port 0 --machine`, health and version endpoint, model manager (pinned, verified, resumable downloads with progress and the licence shown first), `copyist models`
-- [ ] Tauri shell: the window loads the engine's page; the engine starts and stops with the app
+- [x] Tauri shell: the window loads the engine's page; the engine starts and stops with the app (app/; compiles; first Mac run pending)
 - [ ] Mac packaging: PyInstaller engine, yue2.cpp with Metal, signing and notarization (Apple Developer account)
 - [ ] First run: hardware check, model download, a demo song
 - [ ] Best of several takes, ranked by the melody and lyric checks; re-render one section
 - [ ] Windows and Linux builds; updates
+
+## S: Sound set and default voices (docs/sound-set.md, docs/default-voices.md)
+
+- [ ] Build `sfizz_render`; render a song with the Salamander piano and an AVL drum kit; compare with the SoundFont by ear
+- [ ] Find a bass and a guitar with clear licences
+- [ ] Instruments as a pinned download; `render.py` on sfizz; credits in the app and the report
+- [ ] Voice presets: style lines and seeds that stay one singer across songs
+- [ ] Synthetic voice LoRAs: many takes per preset, grouped by speaker embedding, trained with scripts/yue-lora
+- [ ] Mastering step for takes: loudness to streaming level, gentle limiter
 
 ## M4 and later
 

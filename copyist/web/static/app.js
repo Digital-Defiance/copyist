@@ -179,7 +179,7 @@ function installPanel() {
       <h2>Install the singer</h2>
       <p>Copyist sings with YuE2, an open model that runs on this computer, not online. It's a one-time download of
         ${gb(g.size)} GB${g.have ? `, and ${gb(g.have)} GB of it is already here` : ""}.</p>
-      <p class="hint">${esc(models.licence)} <a href="${esc(models.licence_url)}" target="_blank" rel="noopener">Read the licence</a>.</p>
+      <p class="hint">${esc(models.licence)} <a href="${esc(models.licence_url)}" rel="noopener">Read the licence</a>.</p>
       <p><label class="check"><input type="checkbox" id="accept"> I accept the licence</label></p>
       <div class="actions"><button class="go" id="install" disabled>Download the singer</button>
         <span class="hint">It goes into ${esc(models.folder)}.</span></div>
