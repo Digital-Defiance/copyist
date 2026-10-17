@@ -105,7 +105,9 @@ A free, open-source Tauri app: the page as its window, the engine and yue2.cpp a
 
 - [x] Build `sfizz_render`; render a song with the Salamander piano, Growlybass and an AVL drum kit
 - [x] A bass with a clear licence: Karoryfer Growlybass and Meatbass (CC0)
-- [ ] A guitar with a clear licence
+- [x] Electric guitars with clear licences: Karoryfer Black and Green Guitars, Emilyguitar (CC0)
+- [ ] An acoustic steel-string guitar with a clear licence
+- [x] Expressive performance layer (`copyist/perform.py`), on by default
 - [ ] Instruments as a pinned download; `render.py` on sfizz; credits in the app and the report
 - [ ] Voice presets: style lines and seeds that stay one singer across songs
 - [ ] Synthetic voice LoRAs: many takes per preset, grouped by speaker embedding, trained with scripts/yue-lora

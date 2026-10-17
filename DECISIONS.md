@@ -2,6 +2,12 @@
 
 Newest first. One entry per decision: what, why, and what we gave up.
 
+## 2026-10-17 (performance and sound set)
+
+- **The performance is a MIDI-to-MIDI step after the arrangement,** not part of the score. The score and the part PDFs stay exact; only the sound is played. It never adds, removes or moves a note to another pitch, which the tests check. Gave up: performance marks (hairpins, rubato) written into the score; they can come later from the same rules.
+- **It's seeded and on by default.** The same song and seed give the same MIDI, so builds stay repeatable; `--plain` gives the grid.
+- **Instruments come from CC0 and CC BY libraries played by sfizz** (docs/sound-set.md): Salamander piano, Karoryfer basses and guitars, AVL drums, VSCO 2 and VCSL. They're downloaded from their own repositories, not shipped.
+
 ## 2026-10-17 (desktop app)
 
 - **Models are pinned and verified.** Each file in `copyist/models.py` names a repository revision, a size and a SHA-256; a download that doesn't match is deleted. A repository that changes upstream can't change what Copyist installs. Gave up: picking up new model versions automatically.

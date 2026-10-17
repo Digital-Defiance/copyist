@@ -13,7 +13,10 @@ The production take comes from YuE2, which plays the whole band itself. But Copy
 | Drums | [AVL Drumkits](https://www.bandshed.net/avldrumkits/) | CC BY-SA 3.0 | SFZ (also Hydrogen, SF2) | Music made with them can be sold without credit; credit and share-alike apply only to changed samples. |
 | Player | [sfizz](https://github.com/sfztools/sfizz) | BSD-2-Clause | C/C++ library, macOS supported | `sfizz_render --sfz … --midi … --wav …` renders one MIDI file with one instrument to WAV. |
 
-Still to find: guitars (check the rest of Karoryfer's CC0 libraries first).
+| Electric guitars | [Karoryfer Black and Green Guitars](https://github.com/sfzinstruments/karoryfer.black-and-green-guitars) (Gretsch Anniversary, Hofner Club) and [Emilyguitar](https://github.com/sfzinstruments/karoryfer.emilyguitar) (Epiphone; ready-made major, minor and power chords) | CC0 | SFZ + WAV | Twang, staccato and hammer-on programs; good for country, rockabilly and jazz. |
+| Electric piano | [jRhodes3d](https://github.com/sfzinstruments/jlearman.jRhodes3d) (1977 Rhodes Mark I) | CC0 to play; the samples are CC BY-NC 4.0 to redistribute | SFZ + FLAC | Fine for a free app (credit Jeff Learman). |
+
+Still to find: an acoustic steel-string guitar for folk and country strumming. Nothing with a clear licence turned up yet (Pianobook libraries have their own terms).
 
 ## First test (17 October 2026)
 

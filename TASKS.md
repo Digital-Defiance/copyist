@@ -25,7 +25,7 @@ Last updated: 2026-10-17.
 
 ## 1. Push
 
-- [ ] `git push`: 10 commits are waiting (the app shell, engine as a sidecar, the desktop plan, the docs, the web front end, the voice LoRA, follow and the octave fix)
+- [ ] `git push`: 12 commits are waiting (performance, the sound set, the app shell, engine as a sidecar, the desktop plan, the docs, the web front end, the voice LoRA, follow and the octave fix)
 
 ## 2. Production-quality sound (YuE2)
 
@@ -87,7 +87,11 @@ The SoundFont band plus a SoulX vocal will never sound like Suno: they're checki
 - [x] Research: instrument libraries and licences (docs/sound-set.md); voice sources and licences (docs/default-voices.md). No hiring: voices come from presets, synthetic LoRAs and open data
 - [x] Prototype: `sfizz_render` with the Salamander piano, Growlybass (CC0) and an AVL kit on Amazing Grace; under 2 s a part (docs/sound-set.md)
 - [ ] Listen: old SoundFont band against the sampled band
+- [x] Guitars: Karoryfer Black and Green Guitars and Emilyguitar (CC0); bonus jRhodes3d electric piano (docs/sound-set.md). Still missing: an acoustic steel-string guitar
+- [x] Expressive performance (`copyist/perform.py`, on by default, `--plain` off): phrase dynamics, metric accents, melody contour, timing within about 26 ms, rolled piano chords, pedal, phrase breaths, final ritardando. 8 tests
+- [ ] Listen: sampled band, plain against performed
 - [ ] Wire it in: instruments as a pinned download, `sfizz_render` as a sidecar, `render.py` one part at a time with stems
+- [ ] A guitar part in the arrangements (strummed and picked patterns per style)
 
 ## 4. Singing that sounds performed
 

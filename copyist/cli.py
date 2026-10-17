@@ -48,6 +48,10 @@ def cmd_build(args) -> int:
         made.append(p["pdf"])
     midi = engrave.write_midi(band.performance(), out / f"{song.slug}.mid")
     made.append(midi)
+    performed = None
+    if not args.plain:
+        from . import perform
+        performed = perform.perform(midi, midi, song.meter, float(perform.pickup_of(song)), seed=args.seed)
 
     audio_note = None
     if not args.no_audio:
@@ -69,6 +73,13 @@ def cmd_build(args) -> int:
     for name in band.excluded:
         extra.append(f"| Excluded: {name} | no {name} part, so nothing plays it ✓ |")
     extra += [f"- {n}" for n in band.notes]
+    if performed:
+        extra += ["", "## Performance", "",
+                  f"Played, not just written (seed {performed['seed']}): phrases rise and settle, downbeats lean, "
+                  f"the melody sings over the band, timing varies by up to about {performed['timing_ms']:.0f} ms, "
+                  f"the piano pedals {performed['pedal_changes']} times with the harmony, and the last "
+                  f"{performed['ritardando_bars']} bars slow down into a ringing final chord. Every note is the "
+                  "written one. `--plain` writes the MIDI exactly on the grid instead."]
     if audio_note:
         extra += ["", "## Audio", "", f"Skipped: {audio_note}"]
     extra += ["", "## Files", ""] + [f"- `{p.relative_to(out)}`" for p in made]
@@ -252,6 +263,8 @@ def main(argv: list[str] | None = None) -> int:
     b.add_argument("--cache", default=".cache", help="where downloaded assets live (default: .cache)")
     b.add_argument("--no-audio", action="store_true", help="skip rendering the WAV")
     b.add_argument("--images", action="store_true", help="also write a PNG of every PDF page, for checking")
+    b.add_argument("--plain", action="store_true", help="MIDI and audio exactly on the grid, without the performance")
+    b.add_argument("--seed", type=int, default=1, help="seed for the performance (default 1)")
     b.set_defaults(func=cmd_build)
 
     c = sub.add_parser("check", help="run the validators and print the report")

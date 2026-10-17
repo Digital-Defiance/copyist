@@ -136,7 +136,7 @@ Planned: `breath` (singers get a breath at least every N bars), `tessitura` (whe
 ## 6. Sound: rendering roadmap
 
 1. **Sampled render (M0).** SoundFont via TinySoundFont. Exact and predictable; sounds like a demo.
-2. **Expressive performance (M5).** Turn the plain score into a humanized performance (timing, dynamics, pedaling, articulation) while keeping the same notes. Output is still MIDI.
+2. **Expressive performance (M5; first version done, `copyist/perform.py`).** Turn the plain score into a humanized performance while keeping the same notes. Output is still MIDI. It shapes each phrase's dynamics, leans on strong beats, lets the melody sing over the band and follow its contour, varies timing by a few milliseconds (the melody slightly ahead, piano chords rolled upward), breathes at phrase ends, pedals the piano with the harmony, slows into the last chord, and lets it ring. It's seeded, on by default in `copyist build`, and `--plain` turns it off.
 3. **Neural MIDI-to-audio (M6).** A MIDI-conditioned adapter on an open model (ACE-Step 1.5, Apache-2.0, is the leading candidate). Trained on paired score/audio data built by transcribing licensed audio and keeping only confident passages. Verified by transcribing the output and comparing it to the score, plus a realism metric and human listening: both must pass.
 4. **Vocals.** Copyist already knows which syllable sits on which note, which is exactly what singing synthesis needs. Candidates, as of October 2026:
    - **SoulX-Singer** (Apache-2.0, February 2026): zero-shot singing voice synthesis conditioned on a score; English, Mandarin, Cantonese. The cleanest path for vocals sung from Copyist's own notes and syllables.

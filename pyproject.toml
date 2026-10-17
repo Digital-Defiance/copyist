@@ -14,6 +14,7 @@ dependencies = [
     "PyYAML>=6.0",
     "pronouncing>=0.2",
     "pymupdf>=1.24",
+    "mido>=1.3",
 ]
 # Audio rendering also needs TinySoundFont. Install it without its optional
 # playback dependency (PyAudio needs the PortAudio system library):
