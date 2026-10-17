@@ -52,6 +52,15 @@ The goal: Suno-level audio that follows our score.
 - [x] Tests for `voiceprompt.py` (`tests/test_voiceprompt.py`). They found a bug: a blip inside a held note split it in two; fixed
 - [ ] Choose a default voice and record the choice in DECISIONS.md
 
+## 3b. Jennifer's voice in YuE2 (the Suno-grade path)
+
+The SoundFont band plus a SoulX vocal will never sound like Suno: they're checking tools now. YuE2 renders the band and the singer together. Two ways to give it a particular voice:
+
+- [x] Continuation test (yue2.cpp `source_tokens`): the first 18 s of Broadway June Snow (tokenized with `yue-tokenize`, the realaudio tokenizer v4 Q8 and MERT-v2 Q8), then Amazing Grace with an 8-bar intro, the realaudio NAR adapter v9, and CPU with 8 steps. Result: the right octave, but only 14 of 32 notes followed the melody (it was 30–32 without the opening). The opening is in G like ours, but around 103 BPM against our 80, so the model drifts toward June Snow. Not good enough to rely on
+- [ ] Continuation, second try: a source section at the song's own tempo, or a song file written at the source's tempo. Listen for whether the voice carries
+- [ ] **Artist LoRA trained on the musical** (the real fix). Recipe: Hugging Face `Mothersuperior/yue2-mothersuperior-realaudio-tokenizer-v4`, "Train an artist LoRA". Per song it needs the audio, the full lyrics with `[verse]`/`[chorus]` tags, and a style caption that starts with a trigger word. `lights-on-audio` has 41 mixes, and `lights-on/Songs` has their lyrics (which need converting to tagged form). Train rank 64 for about 800–1,500 steps, and no longer (past that it memorizes the songs). Scripts expect a 24 GB CUDA GPU (a rented one for an afternoon); running it on a 128 GB M4 Max under PyTorch MPS is untested. Load the result in yue2.cpp with `--adapters`. Keep the LoRA local, like `voices/`
+- [ ] Use the realaudio NAR adapter (`nar_lora_joint_v9.bf16.safetensors`) in `copyist produce` (`--adapters`), and compare it by ear with a plain render
+
 ## 4. Singing that sounds performed
 
 - [ ] Lyric timing check: align the sung WAV to the lyrics (Whisper word timestamps or a CTC aligner) and flag words that land too far from their notes in the score
