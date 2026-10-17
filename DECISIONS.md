@@ -2,6 +2,11 @@
 
 Newest first. One entry per decision: what, why, and what we gave up.
 
+## 2026-10-17 (desktop app)
+
+- **Copyist becomes a free, open-source desktop app (Tauri 2) that runs everything locally,** rather than a hosted service. YuE2's weights are non-commercial with an individual-creator permission: each user's app downloads them, and users may sell their own songs, while Copyist makes no commercial use of them. It also keeps songs private and needs no servers. Gave up: revenue from the app itself unless the YuE team licenses it; people without a capable GPU.
+- **The page stays the interface; the Python engine and yue2.cpp ship as Tauri sidecars.** Tauri 2 bundles external binaries (`externalBin`), names PyInstaller for Python servers, and signs sidecars when it notarizes on macOS. Gave up: a single-language app.
+
 ## 2026-10-17 (web front end)
 
 - **A local page served by Python's own HTTP server** (`copyist serve`), not a framework or a hosted app. No new dependencies, and the work has to run where the GPU is. Gave up: hosting for other people, for now.

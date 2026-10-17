@@ -90,6 +90,17 @@ Take the first unchecked item in the current milestone. Tick items when they're 
 - [ ] Compare two takes side by side; mark a favorite
 - [ ] Write a new song from the page (after M2 and M3)
 
+## D: Desktop app (docs/desktop-app.md)
+
+A free, open-source Tauri app: the page as its window, the engine and yue2.cpp as sidecars, models downloaded on first run, everything on the person's own computer.
+
+- [ ] Engine as a sidecar: `--root` library folder, `--port 0`, health and version endpoint, model manager (download, verify, progress)
+- [ ] Tauri shell: the window loads the engine's page; the engine starts and stops with the app
+- [ ] Mac packaging: PyInstaller engine, yue2.cpp with Metal, signing and notarization (Apple Developer account)
+- [ ] First run: hardware check, model download, a demo song
+- [ ] Best of several takes, ranked by the melody and lyric checks; re-render one section
+- [ ] Windows and Linux builds; updates
+
 ## M4 and later
 
 See SPEC.md section 11.

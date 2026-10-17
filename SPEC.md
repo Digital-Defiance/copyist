@@ -297,6 +297,8 @@ Only transcribe recordings the user owns or has rights to. The fitted score of s
 
 `copyist serve` (docs/web.md) is a local web page for everything above: the songs, their lyrics and checks, the score as pages, every take with a player, making a new take (voice, strength, verses, seed, style), checking a take's melody, and the progress of a voice training run. It runs the same `copyist` commands, one at a time, on the machine with the GPU, listens on 127.0.0.1 only, and loads nothing from the internet. Choices are made by listening and pressing buttons; nothing on the page needs musical skills.
 
+The plan is for this page to become a free desktop app (Tauri, with the engine and yue2.cpp bundled, models downloaded on first run), so anyone can make songs on their own computer: docs/desktop-app.md.
+
 ## 14. Open questions
 
 - License for the code (MIT, Apache-2.0, or GPL to match tools like Seed-VC).
