@@ -11,6 +11,7 @@ import json
 import mimetypes
 import os
 import re
+import shutil
 import subprocess
 import sys
 import threading
@@ -71,12 +72,20 @@ def follow_summary(folder: Path) -> str | None:
     return None
 
 
+DEMO = Path(__file__).resolve().parents[1] / "demo"
+
+
 class Project:
-    def __init__(self, root: Path):
-        self.root = Path(root).resolve()
+    def __init__(self, root: Path, demo: bool = False):
+        self.root = Path(root).expanduser().resolve()
         self.songs_dir = self.root / "songs"
         self.out = self.root / "out"
         self.loras = self.root / ".cache" / "lora"
+        self.songs_dir.mkdir(parents=True, exist_ok=True)
+        self.out.mkdir(parents=True, exist_ok=True)
+        if demo and not any(self.songs_dir.glob("*.yaml")):   # a new library starts with a song to hear
+            for song in DEMO.glob("*.yaml"):
+                shutil.copy(song, self.songs_dir / song.name)
 
     def rel(self, p: Path) -> str:
         return p.resolve().relative_to(self.root).as_posix()
@@ -169,7 +178,7 @@ class Project:
         stamp = int(pdf.stat().st_mtime)
         folder = self.out / ".pages" / pdf.relative_to(self.out).with_suffix("") / str(stamp)
         if not folder.is_dir():
-            import fitz   # PyMuPDF
+            import pymupdf as fitz
             tmp = folder.with_name(folder.name + ".tmp")
             tmp.mkdir(parents=True, exist_ok=True)
             with fitz.open(pdf) as doc:
@@ -268,6 +277,33 @@ class Jobs:
         threading.Thread(target=self._run, args=(job, args), daemon=True).start()
         return job
 
+    def start_task(self, label: str, task) -> dict:
+        """Run `task(job, log)` in this process (downloads), with `job["progress"]` = [done, total]."""
+        with self.lock:
+            busy = self.running()
+            if busy:
+                raise ValueError(f"Wait for “{busy['label']}” to finish first.")
+            self.logs.mkdir(parents=True, exist_ok=True)
+            job_id = datetime.now().strftime("%Y%m%d-%H%M%S")
+            job = {"id": job_id, "label": label, "song": None, "status": "running", "started": time.time(),
+                   "ended": None, "code": None, "progress": None, "log": str(self.logs / f"{job_id}.log")}
+            self.jobs.insert(0, job)
+            del self.jobs[20:]
+
+        def run():
+            with open(job["log"], "w", encoding="utf-8") as log:
+                try:
+                    task(job, log)
+                    job["code"] = 0
+                except Exception as e:   # the page shows what went wrong; the server keeps running
+                    log.write(f"{e}\n")
+                    job["code"] = 1
+            job["status"] = "done" if job["code"] == 0 else "failed"
+            job["ended"] = time.time()
+
+        threading.Thread(target=run, daemon=True).start()
+        return job
+
     def _run(self, job: dict, args: list[str]) -> None:
         with open(job["log"], "w", encoding="utf-8") as log:
             log.write("$ copyist " + " ".join(args) + "\n")
@@ -291,6 +327,28 @@ class Jobs:
 
     def find(self, job_id: str) -> dict | None:
         return next((j for j in self.jobs if j["id"] == job_id), None)
+
+
+def start_download(jobs: Jobs, body: dict) -> dict:
+    """Download a group of models, once the person has accepted their licence."""
+    from .. import models
+    group = body.get("group")
+    if group not in models.GROUPS:
+        raise ValueError("No such download.")
+    if body.get("accept_licence") is not True:
+        raise ValueError("Accept the licence first.")
+    label = f"Downloading {models.GROUPS[group]['label'].lower()}"
+
+    def task(job, log):
+        def progress(done, total):
+            job["progress"] = [done, total]
+        log.write(f"{label}\n")
+        log.flush()
+        for p in models.download_group(group, progress):
+            log.write(f"Ready: {p}\n")
+            log.flush()
+
+    return jobs.start_task(label, task)
 
 
 def job_args(project: Project, body: dict) -> tuple[str, str | None, list[str]]:
@@ -443,6 +501,15 @@ class Handler(BaseHTTPRequestHandler):
             q = parse_qs(urlparse(self.path).query).get("file", [""])[0]
             pages = p.pages(q)
             return self._json({"pages": pages}) if pages is not None else self._error(404, "No such sheet.")
+        if path == "/api/health":
+            from .. import __version__, models
+            return self._json({"ok": True, "version": __version__, "root": str(p.root),
+                               "models": {g: models.group_status(g)["ready"] for g in models.GROUPS}})
+        if path == "/api/models":
+            from .. import models
+            return self._json({"licence": models.LICENCE, "licence_url": models.LICENCE_URL,
+                               "folder": str(models.paths.models_dir()),
+                               "groups": [models.group_status(g) for g in models.GROUPS]})
         if path == "/api/voices":
             return self._json(p.voices())
         if path == "/api/training":
@@ -463,25 +530,34 @@ class Handler(BaseHTTPRequestHandler):
         try:
             length = int(self.headers.get("Content-Length") or 0)
             body = json.loads(self.rfile.read(min(length, 65536)) or b"{}")
-            label, song, args = job_args(self.project, body)
-            job = self.jobs.start(label, song, args)
+            if body.get("action") == "download":
+                job = start_download(self.jobs, body)
+            else:
+                label, song, args = job_args(self.project, body)
+                job = self.jobs.start(label, song, args)
         except (ValueError, TypeError) as e:
             return self._error(400, str(e))
         return self._json(self.jobs.view(job), 202)
 
 
-def make_server(root: Path, port: int = 8765) -> ThreadingHTTPServer:
-    project = Project(root)
+def make_server(root: Path, port: int = 8765, demo: bool = False) -> ThreadingHTTPServer:
+    project = Project(root, demo=demo)
     handler = type("CopyistHandler", (Handler,), {"project": project, "jobs": Jobs(project)})
     server = ThreadingHTTPServer(("127.0.0.1", port), handler)
     handler.port = server.server_address[1]
     return server
 
 
-def serve(root: Path, port: int = 8765, open_browser: bool = False) -> None:
-    server = make_server(root, port)
+def serve(root: Path, port: int = 8765, open_browser: bool = False, machine: bool = False, demo: bool = False) -> None:
+    """Serve the page. `machine` prints one JSON line first, for the desktop app to read."""
+    from .. import __version__
+    server = make_server(root, port, demo=demo)
     url = f"http://127.0.0.1:{server.server_address[1]}/"
-    print(f"Copyist is at {url} (Ctrl-C to stop)")
+    if machine:
+        print(json.dumps({"copyist": "ready", "url": url, "port": server.server_address[1],
+                          "version": __version__, "root": str(server.RequestHandlerClass.project.root)}), flush=True)
+    else:
+        print(f"Copyist is at {url} (Ctrl-C to stop)", flush=True)
     if open_browser:
         import webbrowser
         webbrowser.open(url)

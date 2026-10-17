@@ -4,7 +4,9 @@
 copyist serve
 ```
 
-Run it from the Copyist folder. It opens http://127.0.0.1:8765/ (`--port` changes the port, `--no-open` skips opening a browser window), and Ctrl-C stops it.
+Run it from the Copyist folder, or give it a library folder with `--root` (it creates `songs/` and `out/` there; `--demo` adds a demo song to an empty one). It opens http://127.0.0.1:8765/ (`--port` changes the port, `--no-open` skips opening a browser window), and Ctrl-C stops it. `--machine` prints one JSON line with the URL first, for the desktop app (docs/desktop-app.md).
+
+If the singer (YuE2's model files) isn't installed, the sound tab offers to download it: it shows the licence, asks you to accept it, and shows progress.
 
 What's there:
 

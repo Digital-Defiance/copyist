@@ -198,7 +198,34 @@ def cmd_lora_songs(args) -> int:
 def cmd_serve(args) -> int:
     """Open Copyist in a browser (docs/web.md)."""
     from .web.server import serve
-    serve(Path(args.root), port=args.port, open_browser=not args.no_open)
+    serve(Path(args.root), port=args.port, open_browser=not (args.no_open or args.machine),
+          machine=args.machine, demo=args.demo)
+    return 0
+
+
+def cmd_models(args) -> int:
+    """List the downloadable models, or download a group of them."""
+    from . import models
+    if args.what == "download":
+        if not args.accept_licence:
+            print(models.LICENCE, "\n\nRun again with --accept-licence to download.", file=sys.stderr)
+            return 2
+        last = [-1]
+
+        def progress(done, total):
+            pct = int(100 * done / total)
+            if pct != last[0]:
+                last[0] = pct
+                print(f"\r{pct}% of {total / 1e9:.1f} GB", end="", file=sys.stderr, flush=True)
+        for p in models.download_group(args.group, progress):
+            print(f"\nReady: {p}")
+        return 0
+    print(f"Models folder: {models.paths.models_dir()}")
+    for g in models.GROUPS:
+        s = models.group_status(g)
+        print(f"{s['label']} ({s['why']}), {s['size'] / 1e9:.1f} GB: {'ready' if s['ready'] else 'not downloaded'}")
+        for m in s["models"]:
+            print(f"  {m['file']}: {m['state']}" + (f" ({m['path']})" if m["path"] else ""))
     return 0
 
 
@@ -285,7 +312,15 @@ def main(argv: list[str] | None = None) -> int:
     sv.add_argument("--port", type=int, default=8765)
     sv.add_argument("--root", default=".", help="the project folder (default: here)")
     sv.add_argument("--no-open", action="store_true", help="don't open a browser window")
+    sv.add_argument("--machine", action="store_true", help="print one JSON line with the URL first (for the desktop app)")
+    sv.add_argument("--demo", action="store_true", help="give an empty library a demo song")
     sv.set_defaults(func=cmd_serve)
+
+    md = sub.add_parser("models", help="list the downloadable models, or download some (docs/desktop-app.md)")
+    md.add_argument("what", nargs="?", choices=("list", "download"), default="list")
+    md.add_argument("group", nargs="?", default="singer", help="singer (needed for takes) or voices")
+    md.add_argument("--accept-licence", action="store_true", help="accept the models' licence (it's printed first)")
+    md.set_defaults(func=cmd_models)
 
     v = sub.add_parser("voice", help="make a singer voice for `copyist sing` from a recording")
     v.add_argument("recording", help="a recording of one person singing (a vocal stem works)")

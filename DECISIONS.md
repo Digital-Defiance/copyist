@@ -4,6 +4,10 @@ Newest first. One entry per decision: what, why, and what we gave up.
 
 ## 2026-10-17 (desktop app)
 
+- **Models are pinned and verified.** Each file in `copyist/models.py` names a repository revision, a size and a SHA-256; a download that doesn't match is deleted. A repository that changes upstream can't change what Copyist installs. Gave up: picking up new model versions automatically.
+- **The licence is shown and accepted before the first download,** on the page and on the command line. The weights are non-commercial, and the person downloading them is the one agreeing to that.
+- **Models live in a data folder shared by every library** (COPYIST_HOME, else the platform's usual place); a developer checkout's `.cache/` still counts, so nothing changes for development.
+
 - **Copyist becomes a free, open-source desktop app (Tauri 2) that runs everything locally,** rather than a hosted service. YuE2's weights are non-commercial with an individual-creator permission: each user's app downloads them, and users may sell their own songs, while Copyist makes no commercial use of them. It also keeps songs private and needs no servers. Gave up: revenue from the app itself unless the YuE team licenses it; people without a capable GPU.
 - **The page stays the interface; the Python engine and yue2.cpp ship as Tauri sidecars.** Tauri 2 bundles external binaries (`externalBin`), names PyInstaller for Python servers, and signs sidecars when it notarizes on macOS. Gave up: a single-language app.
 

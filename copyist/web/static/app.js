@@ -8,6 +8,7 @@ let current = null;          // the song on screen
 let watching = null;         // the job being watched
 let pendingVoice = null;     // a voice picked from the training drawer
 let training = [];           // runs from /api/training
+let models = null;           // /api/models: what's downloaded
 const TABS = [["song", "The song"], ["score", "The score"], ["sound", "The sound"]];
 
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
@@ -166,13 +167,33 @@ function voiceName(file) {
   return v ? v.label : file.replace(/\.safetensors$/, "");
 }
 
+function singerReady() {
+  return !models || models.groups.some((g) => g.id === "singer" && g.ready);
+}
+
+function installPanel() {
+  const g = models.groups.find((x) => x.id === "singer");
+  const gb = (n) => (n / 1e9).toFixed(1);
+  return `
+    <section class="make">
+      <h2>Install the singer</h2>
+      <p>Copyist sings with YuE2, an open model that runs on this computer, not online. It's a one-time download of
+        ${gb(g.size)} GB${g.have ? `, and ${gb(g.have)} GB of it is already here` : ""}.</p>
+      <p class="hint">${esc(models.licence)} <a href="${esc(models.licence_url)}" target="_blank" rel="noopener">Read the licence</a>.</p>
+      <p><label class="check"><input type="checkbox" id="accept"> I accept the licence</label></p>
+      <div class="actions"><button class="go" id="install" disabled>Download the singer</button>
+        <span class="hint">It goes into ${esc(models.folder)}.</span></div>
+      <div class="job" data-job-panel></div>
+    </section>`;
+}
+
 function soundTab(song) {
   const takes = song.recordings.filter((r) => r.kind === "take");
   const tests = song.recordings.filter((r) => r.kind !== "take");
   const verseOptions = song.verses.map((_, i) => `<option value="${i + 1}">${i + 1}</option>`).join("");
   const voiceOptions = [`<option value="">Let YuE2 choose</option>`,
     ...voices.map((v) => `<option value="${esc(v.id)}">${esc(v.label)}</option>`)].join("");
-  return `
+  const make = singerReady() ? `
     <section class="make">
       <h2>Make a take</h2>
       <div class="fields">
@@ -192,7 +213,8 @@ function soundTab(song) {
           ? "Voice training is using the GPU right now, so a take will be slow and will slow the training down."
           : "Takes render on this Mac's GPU, about a minute for a verse."}</span></div>
       <div class="job" data-job-panel></div>
-    </section>
+    </section>` : installPanel();
+  return `${make}
     <section><h2>Takes</h2>
       ${takes.length ? `<ul class="recordings">${takes.map(takeItem).join("")}</ul>`
         : '<p class="hint">No takes yet. Choose a voice above and make the first one.</p>'}
@@ -217,6 +239,12 @@ function testItem(r) {
 }
 
 function wireSound(song) {
+  if (!singerReady()) {
+    const accept = $("#accept"), install = $("#install");
+    accept.addEventListener("change", () => { install.disabled = !accept.checked; });
+    install.addEventListener("click", () => start({ action: "download", group: "singer", accept_licence: accept.checked }));
+    return;
+  }
   const voice = $("#voice"), style = $("#style"), strength = $("#strength");
   let styleEdited = false;
   style.addEventListener("input", () => { styleEdited = true; });
@@ -261,9 +289,12 @@ function showJob(job) {
   const panel = $("[data-job-panel]");
   if (!panel) return;
   const words = { running: "Working…", done: "Done.", failed: "That didn't work. The output below says why." };
-  panel.innerHTML = `<p class="status ${job.status}">${esc(job.label)}: ${words[job.status] || job.status}</p>
+  const pr = job.progress;
+  const bar = pr && job.status === "running"
+    ? `<p><progress max="${pr[1]}" value="${pr[0]}"></progress> ${(pr[0] / 1e9).toFixed(2)} of ${(pr[1] / 1e9).toFixed(1)} GB</p>` : "";
+  panel.innerHTML = `<p class="status ${job.status}">${esc(job.label)}: ${words[job.status] || job.status}</p>${bar}
     <details ${job.status === "failed" ? "open" : ""}><summary>Output</summary><pre>${esc(job.output || "")}</pre></details>`;
-  for (const b of document.querySelectorAll("button[data-job], #make")) b.disabled = job.status === "running";
+  for (const b of document.querySelectorAll("button[data-job], #make, #install")) b.disabled = job.status === "running";
 }
 
 // The "Make a take" choices survive the page redrawing after a job.
@@ -285,6 +316,7 @@ async function poll() {
   try { watching = await api(`/api/jobs/${watching.id}`); } catch { return; }
   if (watching.status === "running") { showJob(watching); setTimeout(poll, 2000); return; }
   saveForm();
+  try { models = await api("/api/models"); } catch { /* keep the last answer */ }
   await route();    // shows the new take or score, then the finished job
   restoreForm();
 }
@@ -349,7 +381,7 @@ async function refreshTraining() {
 // ------------------------------------------------------------------- start
 
 async function main() {
-  [songs, voices, training] = await Promise.all([api("/api/songs"), api("/api/voices"), api("/api/training")]);
+  [songs, voices, training, models] = await Promise.all([api("/api/songs"), api("/api/voices"), api("/api/training"), api("/api/models")]);
   renderSongList();
   renderTraining(training);
   const jobs = await api("/api/jobs");

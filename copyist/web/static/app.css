@@ -150,6 +150,10 @@ textarea { min-height: 5.5rem; resize: vertical; line-height: 1.45; }
   border-radius: 6px; padding: 0.6rem 0.75rem; font-size: 0.8rem; line-height: 1.45; white-space: pre-wrap;
 }
 .status { font-family: var(--pencil); }
+progress { accent-color: var(--blue); width: min(100%, 24rem); height: 0.9rem; vertical-align: middle; margin-right: 0.5rem; }
+.check { display: inline-flex; gap: 0.5rem; align-items: center; cursor: pointer; }
+.check input { width: auto; accent-color: var(--blue); }
+.make > p { max-width: 62ch; margin: 0.4rem 0; }
 .status.failed { color: var(--red); }
 
 .recordings { list-style: none; padding: 0; margin: 0; max-width: 52rem; }

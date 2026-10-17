@@ -42,6 +42,8 @@ On an Apple M4 Max, that verse (47 seconds, Metal, `MTL0`) rendered in 45 second
 
 ## Setup (once)
 
+The quickest way to get the model files is `copyist models download singer --accept-licence` (it prints the licence first without the flag), or the sound tab of `copyist serve`. They go into Copyist's data folder (`copyist models` says where). The renderer itself still comes from the build below.
+
 The engine is [yue2.cpp](https://github.com/ServeurpersoCom/yue2.cpp) (MIT), which runs YuE2's weights. On a Mac the build turns Metal on by itself. `scripts/setup-yue.sh` clones it into `.cache/yue2.cpp`, builds it, and downloads the weights into `.cache/yue/` (it uses `huggingface_hub` from the Copyist environment):
 
 - `YuE2-3B-Q6_K.gguf` (the model)

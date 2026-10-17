@@ -94,7 +94,7 @@ Take the first unchecked item in the current milestone. Tick items when they're 
 
 A free, open-source Tauri app: the page as its window, the engine and yue2.cpp as sidecars, models downloaded on first run, everything on the person's own computer.
 
-- [ ] Engine as a sidecar: `--root` library folder, `--port 0`, health and version endpoint, model manager (download, verify, progress)
+- [x] Engine as a sidecar: `--root` library folder, `--port 0 --machine`, health and version endpoint, model manager (pinned, verified, resumable downloads with progress and the licence shown first), `copyist models`
 - [ ] Tauri shell: the window loads the engine's page; the engine starts and stops with the app
 - [ ] Mac packaging: PyInstaller engine, yue2.cpp with Metal, signing and notarization (Apple Developer account)
 - [ ] First run: hardware check, model download, a demo song

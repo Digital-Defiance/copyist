@@ -323,21 +323,20 @@ def run_yue2cpp(req: dict, out_dir: Path, binary: str | None = None, model: str 
     """Render a request with yue2.cpp (`yue-synth`).
 
     Paths come from the arguments, then the COPYIST_YUE_* variables, then the
-    copies scripts/setup-yue.sh puts in .cache/ (relative to the current folder).
+    desktop app's programs and downloaded models, then the developer copies in
+    .cache/ (copyist/paths.py).
     """
-    local = {"COPYIST_YUE_SYNTH": Path(".cache/yue2.cpp/build/yue-synth"),
-             "COPYIST_YUE_MODEL": Path(".cache/yue/YuE2-3B-Q6_K.gguf"),
-             "COPYIST_YUE_VAE": Path(".cache/yue/YuE2-Vae-F32.gguf")}
-
-    def find(given, var):
-        found = given or os.environ.get(var)
-        return found or (str(local[var].resolve()) if local[var].is_file() else None)
-
-    binary, model, vae = find(binary, "COPYIST_YUE_SYNTH"), find(model, "COPYIST_YUE_MODEL"), find(vae, "COPYIST_YUE_VAE")
+    from . import models, paths
+    binary = binary or (str(p) if (p := paths.find_program("yue-synth", "COPYIST_YUE_SYNTH")) else None)
+    model = model or (str(p) if (p := models.path_of("yue2")) else None)
+    vae = vae or (str(p) if (p := models.path_of("yue2-vae")) else None)
     device = device or os.environ.get("COPYIST_YUE_DEVICE")
-    if not (binary and model and vae):
-        raise SongError("YuE2 isn't set up here: run scripts/setup-yue.sh, or set COPYIST_YUE_SYNTH, "
-                        "COPYIST_YUE_MODEL and COPYIST_YUE_VAE (see docs/production.md).")
+    if not binary:
+        raise SongError("YuE2's renderer (yue-synth) isn't installed here: run scripts/setup-yue.sh, or set "
+                        "COPYIST_YUE_SYNTH (see docs/production.md).")
+    if not (model and vae):
+        raise SongError("The singer isn't downloaded yet: run `copyist models download singer` (or use the page), "
+                        "or set COPYIST_YUE_MODEL and COPYIST_YUE_VAE (see docs/production.md).")
     out_dir.mkdir(parents=True, exist_ok=True)
     req_path = out_dir / "yue-request.json"
     req_path.write_text(json.dumps(req, ensure_ascii=False, indent=1), encoding="utf-8")

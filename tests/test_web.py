@@ -33,8 +33,8 @@ class WebTests(unittest.TestCase):
         (out / "takes" / "take-1").mkdir(parents=True)
         (out / "report.md").write_text("**Finished:** 0 failing, 0 warnings.\n\n| Check | Result | Where | Details |\n"
                                        "|---|---|---|---|\n| bars | pass |  | All 17 bars add up. |\n", encoding="utf-8")
-        import fitz
-        with fitz.open() as doc:
+        import pymupdf
+        with pymupdf.open() as doc:
             doc.new_page(width=200, height=100).insert_text((20, 50), "Amazing Grace")
             doc.new_page(width=200, height=100)
             doc.save(out / "lead-sheet.pdf")
@@ -122,8 +122,9 @@ class WebTests(unittest.TestCase):
         self.assertEqual(r.status, 400)
 
     def test_a_job_runs_and_reports(self):
-        env = {k: v for k, v in os.environ.items() if not k.startswith("COPYIST_YUE")}
+        env = {k: v for k, v in os.environ.items() if not k.startswith("COPYIST_")}
         env["PYTHONPATH"] = str(ROOT)
+        env["COPYIST_HOME"] = tempfile.mkdtemp()
         with mock.patch.dict(os.environ, env, clear=True):
             r, data = self.post({"action": "produce", "song": "amazing-grace", "voice": ".cache/lora/lights-on/lora/step-300.safetensors"})
             self.assertEqual(r.status, 202, data)
@@ -135,8 +136,44 @@ class WebTests(unittest.TestCase):
                     break
                 time.sleep(0.5)
         self.assertEqual(job["status"], "failed")       # no YuE2 here; the output says what to set
-        self.assertIn("YuE2 isn't set up here", job["output"])
+        self.assertIn("yue-synth) isn't installed here", job["output"])
         self.assertIn("--lora .cache/lora/lights-on/lora/step-300.safetensors:1", job["output"])
+
+    def test_health_and_models(self):
+        health = json.loads(self.request("GET", "/api/health")[1])
+        self.assertTrue(health["ok"])
+        self.assertEqual(set(health["models"]), {"singer", "voices"})
+        listing = json.loads(self.request("GET", "/api/models")[1])
+        self.assertIn("CC BY-NC 4.0", listing["licence"])
+        singer = next(g for g in listing["groups"] if g["id"] == "singer")
+        self.assertEqual([m["id"] for m in singer["models"]], ["yue2", "yue2-vae"])
+
+    def test_downloads_need_the_licence_accepted(self):
+        r, data = self.post({"action": "download", "group": "singer"})
+        self.assertEqual((r.status, json.loads(data)["error"]), (400, "Accept the licence first."))
+        r, data = self.post({"action": "download", "group": "everything", "accept_licence": True})
+        self.assertEqual(r.status, 400)
+
+    def test_a_download_job_reports_progress(self):
+        from copyist import models
+        calls = []
+
+        def fake_group(group, progress=None, opener=None):
+            for done in (10, 20):
+                progress(done, 20)
+                calls.append(done)
+            return [Path("/tmp/model.gguf")]
+        with mock.patch.object(models, "download_group", fake_group):
+            r, data = self.post({"action": "download", "group": "voices", "accept_licence": True})
+            self.assertEqual(r.status, 202, data)
+            job = json.loads(data)
+            for _ in range(50):
+                job = json.loads(self.request("GET", f"/api/jobs/{job['id']}")[1])
+                if job["status"] != "running":
+                    break
+                time.sleep(0.1)
+        self.assertEqual((job["status"], job["progress"]), ("done", [20, 20]))
+        self.assertIn("Ready: /tmp/model.gguf", job["output"])
 
     def test_training_and_voices(self):
         run = json.loads(self.request("GET", "/api/training")[1])[0]
@@ -146,6 +183,37 @@ class WebTests(unittest.TestCase):
         voices = json.loads(self.request("GET", "/api/voices")[1])
         self.assertEqual(voices, [{"id": ".cache/lora/lights-on/lora/step-300.safetensors", "label": "lights-on, step 300",
                                    "style": "lightson, in the style of lightson. Female lead."}])
+
+
+class LibraryTests(unittest.TestCase):
+    def test_a_new_library_gets_a_demo_song(self):
+        root = Path(tempfile.mkdtemp(prefix="copyist-lib-")) / "Copyist"
+        server = make_server(root, port=0, demo=True)
+        server.server_close()
+        self.assertTrue((root / "songs" / "amazing-grace.yaml").is_file())
+        self.assertTrue((root / "out").is_dir())
+
+    def test_the_demo_song_matches_the_test_song(self):
+        self.assertEqual((ROOT / "copyist" / "demo" / "amazing-grace.yaml").read_text(encoding="utf-8"),
+                         (ROOT / "songs" / "amazing-grace.yaml").read_text(encoding="utf-8"))
+
+    def test_serve_for_the_app_prints_where_it_is(self):
+        import subprocess
+        import sys
+        root = tempfile.mkdtemp(prefix="copyist-lib-")
+        p = subprocess.Popen([sys.executable, "-m", "copyist", "serve", "--root", root, "--port", "0", "--machine"],
+                             cwd=ROOT, stdout=subprocess.PIPE, text=True)
+        try:
+            line = json.loads(p.stdout.readline())
+            self.assertEqual(line["copyist"], "ready")
+            c = http.client.HTTPConnection("127.0.0.1", line["port"], timeout=10)
+            c.request("GET", "/api/health")
+            self.assertTrue(json.loads(c.getresponse().read())["ok"])
+            c.close()
+        finally:
+            p.terminate()
+            p.wait(timeout=10)
+            p.stdout.close()
 
 
 if __name__ == "__main__":

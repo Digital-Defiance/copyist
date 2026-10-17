@@ -32,3 +32,4 @@ packages = ["copyist", "copyist.web"]
 
 [tool.setuptools.package-data]
 "copyist.web" = ["static/*", "static/fonts/*"]
+"copyist" = ["demo/*.yaml"]

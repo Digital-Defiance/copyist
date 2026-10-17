@@ -45,7 +45,11 @@ Where it may fall short, so measure: speed on smaller machines, the hardware it 
 
 ## Steps (ROADMAP milestone D)
 
-1. **Engine as a sidecar.** Library folder (`--root`), `--port 0` that prints the port it got, a health and version endpoint, a model manager (download, verify, progress), and paths for yue2.cpp and the models taken from the app's data folder. All of this can be built and tested on any machine.
+1. **Engine as a sidecar (done, 17 October 2026).** What the app shell uses:
+   - Start it with `copyist serve --root LIBRARY --port 0 --machine --demo`. The first line on stdout is JSON, `{"copyist": "ready", "url": …, "port": …, "version": …, "root": …}`; load `url` in the window. `--demo` gives an empty library the Amazing Grace demo.
+   - Set `COPYIST_HOME` to the app's data folder (models go in `models/` there) and `COPYIST_BIN` to the folder holding the bundled `yue-synth` and `yue-tokenize`. `copyist/paths.py` says where everything is looked for.
+   - `GET /api/health` returns the version, the library and which model groups are installed; `GET /api/models` returns the licence text and each group's files and state.
+   - Downloads (`copyist/models.py`) are pinned to a repository revision with each file's size and SHA-256, resume from a `.part` file, and are thrown away if the checksum is wrong. The page asks the person to accept the licence, then shows progress. On the command line, `copyist models` and `copyist models download singer --accept-licence` do the same.
 2. **Tauri shell.** A window that waits for the engine and loads its page, starting and stopping the engine with the app, one instance only, menus.
 3. **Packaging for the Mac.** Freeze the engine with PyInstaller; build yue2.cpp for Apple Silicon with Metal; bundle, sign and notarize. This needs an Apple Developer account ($99 a year, ideally Digital Defiance's).
 4. **First run.** Hardware check, model download, and a demo song rendered as the first thing you hear.
