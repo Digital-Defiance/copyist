@@ -2,6 +2,10 @@
 
 Newest first. One entry per decision: what, why, and what we gave up.
 
+## 2026-10-18 (write style line)
+
+- **Planner style lines keep meter and tempo as their own tags.** Deduping phrases was dropping a trailing `3/4` when production already said "gentle 3/4 waltz", and yue-plan then wandered into 4/4 and 6/8. Steering tags (`N/D`, `N BPM`) are appended after dedupe. Ranking also prefers candidates whose meter the asked-for style actually plays (`meter_miss`).
+
 ## 2026-10-18 (celesta)
 
 - **Music-box style uses Neil Bickford's A Sampled Celesta** (CC0 Mustel, via a 5 MB mono whole-tone subset in `Digital-Defiance/copyist-celesta`). The earlier VCSL glockenspiel stays in the `bells` pack as `musicbox` (comb music-box stand-in) until a real crank/comb set can be hosted — folkman's CC0 Freesound pack needs a login to download, so it isn't in the auto-downloader yet. Celesta covers C4–C8 at written pitch (no `PLAY_SHIFT`).

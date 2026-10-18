@@ -329,6 +329,23 @@ with open(os.environ['FAKE_LOG'], 'a') as log:
 """
 
 
+class StyleLineTests(unittest.TestCase):
+    def test_waltz_keeps_meter_and_tempo_as_their_own_tags(self):
+        # Production already says "gentle 3/4 waltz"; the planner still needs a
+        # trailing "3/4" and "N BPM" or it wanders into 4/4 and 6/8 (Mac trial).
+        line = write.style_line("waltz", None, "alto")
+        parts = [p.strip() for p in line.split(",")]
+        self.assertIn("3/4", parts)
+        self.assertTrue(any(p.endswith("BPM") for p in parts), line)
+
+    def test_rank_prefers_the_style_meter(self):
+        a = {"fails": 0, "meter_miss": 1, "fit_cost": 0.4, "prosody": 0, "range": 0, "leap": 5,
+             "chord_tones": 0, "hook": 0}
+        b = {"fails": 0, "meter_miss": 0, "fit_cost": 0.5, "prosody": 0, "range": 0, "leap": 5,
+             "chord_tones": 0, "hook": 0}
+        self.assertLess(write.rank_key(b), write.rank_key(a))
+
+
 class WriteCommandTests(unittest.TestCase):
     def setUp(self):
         import os

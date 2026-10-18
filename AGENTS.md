@@ -8,22 +8,22 @@ Instructions for AI coding agents (Claude, Cursor, anything else) and people pic
 
 The work moved fast and may change hands at any moment. Here is where things stand.
 
-**Done and working** (tests pass: `python -m unittest discover -s tests`, 187 tests):
+**Done and working** (tests pass: `python -m unittest discover -s tests`, 214+ tests):
 - Song files become a lead sheet, band score and parts, MIDI, and a validation report.
 - 23 styles as data files, with a style gallery; styles can cycle a phrase of bars.
 - Expressive performance.
-- The sampled band through sfizz, with stems and a gentle master. Waltz exact preview is piano-vocal (no clarinet, no drums).
+- The sampled band through sfizz, with stems and a gentle master. Waltz exact preview is piano-vocal (no clarinet, no drums). Melody voices (fiddle/flute/oboe/sax), guitar staff, celesta.
 - YuE2 takes that follow the score, checked by `copyist follow`.
 - Voice LoRA training on the Mac.
 - The local web page (`copyist serve`).
 - The Tauri desktop shell.
 - MIT licence and GitHub Actions.
-- `copyist write` and `copyist transcribe` (built 18 October 2026).
+- `copyist write` and `copyist transcribe` (built 18 October 2026). Mac write timed: ~8 s a candidate on MTL0.
 
 **Next, in this order:**
-1. **Melody writing:** TASKS.md section 3g — owner tries `copyist write` on the Mac and listens; fix what she finds.
+1. **Melody writing:** owner listens to `out/hope/write/` and `out/the-tyger/write/` (or runs more from the page); fix what she finds. Then section rewriting (TASKS 3g).
 2. **Transcribing recordings:** TASKS.md section 7 — more sung test recordings, then the owner's songs.
-3. **Less-cheesy exact previews (rest of 3f):** crank/comb music box when a CC0 set can be hosted (celesta is in). (Phrase cycles, form build, stereo room, organ, harp, tonewheel, celesta, guitars on a dedicated staff, fiddle, flute, oboe, sax are done.)
+3. **Less-cheesy exact previews (rest of 3f):** crank/comb music box when a CC0 set can be hosted (celesta is in).
 4. **The open singer (plan B):** TASKS.md section 3h, spec in [docs/open-singer.md](docs/open-singer.md). Start with phase B0 (feasibility).
 
 **The owner's machine:**

@@ -182,17 +182,27 @@ def style_line(style_id: str | None, words: str | None, voice: str) -> str:
     if not style and not words:
         parts.append("gentle ballad, acoustic piano, soft strings, intimate and heartfelt")
     parts.append(VOICES[voice][3])
+    steer = []  # meter / tempo tags that must stay even if the production words already say them
     if style and len(style.meters) == 1:
         meter = next(iter(style.meters))
-        parts.append(meter)
+        steer.append(meter)
         if not meter.endswith("/8"):
-            parts.append(f"{round(sum(style.tempo) / 2)} BPM")
+            steer.append(f"{round(sum(style.tempo) / 2)} BPM")
     phrases, seen = [], set()
     for phrase in ", ".join(parts).split(","):
         phrase = phrase.strip()
-        if phrase and phrase.lower() not in seen and not any(phrase.lower() in p.lower().split() for p in phrases):
-            seen.add(phrase.lower())
-            phrases.append(phrase)
+        if not phrase or phrase.lower() in seen:
+            continue
+        # Drop near-duplicates ("gentle" inside "gentle ballad") but keep short steering
+        # tags like "3/4" even when production already says "gentle 3/4 waltz".
+        if any(phrase.lower() in p.lower().split() for p in phrases):
+            continue
+        seen.add(phrase.lower())
+        phrases.append(phrase)
+    for tag in steer:
+        if tag.lower() not in seen:
+            seen.add(tag.lower())
+            phrases.append(tag)
     return ", ".join(phrases)
 
 
@@ -274,8 +284,12 @@ def hook_count(song) -> int | None:
     return sum(1 for k in measures if k != start and shape(k) == hook)
 
 
-def scores(song, findings, cand: Candidate) -> dict:
+def scores(song, findings, cand: Candidate, asked_style: str | None = None) -> dict:
+    from . import styles
     count = lambda check, sev: sum(f.check == check and f.severity == sev for f in findings)
+    style = styles.get(asked_style) if asked_style else None
+    # 0 when the plan's meter is one the asked-for style plays; 1 when it wandered off.
+    meter_miss = 0 if (not style or song.meter in style.meters) else 1
     return {
         "fails": sum(f.severity == "fail" for f in findings),
         "warnings": sum(f.severity == "warn" for f in findings),
@@ -286,13 +300,15 @@ def scores(song, findings, cand: Candidate) -> dict:
         "leap": largest_leap(song),
         "chord_tones": count("chord-tones", "warn"),
         "hook": hook_count(song),
+        "meter_miss": meter_miss,
     }
 
 
 def rank_key(s: dict) -> tuple:
-    """Spec order: no failing checks, the fit, prosody, range, then leaps over a 9th, chord tones, the hook."""
-    return (s["fails"], s["fit_cost"], s["prosody"], s["range"], int(s["leap"] > 14), s["chord_tones"],
-            -(s["hook"] or 0))
+    """Spec order: no failing checks, match the style's meter, the fit, prosody, range,
+    then leaps over a 9th, chord tones, the hook."""
+    return (s["fails"], s.get("meter_miss", 0), s["fit_cost"], s["prosody"], s["range"],
+            int(s["leap"] > 14), s["chord_tones"], -(s["hook"] or 0))
 
 
 # ---------------------------------------------------------------- the command
@@ -356,7 +372,8 @@ def write_songs(lyrics: str, title: str, out_root: Path = Path("out"), style: st
             findings = validate.validate(song)
             entry.update({"ok": True, "song": f"{cdir.name}/{song_path.name}", "key": song.key,
                           "meter": song.meter, "tempo": song.tempo, "style": song.style,
-                          "sections": song.sections, "scores": scores(song, findings, cand), "notes": cand.notes})
+                          "sections": song.sections, "scores": scores(song, findings, cand, style),
+                          "notes": cand.notes})
             report = [f"# {title}: candidate {s}", "", f"Planner style: {line}", ""] + \
                 [f"- {n}" for n in cand.notes] + ["", validate.report_markdown(song, findings)]
             (cdir / REPORT_FILE).write_text("\n".join(report), encoding="utf-8")

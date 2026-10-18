@@ -2,7 +2,7 @@
 
 **Goal:** someone who can't read or write music gives Copyist lyrics and a few words of direction, and gets back several finished songs to choose between by ear. Each one has a real melody and chords, the lyrics placed correctly under the notes, and every Copyist output: lead sheet, score, parts, band preview, YuE2 take. This is milestone MW in ROADMAP.md. The owner's stated goal for Copyist is "really good melodies and solid themes", so this is the heart of the product.
 
-Status, 18 October 2026: built and tested (`copyist write`, `copyist/write.py`, the page's "Write a song"), and run for real with yue-plan on CPU. Next: the owner tries it on the Mac (TASKS.md section 3g).
+Status, 18 October 2026: built and tested (`copyist write`, `copyist/write.py`, the page's "Write a song"). On the owner's M4 Max with Metal: four folk candidates for a Dickinson verse in about 31 s (~8 s each); four waltz candidates for a Blake verse in about 28 s. Listen to the previews in `out/<slug>/write/candidate-*/preview.wav`.
 
 ## The idea in one paragraph
 
@@ -16,7 +16,7 @@ Each candidate is played on the exact band preview so the person picks by ear. A
 ## What `yue-plan` produces (measured)
 
 - **Command:** `yue-plan --model YuE2-3B-Q6_K.gguf --request req.json --out score.abc [--lm-seed N] [--device MTL0]`. The request is the same JSON `yue-synth` takes, with `"cot": "full"` and `"abc": ""`. Copyist's existing `paths.find_program` finds the binary in `.cache/yue2.cpp/build/` on the owner's Mac.
-- **Speed:** on a 2-core Linux CPU (the cloud container), a 12-line lyric took 2 min 42 s (640 score tokens, 203 ms a token). On an M4 Max with Metal, expect roughly 10 to 20 s a candidate (not measured yet: measure it).
+- **Speed:** on a 2-core Linux CPU (the cloud container), a 12-line lyric took 2 min 42 s (640 score tokens, 203 ms a token). On an M4 Max with Metal (`--device MTL0`), about 7–8 s a candidate (four Dickinson or Blake verses in ~30 s total, including band previews).
 - **Determinism:** the same `--lm-seed` gives the same score. Different seeds give different songs.
 - **The style line steers it.** "gentle folk ballad ... 84 BPM" gave 3/4 in D at 86 BPM. "slow pop ballad, 4/4, piano ... 72 BPM" gave 4/4 in B-flat at 72 BPM.
 - **It chooses its own form** from the lyrics. Three `[Verse]` stanzas came back as an intro, a verse covering stanzas 1 and 2, a "chorus" covering stanza 3, and an outro. Copyist keeps the section names YuE2 writes.
