@@ -2,6 +2,10 @@
 
 Newest first. One entry per decision: what, why, and what we gave up.
 
+## 2026-10-18 (lyric refit)
+
+- **Refit keeps the melody and re-runs the write fitter.** `copyist refit` / the page's "Edit the lyrics" place new words under existing notes (splits allowed). Multi-verse hymn files become one fitted verse block when refit from plain text — same as `copyist write`. Gave up: editing each Amazing Grace verse independently without a syllable budget UI.
+
 ## 2026-10-18 (rule-based writer)
 
 - **`copyist write --engine rules` is Copyist's own MIT melody writer**, and `--engine auto` falls back to it when `yue-plan` isn't installed. YuE2's planner stays the default when present (`plan`). Gave up: waiting on an open neural planner before anyone without YuE2 can write a song.

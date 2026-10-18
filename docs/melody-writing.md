@@ -226,6 +226,14 @@ Use hand-written plans in the YuE2 dialect, not model output, kept in `tests/dat
 - **Rewrite:** `tests/test_rewrite.py` — section bounds, raising notes with chords, swapping a chorus from a donor, simpler preferring smaller leaps, `--keep`.
 - **Rules:** `tests/test_ruleswrite.py` — draft fits and loads; seeds differ; `copyist write --engine rules`.
 
+## Refitting lyrics
+
+```
+copyist refit SONG.yaml --lyrics new.txt [--build]
+```
+
+Keeps the melody and chords; places new words with the same fitter as `copyist write` (note splits allowed when there are more syllables than notes). On the page, a kept song's Song tab has **Edit the lyrics** and **Fit lyrics and write the score**.
+
 ## Rule-based writer (`--engine rules`)
 
 Copyist's own MIT writer (`copyist/ruleswrite.py`): no YuE2. Stress picks longer notes on strong beats; a seeded chord progression and contour template choose pitches (chord tones on strong beats, scale neighbours on weak); the first line's intervals come back as a motif with small changes; line ends cadence toward the tonic. Seeds change key, progression and contour so "Write 4 more" still gives variety. With `--engine auto`, this is the fallback when `yue-plan` isn't installed.

@@ -5,6 +5,7 @@
     copyist produce songs/amazing-grace.yaml # a YuE2 recording from the score
     copyist write lyrics.txt --title Hope     # melodies for new lyrics, to choose by ear
     copyist rewrite songs/hope.yaml --section verse --how higher
+    copyist refit songs/hope.yaml --lyrics new.txt   # new words under the same melody
     copyist transcribe song.mp3 --title Hope  # a lead sheet from a recording
 """
 from __future__ import annotations
@@ -344,6 +345,23 @@ def cmd_write(args) -> int:
     return 0
 
 
+def cmd_refit(args) -> int:
+    """New lyrics under an existing melody (docs/melody-writing.md)."""
+    from . import refit, write
+    try:
+        lyrics = Path(args.lyrics).read_text(encoding="utf-8") if args.lyrics else sys.stdin.read()
+        target = refit.refit(Path(args.song), lyrics)
+    except (write.WriteError, SongError, OSError) as e:
+        print(e, file=sys.stderr)
+        return 2
+    if not args.build:
+        print(f"Refitted lyrics in {target}. Build it with: copyist build {target}")
+        return 0
+    print(f"Refitted lyrics in {target}. Writing its score...", flush=True)
+    return cmd_build(argparse.Namespace(song=str(target), out=args.out, cache=args.cache, no_audio=False,
+                                        plain=False, seed=1, images=False))
+
+
 def cmd_rewrite(args) -> int:
     """Rewrite one section of a song: again, higher, or simpler (docs/melody-writing.md)."""
     from . import rewrite, write
@@ -592,6 +610,14 @@ def main(argv: list[str] | None = None) -> int:
     wr.add_argument("--cache", default=".cache")
     wr.add_argument("--device", help="yue2.cpp device (default COPYIST_YUE_DEVICE)")
     wr.set_defaults(func=cmd_write)
+
+    rf = sub.add_parser("refit", help="place new lyrics under an existing melody")
+    rf.add_argument("song", help="a song file to update")
+    rf.add_argument("--lyrics", help="a text file of lyrics (default: stdin); [Verse]/[Chorus] tags allowed")
+    rf.add_argument("--build", action="store_true", help="then write the score, parts and audio")
+    rf.add_argument("--out", default="out", help="output folder for --build (default: out)")
+    rf.add_argument("--cache", default=".cache")
+    rf.set_defaults(func=cmd_refit)
 
     rw = sub.add_parser("rewrite", help="rewrite one section of a song: again, higher, or simpler")
     rw.add_argument("song", nargs="?", help="a song file to rewrite")

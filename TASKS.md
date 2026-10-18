@@ -158,7 +158,7 @@ The owner's goal is "really good melodies and solid themes", for people who can'
 - [x] Section rewriting: `copyist rewrite SONG --section --how again|higher|simpler` (swap from write donors, or raise notes and chords together; tests in `tests/test_rewrite.py`)
 - [x] Owner kept Tyger higher candidate 3 (+4 → D) after the chord-together fix; page "Try another melody" (again / higher / simpler) on the Song tab
 - [x] Rule-based writer: `copyist write --engine rules` (and `auto` fallback without yue-plan); stress, chords, contour, motifs (`copyist/ruleswrite.py`, `tests/test_ruleswrite.py`)
-- [ ] Let the page edit a kept song's lyrics and refit them (the fit code is ready)
+- [x] Page lyric refit: `copyist refit SONG --lyrics` and Song tab "Edit the lyrics" / "Fit lyrics and write the score" (`copyist/refit.py`, `tests/test_refit.py`)
 
 ## 3i. Score editing (SPEC §14)
 

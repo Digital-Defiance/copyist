@@ -117,13 +117,19 @@ class Project:
                 sheets.append({"label": label, "path": self.rel(out / name)})
         for part in sorted((out / "parts").glob("*.pdf")):
             sheets.append({"label": f"{part.stem.capitalize()} part", "path": self.rel(part)})
+        from ..refit import plain_for_edit
         sections = d.get("sections") or []
         if not isinstance(sections, list):
             sections = []
+        verses = d.get("lyrics") or []
+        if isinstance(verses, str):
+            verses = [verses]
+        verses = [str(v) for v in verses]
         return {"slug": slug, "title": d.get("title", slug), "credits": d.get("credits") or {},
                 "key": d.get("key"), "meter": d.get("meter"), "tempo": d.get("tempo"),
                 "style": d.get("style"), "production": d.get("production"),
-                "instruments": d.get("instruments"), "verses": d.get("lyrics") or [],
+                "instruments": d.get("instruments"), "verses": verses,
+                "lyrics_edit": plain_for_edit(verses),
                 "sections": sections,
                 "report": report_checks(out / "report.md"), "sheets": sheets,
                 "recordings": self.recordings(slug), "built": (out / "lead-sheet.pdf").is_file(),
@@ -713,6 +719,16 @@ def job_args(project: Project, body: dict) -> tuple[str, str | None, list[str]]:
     song = project.rel(path)
     if action == "build":
         return "Writing the score", slug, ["build", song]
+    if action == "refit":
+        lyrics = str(body.get("lyrics") or "").strip()
+        if not lyrics or len(lyrics) > 20000:
+            raise ValueError("Paste the lyrics (up to 20,000 characters).")
+        folder = project.out / slug
+        folder.mkdir(parents=True, exist_ok=True)
+        lyrics_path = folder / "refit-lyrics.txt"
+        lyrics_path.write_text(lyrics + "\n", encoding="utf-8")
+        return "Fitting the new lyrics", slug, [
+            "refit", song, "--lyrics", project.rel(lyrics_path), "--build"]
     if action == "gallery":
         return "Playing it in every style", slug, ["gallery", song]
     if action == "gallery-takes":
