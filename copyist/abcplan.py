@@ -290,6 +290,49 @@ def pitches(bars: list[Bar], key: str) -> list[int]:
     return out
 
 
+def _set_note_pitches(bars: list[Bar], key: str, midis: list[list[int | None]]) -> None:
+    """Write MIDI pitches (bar by bar, None where there is no note) back onto the tokens."""
+    ka = key_accidentals(key)
+    for bar, row in zip(bars, midis):
+        changed: set[str] = set()
+        for t, m in zip(bar.toks, row):
+            if t.kind != "note" or m is None:
+                continue
+            letter, alter, octave = _spell(m, key)
+            explicit = alter != ka.get(letter, 0) or letter in changed
+            t.step, t.octave = letter, octave
+            t.acc = ACC_TEXT.get(alter, "") if explicit else ""
+            if explicit:
+                changed.add(letter)
+
+
+def transpose_notes(bars: list[Bar], key: str, semitones: int) -> None:
+    """Move every note pitch by `semitones`, leaving chord symbols alone. Respells in `key`."""
+    if semitones == 0:
+        return
+    _set_note_pitches(bars, key, [[None if m is None else m + semitones for m in row]
+                                  for row in _note_midis(bars, key)])
+
+
+def clamp_notes(bars: list[Bar], key: str, low: int, high: int) -> None:
+    """Move notes that sit outside [low, high] by whole octaves until they fit (or as close as they can)."""
+    rows = _note_midis(bars, key)
+    clamped = []
+    for row in rows:
+        out = []
+        for m in row:
+            if m is None:
+                out.append(None)
+                continue
+            while m > high:
+                m -= 12
+            while m < low:
+                m += 12
+            out.append(m)
+        clamped.append(out)
+    _set_note_pitches(bars, key, clamped)
+
+
 def transpose_chord(symbol: str, semitones: int, key: str) -> str:
     """A chord symbol moved by `semitones`, the root and any slash bass respelled for `key`."""
     if semitones % 12 == 0:

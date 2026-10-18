@@ -94,6 +94,21 @@ Plus `candidates.json`, the index the page reads, ranked. Candidate folders are 
 
 `copyist write --title T --keep SEED` (or the page's "Keep this one") copies the candidate's song file to `songs/<slug>.yaml`. It refuses to overwrite a different song unless given `--replace`; `--build` then writes the score, as the page does. From there, everything else applies.
 
+## Rewriting one section
+
+```
+copyist rewrite SONG.yaml --section verse --how again|higher|simpler
+         [--candidates 4] [--lyrics LYRICS.txt] [--no-plan] [--device MTL0]
+copyist rewrite --title T --how higher --keep SEED [--replace] [--build]
+```
+
+YuE2's planner writes whole songs, so Copyist rewrites a section in two ways:
+
+- **`higher`:** raises the notes of that section by a few semitones (chords stay put), clamps to the voice range, and writes several shifts (`+2`…`+5`) as candidates. No planner call.
+- **`again` / `simpler`:** reuse (or plan) other write candidates with the same key, meter and section length, then swap that section into the base song. `simpler` prefers the donor whose section has the smallest leaps; when it plans more, it also asks for a stepwise melody. Pass `--no-plan` to use only donors already in `out/<slug>/write/`.
+
+Output: `out/<slug>/rewrite/<how>/candidate-*/` with song file, report and band preview, plus `candidates.json`. Keep one with `--keep` (same rules as `write --keep`). Plain lyrics come from `out/<slug>/write/lyrics.txt` when present, or `--lyrics`.
+
 ## Turning a plan into a song file
 
 1. **Parse the dialect** (`copyist/abcplan.py`): the header (M, L, Q, K), then the sections and voices. Keep only the `Vocal` bars, each tagged with its section. Read tokens with a small tokenizer of Copyist's own:
@@ -207,9 +222,10 @@ Use hand-written plans in the YuE2 dialect, not model output, kept in `tests/dat
 - **Alignment:** exact counts; one extra note (a melisma at a line end); one missing note (a split); a line end that must land on a rest.
 - **End to end with a fake `yue-plan`** (a script that writes a fixed plan, as tests/test_yue.py fakes `yue-synth`): `copyist write` makes N candidates, every song file loads, `lyrics-fit` passes, and `candidates.json` is ranked.
 - **Keep:** the chosen file is copied, and nothing else in `songs/` changes.
+- **Rewrite:** `tests/test_rewrite.py` — section bounds, raising notes without moving chords, swapping a chorus from a donor, simpler preferring smaller leaps, `--keep`.
 
 ## Later
 
-- **Rewriting one section** ("again", "higher", "simpler"): yue-plan writes whole songs, so an option is to plan many songs and swap in a section from another candidate with the same meter and key.
+- **The page:** buttons on a kept song for "again" / "higher" / "simpler", listing rewrite candidates like the write page.
 - **A rule-based writer, entirely Copyist's own (MIT),** as a fallback without YuE2: rhythm from the syllables' stress, pitches from the chords with contour templates, motifs repeated and varied, cadences at line ends.
 - **The open singer** (docs/open-singer.md) will take Copyist's scores the same way, so melody writing doesn't depend on YuE2's planner forever. The rule-based writer and a planner trained on open data are how to get there.

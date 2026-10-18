@@ -2,6 +2,10 @@
 
 Newest first. One entry per decision: what, why, and what we gave up.
 
+## 2026-10-18 (section rewrite)
+
+- **Section rewrite swaps donors or raises notes; it does not ask the planner for a fragment.** `yue-plan` only writes whole songs, so `again` / `simpler` plan or reuse full candidates with the same key, meter and section length, then splice that section into the base. `higher` moves the section's pitches up a few semitones and leaves the chords alone (no planner). Output lives under `out/<slug>/rewrite/<how>/`.
+
 ## 2026-10-18 (write style line)
 
 - **Planner style lines keep meter and tempo as their own tags.** Deduping phrases was dropping a trailing `3/4` when production already said "gentle 3/4 waltz", and yue-plan then wandered into 4/4 and 6/8. Steering tags (`N/D`, `N BPM`) are appended after dedupe. Ranking also prefers candidates whose meter the asked-for style actually plays (`meter_miss`).

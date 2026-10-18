@@ -163,8 +163,8 @@ Lyrics and a style in; several finished songs out to choose between by ear, each
 - [x] Syllables and stress; the planner's ABC into Copyist song files; lyrics fitted to the notes
 - [x] `copyist write` with ranked candidates, band previews and optional takes; `--keep`
 - [x] The page's "Write a song"
-- [ ] The owner writes a song with it on the Mac and keeps one
-- [ ] Section-level rewriting ("again", "higher", "simpler")
+- [x] The owner writes a song with it on the Mac and keeps one (Tyger candidate 4 → `songs/the-tyger.yaml`)
+- [x] Section-level rewriting ("again", "higher", "simpler") via `copyist rewrite` (page buttons still open)
 - [ ] A rule-based writer of Copyist's own (MIT), for use without YuE2
 
 ## SE: Score editing (SPEC §14)

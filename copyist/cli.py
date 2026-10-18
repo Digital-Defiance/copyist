@@ -4,6 +4,7 @@
     copyist check songs/amazing-grace.yaml   # validators only; exit code 1 if anything fails
     copyist produce songs/amazing-grace.yaml # a YuE2 recording from the score
     copyist write lyrics.txt --title Hope     # melodies for new lyrics, to choose by ear
+    copyist rewrite songs/hope.yaml --section verse --how higher
     copyist transcribe song.mp3 --title Hope  # a lead sheet from a recording
 """
 from __future__ import annotations
@@ -343,6 +344,57 @@ def cmd_write(args) -> int:
     return 0
 
 
+def cmd_rewrite(args) -> int:
+    """Rewrite one section of a song: again, higher, or simpler (docs/melody-writing.md)."""
+    from . import rewrite, write
+    if args.keep is not None:
+        if not args.title and not args.song:
+            print("Give --title (or the song) with --keep.", file=sys.stderr)
+            return 2
+        title = args.title or load_song(args.song).title
+        try:
+            target = rewrite.keep(Path(args.out), title, args.how, args.keep, Path(args.songs), args.replace)
+        except write.WriteError as e:
+            print(e, file=sys.stderr)
+            return 2
+        if not args.build:
+            print(f"Kept {args.how} candidate {args.keep} as {target}. Build it with: copyist build {target}")
+            return 0
+        print(f"Kept {args.how} candidate {args.keep} as {target}. Writing its score...", flush=True)
+        return cmd_build(argparse.Namespace(song=str(target), out=args.out, cache=args.cache, no_audio=False,
+                                            plain=False, seed=1, images=False))
+    if not args.song:
+        print("Give the song file to rewrite.", file=sys.stderr)
+        return 2
+
+    def progress(done, total, name):
+        if name:
+            print(f"[{done + 1}/{total}] {name}", flush=True)
+
+    try:
+        index = rewrite.rewrite_section(
+            Path(args.song), args.section, args.how, Path(args.out),
+            Path(args.lyrics) if args.lyrics else None, args.candidates, args.seed,
+            args.device, Path(args.cache), previews=not args.no_preview,
+            plan_more=not args.no_plan, progress=progress)
+    except write.WriteError as e:
+        print(e, file=sys.stderr)
+        return 2
+    folder = Path(args.out) / index["slug"] / "rewrite" / args.how
+    print(f"Candidates in {folder} (best first):")
+    for e in index["candidates"]:
+        if e.get("ok"):
+            sc = e["scores"]
+            extra = f", +{e['semitones']}" if e.get("semitones") else (f", from {e['donor']}" if e.get("donor") else "")
+            print(f"  {e['rank']}. candidate {e['seed']}{extra}: {e['key']}, {e['meter']}; "
+                  f"{sc['fails']} failing, fit {sc['fit_cost']}"
+                  + (f"; preview {folder / e['preview']}" if e.get("preview") else ""))
+        else:
+            print(f"  -  candidate {e['seed']}: not usable ({e.get('reason')})")
+    print(f"Keep one with: copyist rewrite --title {json.dumps(index['title'])} --how {args.how} --keep N")
+    return 0
+
+
 def cmd_transcribe(args) -> int:
     """A lead sheet from a recording (docs/transcribing.md)."""
     from . import transcribe as tr
@@ -538,6 +590,27 @@ def main(argv: list[str] | None = None) -> int:
     wr.add_argument("--cache", default=".cache")
     wr.add_argument("--device", help="yue2.cpp device (default COPYIST_YUE_DEVICE)")
     wr.set_defaults(func=cmd_write)
+
+    rw = sub.add_parser("rewrite", help="rewrite one section of a song: again, higher, or simpler")
+    rw.add_argument("song", nargs="?", help="a song file to rewrite")
+    rw.add_argument("--section", default="verse", help="which section (default verse)")
+    rw.add_argument("--how", required=True, choices=["again", "higher", "simpler"],
+                    help="again (swap from another candidate), higher (raise the notes), or simpler")
+    rw.add_argument("--lyrics", help="plain lyrics (default: out/<slug>/write/lyrics.txt)")
+    rw.add_argument("--candidates", type=int, default=4, help="how many rewrites to try (default 4)")
+    rw.add_argument("--seed", type=int, default=1, help="first candidate number in the rewrite folder")
+    rw.add_argument("--no-preview", action="store_true", help="skip the band previews")
+    rw.add_argument("--no-plan", action="store_true",
+                    help="with again/simpler: only use donors already in out/<slug>/write/")
+    rw.add_argument("--title", help="with --keep: the song's title")
+    rw.add_argument("--keep", type=int, metavar="SEED", help="copy rewrite candidate SEED into songs/")
+    rw.add_argument("--replace", action="store_true", help="with --keep: replace a different song of the same name")
+    rw.add_argument("--build", action="store_true", help="with --keep: then write its score, parts and audio")
+    rw.add_argument("--songs", default="songs", help="with --keep: the songs folder (default songs)")
+    rw.add_argument("--out", default="out", help="output folder (default: out)")
+    rw.add_argument("--cache", default=".cache")
+    rw.add_argument("--device", help="yue2.cpp device when planning more donors (default COPYIST_YUE_DEVICE)")
+    rw.set_defaults(func=cmd_rewrite)
 
     tx = sub.add_parser("transcribe", help="a lead sheet from a recording (docs/transcribing.md)")
     tx.add_argument("recording", nargs="?", help="the recording (WAV, MP3, FLAC...), one you have the rights to")
