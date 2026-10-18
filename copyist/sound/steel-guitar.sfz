@@ -1,0 +1,27 @@
+// Copyist steel-string guitar: Discord GM Martin HD28 (CC0, Jeff Learman).
+// Samples live under Discord GM/...; place_generated makes samples/ a link to that folder
+// so this SFZ can use a path without spaces (sfizz needs that).
+<control>
+default_path=samples/
+
+<global>
+ampeg_attack=0.002
+ampeg_release=0.45
+amp_veltrack=85
+volume=2
+
+<region> lokey=35 hikey=41 pitch_keycenter=40 sample=MartinGM2_040__E2_1.wav
+<region> lokey=42 hikey=44 pitch_keycenter=43 sample=MartinGM2_043__G2_1.wav
+<region> lokey=45 hikey=47 pitch_keycenter=46 sample=MartinGM2_046_Bb2_1.wav
+<region> lokey=48 hikey=50 pitch_keycenter=49 sample=MartinGM2_049_Db3_1.wav
+<region> lokey=51 hikey=53 pitch_keycenter=52 sample=MartinGM2_052__E3_1.wav
+<region> lokey=54 hikey=56 pitch_keycenter=55 sample=MartinGM2_055__G3_1.wav
+<region> lokey=57 hikey=59 pitch_keycenter=58 sample=MartinGM2_058_Bb3_1.wav
+<region> lokey=60 hikey=62 pitch_keycenter=61 sample=MartinGM2_061_Db4_1.wav
+<region> lokey=63 hikey=66 pitch_keycenter=64 sample=MartinGM2_064__E4_1.wav
+<region> lokey=67 hikey=69 pitch_keycenter=68 sample=MartinGM2_068_Ab4_1.wav
+<region> lokey=70 hikey=72 pitch_keycenter=71 sample=MartinGM2_071__B4_1.wav
+<region> lokey=73 hikey=75 pitch_keycenter=74 sample=MartinGM2_074__D5_1.wav
+<region> lokey=76 hikey=78 pitch_keycenter=77 sample=MartinGM2_077__F5_1.wav
+<region> lokey=79 hikey=81 pitch_keycenter=80 sample=MartinGM2_080_Ab5_1.wav
+<region> lokey=82 hikey=88 pitch_keycenter=83 sample=MartinGM2_083__B5_1.wav

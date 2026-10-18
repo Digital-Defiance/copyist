@@ -2,9 +2,13 @@
 
 Newest first. One entry per decision: what, why, and what we gave up.
 
+## 2026-10-18 (steel guitar)
+
+- **Country uses Discord GM's Martin HD28 steel-string** (CC0, Jeff Learman, ~3 MB, `folk` pack). Folk keeps the nylon. Copyist writes a simple SFZ (no keyswitches) and links `samples/` to the nested folder so sfizz isn't fed a path with spaces. The guitar still plays the piano-staff patterns; a dedicated guitar staff and Meta Open Sound's larger steel set stay open.
+
 ## 2026-10-18 (nylon guitar)
 
-- **Folk and country use FreePats' Spanish classical guitar** (CC0 nylon, ~5 MB, `folk` pack). No free steel-string turned up in a shape we could pin cleanly yet; nylon covers fingerpicking and boom-chick. The guitar plays the existing piano-staff patterns (no separate guitar role yet). Steel-string, strums-as-shapes, and a dedicated guitar part stay open.
+- **Folk uses FreePats' Spanish classical guitar** (CC0 nylon, ~5 MB, `folk` pack). Country started on nylon, then moved to steel (see above). The guitar plays the existing piano-staff patterns (no separate guitar role yet). Strums-as-shapes and a dedicated guitar part stay open.
 
 ## 2026-10-18 (music box)
 

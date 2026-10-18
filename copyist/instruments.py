@@ -7,9 +7,10 @@ so what lands on disk is byte for byte what the library's authors published.
 A file is only moved into place once it checks out, so an interrupted download
 picks up where it stopped.
 
-The clarinet, pipe organ and harp are exceptions to "as published": VSCO and VCSL
-ship those as WAV files only, so Copyist writes their SFZs (copyist/sound/*.sfz)
-next to the samples. The tonewheel organ is fully synthetic (sfizz *sine oscillators).
+The clarinet, pipe organ, harp, music box and steel guitar are exceptions to "as
+published": VSCO/VCSL/Discord ship WAV-only or awkward paths, so Copyist writes
+their SFZs (copyist/sound/*.sfz) next to the samples. The tonewheel organ is fully
+synthetic (sfizz *sine oscillators).
 """
 from __future__ import annotations
 
@@ -82,6 +83,9 @@ CATALOG = {i.id: i for i in (
     Instrument("nylon-guitar", "FreePats Spanish classical guitar (nylon)", "freepats/spanish-classical-guitar",
                "6f4eb1b092acc88f5448cea1a0001bd07b971af8", "SpanishClassicalGuitar-20190618.sfz", "CC0", "",
                "https://freepats.zenvoid.org/Guitar/acoustic-guitar.html"),
+    Instrument("steel-guitar", "Discord GM Martin HD28 steel-string guitar", "sfzinstruments/Discord-SFZ-GM-Bank",
+               "7a9c478fe331f94f246d33332f0adedb25bbbe27", "steel-guitar.sfz", "CC0", "",
+               "https://github.com/sfzinstruments/Discord-SFZ-GM-Bank", generated=True),
 )}
 
 # What a person downloads, in packs, so nobody fetches an orchestra they won't use.
@@ -94,8 +98,14 @@ PACKS = {
     "bells": {"label": "Music box and bells", "why": "a tinkling music-box stand-in (VCSL glockenspiel) for lullabies "
                                                       "and the musical",
               "instruments": ["musicbox"]},
-    "folk": {"label": "Folk and country", "why": "nylon acoustic guitar for folk fingerpicking and country boom-chick",
-             "instruments": ["nylon-guitar"]},
+    "folk": {"label": "Folk and country", "why": "nylon guitar for folk fingerpicking, steel-string for country "
+                                                  "boom-chick",
+             "instruments": ["nylon-guitar", "steel-guitar"]},
+}
+
+# Generated SFZs that need a space-free samples/ link into a nested folder in the clone.
+SAMPLE_LINKS = {
+    "steel-guitar": "Discord GM/Melodic/026-Acoustic Guitar (steel)",
 }
 
 # Which instrument plays each part of the arrangement (roles from perform.roles), unless the
@@ -170,6 +180,13 @@ def place_generated(inst: Instrument, folder: Path) -> None:
     text = src.read_text(encoding="utf-8")
     if not dest.is_file() or dest.read_text(encoding="utf-8") != text:
         dest.write_text(text, encoding="utf-8")
+    target = SAMPLE_LINKS.get(inst.id)
+    if target:
+        link, real = folder / "samples", folder / target
+        if real.is_dir() and (not link.exists() or (link.is_symlink() and link.resolve() != real.resolve())):
+            if link.is_symlink() or link.exists():
+                link.unlink()
+            link.symlink_to(real)
 
 
 def status(instrument_id: str) -> dict:

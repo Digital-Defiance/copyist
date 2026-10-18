@@ -18,7 +18,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
-from copyist.instruments import CATALOG, SOUND, git_blob_id  # noqa: E402
+from copyist.instruments import CATALOG, SAMPLE_LINKS, SOUND, git_blob_id  # noqa: E402
 
 # Beyond what each SFZ plays: the licence and readme travel with the samples.
 EXTRA = {
@@ -33,6 +33,7 @@ EXTRA = {
     "harp": ["LICENSE", "README.md", "Strings/Harp/"],
     "musicbox": ["LICENSE", "README.md", "Idiophones/Struck Idiophones/Glockenspiel/"],
     "nylon-guitar": ["LICENSE", "README.md", "samples/"],
+    "steel-guitar": ["Discord GM/Melodic/026-Acoustic Guitar (steel)/"],
 }
 
 
@@ -87,7 +88,9 @@ def main(clones: Path) -> None:
         clone = clones / inst.repo.split("/")[1]
         known = tree(clone, inst.revision)
         wanted = set() if inst.generated else played(clone, inst.revision, inst.sfz, known)
-        if inst.generated:
+        # SAMPLE_LINKS instruments point the SFZ at a local samples/ symlink; the real
+        # files are listed under EXTRA (the nested folder in the clone).
+        if inst.generated and inst.id not in SAMPLE_LINKS:
             text = (SOUND / inst.sfz).read_text()
             default = re.search(r"default_path=(\S+)", text)
             prefix = default.group(1) if default else ""

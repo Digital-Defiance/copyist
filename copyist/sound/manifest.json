@@ -7534,6 +7534,92 @@
 "70113d48e744df040233ad2d92e11c72c2e35192"
 ]
 ]
+},
+"steel-guitar":{
+"repo":"sfzinstruments/Discord-SFZ-GM-Bank",
+"revision":"7a9c478fe331f94f246d33332f0adedb25bbbe27",
+"files":[
+[
+"Discord GM/Melodic/026-Acoustic Guitar (steel)/MartinGM2_040__E2_1.wav",
+411982,
+"252091bc8e44bb0972f5e68ee2b2c12173507c3f"
+],
+[
+"Discord GM/Melodic/026-Acoustic Guitar (steel)/MartinGM2_043__G2_1.wav",
+177728,
+"d48b82a4c7ddbeb4455c4a1a4fdfe23fb3a2c578"
+],
+[
+"Discord GM/Melodic/026-Acoustic Guitar (steel)/MartinGM2_046_Bb2_1.wav",
+395872,
+"3364ed1643283b75d46c92e036b3dbdaf209f9dd"
+],
+[
+"Discord GM/Melodic/026-Acoustic Guitar (steel)/MartinGM2_049_Db3_1.wav",
+236312,
+"9c25a8afb8dc1600dfba6e4a5b0038eb849d3339"
+],
+[
+"Discord GM/Melodic/026-Acoustic Guitar (steel)/MartinGM2_052__E3_1.wav",
+325112,
+"a9b10b4ea08881140672df5fb3de7de48539e97b"
+],
+[
+"Discord GM/Melodic/026-Acoustic Guitar (steel)/MartinGM2_055__G3_1.wav",
+204714,
+"58cf4e5b5ffa5356d2f2a49bc5a0845afc81b236"
+],
+[
+"Discord GM/Melodic/026-Acoustic Guitar (steel)/MartinGM2_058_Bb3_1.wav",
+305722,
+"c523c5768784894783afd6a583ca09066626c915"
+],
+[
+"Discord GM/Melodic/026-Acoustic Guitar (steel)/MartinGM2_061_Db4_1.wav",
+259044,
+"47d2d7e25205200da0058cbd440fb59e29cb2c86"
+],
+[
+"Discord GM/Melodic/026-Acoustic Guitar (steel)/MartinGM2_064__E4_1.wav",
+177692,
+"5284d358aad34708f8282e12d3f4c705887fa7c8"
+],
+[
+"Discord GM/Melodic/026-Acoustic Guitar (steel)/MartinGM2_068_Ab4_1.wav",
+154032,
+"6b17f3ee2454c200f02be0e7ab280197f2d029e0"
+],
+[
+"Discord GM/Melodic/026-Acoustic Guitar (steel)/MartinGM2_071__B4_1.wav",
+114170,
+"6a17cf650e538430acdbc0983451604cd6306605"
+],
+[
+"Discord GM/Melodic/026-Acoustic Guitar (steel)/MartinGM2_074__D5_1.wav",
+83530,
+"a2ff038e718286d9203652e075a205efedff51b7"
+],
+[
+"Discord GM/Melodic/026-Acoustic Guitar (steel)/MartinGM2_077__F5_1.wav",
+137676,
+"177404840211633847cbb8d6260f57ae8d0221b3"
+],
+[
+"Discord GM/Melodic/026-Acoustic Guitar (steel)/MartinGM2_080_Ab5_1.wav",
+104652,
+"eea778214cfbfcda5af83ec96716e02904f8bd4f"
+],
+[
+"Discord GM/Melodic/026-Acoustic Guitar (steel)/MartinGM2_083__B5_1.wav",
+62414,
+"eece19a83c69222a5c9e44d30b9329f8a7439801"
+],
+[
+"Discord GM/Melodic/026-Acoustic Guitar (steel)/_MartinGM2-loop-sw.sfz",
+4851,
+"839006fab62b1a57e8947a559f3311c666f9bf70"
+]
+]
 }
 }
 }

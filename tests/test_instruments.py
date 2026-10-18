@@ -88,6 +88,16 @@ class ManifestTests(unittest.TestCase):
         for n in names:
             self.assertIn(folder + n, listed)
 
+    def test_the_steel_guitar_sfz_names_samples_in_its_linked_folder(self):
+        text = (instruments.SOUND / "steel-guitar.sfz").read_text()
+        listed = {f[0] for f in instruments.manifest()["steel-guitar"]}
+        target = instruments.SAMPLE_LINKS["steel-guitar"]
+        names = [line.split("sample=", 1)[1].strip()
+                 for line in text.splitlines() if "sample=" in line]
+        self.assertEqual(len(names), 15)
+        for n in names:
+            self.assertIn(f"{target}/{n}", listed)
+
     def test_instruments_that_ask_for_credit_have_a_credit_line(self):
         for inst in instruments.CATALOG.values():
             if "BY" in inst.licence:
@@ -108,7 +118,8 @@ class ManifestTests(unittest.TestCase):
         self.assertEqual(instruments.instrument_for("piano", "broadway-ballad"), "harp")
         self.assertEqual(instruments.instrument_for("melody", "music-box"), "musicbox")
         self.assertEqual(instruments.instrument_for("piano", "folk"), "nylon-guitar")
-        self.assertEqual(instruments.instrument_for("piano", "country"), "nylon-guitar")
+        self.assertEqual(instruments.instrument_for("piano", "country"), "steel-guitar")
+        self.assertEqual(instruments.instrument_for("piano", "country-waltz"), "steel-guitar")
         self.assertEqual(instruments.instrument_for("piano"), "piano")
         self.assertEqual(instruments.instrument_for("bass", "waltz"), "upright-bass")
         self.assertEqual(instruments.instrument_for("bass", "straight"), "electric-bass")
