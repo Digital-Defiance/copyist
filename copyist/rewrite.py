@@ -150,17 +150,31 @@ def load_data(path: Path) -> dict:
     return data
 
 
-def raise_section(data: dict, section: str, semitones: int) -> list[abcplan.Bar]:
-    """Bars of `data` with one section's notes moved up by `semitones` (chords unchanged)."""
+def raise_section(data: dict, section: str, semitones: int) -> tuple[list[abcplan.Bar], str]:
+    """Bars of `data` with one section moved up by `semitones` (notes and chords together).
+
+    Returns (bars, key). When the raise covers the whole song, the key moves with it so the
+    file stays tidy; a partial section keeps the song key and reads as a short modulation.
+    """
     bars = bars_from_melody(data["melody"], data.get("sections"))
     lo, hi = section_bounds(data.get("sections") or [{"name": "verse", "bar": 1}], section, len(bars))
     piece = copy.deepcopy(bars[lo:hi])
-    abcplan.transpose_notes(piece, data["key"], semitones)
+    old_key = str(data["key"])
+    whole = lo == 0 and hi == len(bars)
+    if whole:
+        new_key = abcplan.respell(piece, old_key, semitones)
+    else:
+        abcplan.transpose_notes(piece, old_key, semitones)
+        for bar in piece:
+            for t in bar.toks:
+                if t.kind == "chord":
+                    t.text = abcplan.transpose_chord(t.text, semitones, old_key)
+        new_key = old_key
     voice = data.get("voice") or {}
     if voice.get("range"):
         low, high = (m21pitch.Pitch(str(p)).midi for p in voice["range"])
-        abcplan.clamp_notes(piece, data["key"], low, high)
-    return splice(bars, lo, hi, piece)
+        abcplan.clamp_notes(piece, new_key if whole else old_key, low, high)
+    return splice(bars, lo, hi, piece), new_key
 
 
 def section_slice(data: dict, section: str) -> list[abcplan.Bar]:
@@ -238,15 +252,18 @@ def rewrite_section(song_path: Path, section: str, how: str, out_root: Path = Pa
             cdir.mkdir(parents=True, exist_ok=True)
             entry: dict = {"seed": s, "folder": cdir.name, "ok": False, "how": how, "semitones": shift}
             try:
-                raised = raise_section(data, section, shift)
-                if mean_pitch(raised[lo:hi], key) <= base_mean:
+                raised, raised_key = raise_section(data, section, shift)
+                if mean_pitch(raised[lo:hi], raised_key) <= base_mean:
                     raise WriteError(f"+{shift} didn't raise the section (range clamp undid it).")
                 ww = dict(data.get("written_with") or {})
                 ww.update({"rewrite": how, "section": section, "semitones": shift, "from": ww.get("seed")})
+                note = f"Raised the {section} by {shift} semitones (melody and chords together)."
+                if raised_key != key:
+                    note = f"Raised the {section} by {shift} semitones to {raised_key}."
                 cand = candidate_from_bars(
-                    raised, unit=unit, meter=meter, key=key, tempo=tempo, lyrics=words,
+                    raised, unit=unit, meter=meter, key=raised_key, tempo=tempo, lyrics=words,
                     title=title, voice=voice, style=style, written_with=ww, credits=credits,
-                    notes=[f"Raised the {section} by {shift} semitones (chords unchanged)."])
+                    notes=[note])
                 song_file = cdir / f"{name}.yaml"
                 song_file.write_text(write.song_yaml(cand.data), encoding="utf-8")
                 song = load_song(song_file)

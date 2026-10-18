@@ -104,7 +104,7 @@ copyist rewrite --title T --how higher --keep SEED [--replace] [--build]
 
 YuE2's planner writes whole songs, so Copyist rewrites a section in two ways:
 
-- **`higher`:** raises the notes of that section by a few semitones (chords stay put), clamps to the voice range, and writes several shifts (`+2`…`+5`) as candidates. No planner call.
+- **`higher`:** raises that section by a few semitones (melody and chords together; the key moves when the section is the whole song), clamps to the voice range, and writes several shifts (`+2`…`+5`) as candidates. No planner call.
 - **`again` / `simpler`:** reuse (or plan) other write candidates with the same key, meter and section length, then swap that section into the base song. `simpler` prefers the donor whose section has the smallest leaps; when it plans more, it also asks for a stepwise melody. Pass `--no-plan` to use only donors already in `out/<slug>/write/`.
 
 Output: `out/<slug>/rewrite/<how>/candidate-*/` with song file, report and band preview, plus `candidates.json`. Keep one with `--keep` (same rules as `write --keep`). Plain lyrics come from `out/<slug>/write/lyrics.txt` when present, or `--lyrics`.

@@ -56,6 +56,16 @@ class BarHelpersTests(unittest.TestCase):
         self.assertEqual([a - b for a, b in zip(after, before)], [3] * len(before))
         self.assertEqual([t.text for b in bars for t in b.toks if t.kind == "chord"], chords)
 
+    def test_raise_section_moves_chords_with_notes(self):
+        bars, new_key = rewrite.raise_section(self.data, "chorus", 3)
+        # Partial section: song key stays; chorus chords move with the pitches.
+        self.assertEqual(new_key, self.data["key"])
+        chorus = bars[10:]
+        chords = [t.text for b in chorus for t in b.toks if t.kind == "chord"]
+        self.assertTrue(any(c in ("Bb", "A#") or c.startswith("Bb") or c.startswith("A#")
+                            for c in chords))                     # G + 3
+        self.assertTrue(any(c.startswith("F") for c in chords))   # D + 3 → F
+
 
 class HigherTests(unittest.TestCase):
     def setUp(self):
@@ -81,6 +91,10 @@ class HigherTests(unittest.TestCase):
         self.assertEqual(abcplan.pitches(bars[:10], raised["key"]), verse_before)
         self.assertGreater(rewrite.mean_pitch(bars[10:], raised["key"]),
                            sum(chorus_before) / len(chorus_before))
+        # Chorus chords moved with the notes (not left in the old key against a raised tune).
+        chorus_chords = [t.text for b in bars[10:] for t in b.toks if t.kind == "chord"]
+        base_chorus = [t.text for b in base_bars[10:] for t in b.toks if t.kind == "chord"]
+        self.assertNotEqual(chorus_chords, base_chorus)
         song = load_song(self.out / "carry-me-home" / "rewrite" / "higher" / best["song"])
         self.assertTrue(song.lyric_fits[0].fits)
 
@@ -108,10 +122,10 @@ class AgainTests(unittest.TestCase):
                                          {"planner": "yue-plan", "seed": 1})
         # Donor: same form, chorus raised so the swap is audible and leaps differ.
         donor_data = dict(base_cand.data)
-        donor_bars = rewrite.raise_section(donor_data, "chorus", 5)
+        donor_bars, donor_key = rewrite.raise_section(donor_data, "chorus", 5)
         donor_cand = rewrite.candidate_from_bars(
             donor_bars, unit=__import__("fractions").Fraction(donor_data["unit"]),
-            meter=donor_data["meter"], key=donor_data["key"], tempo=donor_data["tempo"],
+            meter=donor_data["meter"], key=donor_key, tempo=donor_data["tempo"],
             lyrics=lyrics, title="Carry Me Home", voice="alto", style="waltz",
             written_with={"planner": "yue-plan", "seed": 2})
 

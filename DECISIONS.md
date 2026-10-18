@@ -4,7 +4,7 @@ Newest first. One entry per decision: what, why, and what we gave up.
 
 ## 2026-10-18 (section rewrite)
 
-- **Section rewrite swaps donors or raises notes; it does not ask the planner for a fragment.** `yue-plan` only writes whole songs, so `again` / `simpler` plan or reuse full candidates with the same key, meter and section length, then splice that section into the base. `higher` moves the section's pitches up a few semitones and leaves the chords alone (no planner). Output lives under `out/<slug>/rewrite/<how>/`.
+- **Section rewrite swaps donors or raises a section; it does not ask the planner for a fragment.** `yue-plan` only writes whole songs, so `again` / `simpler` plan or reuse full candidates with the same key, meter and section length, then splice that section into the base. `higher` moves that section's notes and chords together (and the key when the section is the whole song); raising the tune alone against old chords sounded flat/out of tune. Output lives under `out/<slug>/rewrite/<how>/`.
 
 ## 2026-10-18 (write style line)
 
