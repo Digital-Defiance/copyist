@@ -1,14 +1,16 @@
 format: copyist-style/0
 name: Jazz waltz
 family: Jazz and blues
-about: Swing in three. A walking bass, the ride cymbal, the piano comping 3rd-and-7th chords off the beat.
+about: Swing in three. Walking bass, ride cymbal, piano shells that flip the off-beats every other bar.
 feel: swing
 tempo: [120, 200]
 instruments: {bass: upright-bass}
 production: jazz waltz, 3/4 swing, walking upright bass, ride cymbal, piano trio, clarinet, elegant
 meters:
   "3/4":
-    rh: [[1, 0.5, shell], [2.5, 0.5, shell]]
+    rh:
+      - [[1, 0.5, shell], [2.5, 0.5, shell]]
+      - [[0.5, 0.5, shell], [2, 0.5, shell]]
     lh: []
     bass: walk
     drums:

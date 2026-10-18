@@ -10,6 +10,7 @@ Newest first. One entry per decision: what, why, and what we gave up.
 - **Piano melody skips voice-style legato.** Overlapping successive notes (~15 ms) sounds right on a clarinet and clicks on Salamander; `melody_legato=False` releases before the next hammer.
 - **Ballad, hymn and lullaby follow the same idea** (2026-10-18, continued): piano melody, no kit on ballad/hymn, phrase cycles under the tune. Broadway ballad keeps the clarinet and varies its arpeggio phrase. Solo-piano textures (lullaby, no bass) keep the right-hand figure but drop pitches the melody is already playing.
 - **Uptempo styles get phrase cycles, not piano-vocal** (straight, pop, rock, country): the kit and clarinet stay; patterns answer across two bars. Folk is piano-vocal with `keep_rh: true` so the fingerpicked figure remains under the tune.
+- **Every style now cycles a phrase** on at least one of rh/lh/bass (2026-10-18). One-bar forever was the cheese; two-bar answers keep each style's identity (skank, Charleston, oom-pah, boogie, …).
 - **Gave up for this cut:** builds across verses, more melody instruments beyond piano/clarinet, real stereo mix. Those stay on TASKS 3f.
 
 ## 2026-10-18 (previews and score editing)

@@ -134,6 +134,15 @@ class CatalogTests(unittest.TestCase):
         with self.assertRaises(styles.StyleError):
             styles.parse(minimal(keep_rh=True), "test")
 
+    def test_every_style_cycles_a_phrase_on_some_part(self):
+        """No style is stuck on a single bar forever (the arranger-keyboard feel)."""
+        for s in styles.catalog().values():
+            for meter, pat in s.meters.items():
+                cycled = any(styles.is_cycle(pat[p]) for p in ("rh", "lh", "bass")
+                             if isinstance(pat.get(p), list))
+                with self.subTest(style=s.id, meter=meter):
+                    self.assertTrue(cycled, f"{s.id} {meter} has no phrase cycle")
+
     def test_lullaby_keeps_a_right_hand_that_avoids_the_melody(self):
         song = dataclasses.replace(load_song(SONGS["6/8"]), style="lullaby")
         band = arrange.arrange_band(song)

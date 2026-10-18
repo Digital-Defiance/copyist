@@ -1,13 +1,15 @@
 format: copyist-style/0
 name: Disco
 family: Soul and gospel
-about: Four on the floor. The kick on every beat, the open hi-hat on every off-beat, octaves in the bass, the piano chopping chords on the off-beats.
+about: Four on the floor. Open hi-hat on the off-beats; the piano chops chords, then settles every other bar.
 tempo: [112, 128]
 instruments: {bass: electric-bass}
 production: disco, four-on-the-floor, funky octave bass, lush strings, clavinet, rhythm guitar, 1970s dance floor
 meters:
   "4/4":
-    rh: [[0.5, 0.5, chord], [1.5, 0.5, chord], [2.5, 0.5, chord], [3.5, 0.5, chord]]
+    rh:
+      - [[0.5, 0.5, chord], [1.5, 0.5, chord], [2.5, 0.5, chord], [3.5, 0.5, chord]]
+      - [[0.5, 0.5, chord], [1.5, 0.5, chord], [2.5, 1.5, chord]]
     lh: []
     bass: {line: [root, octave], every: 0.5}
     drums:

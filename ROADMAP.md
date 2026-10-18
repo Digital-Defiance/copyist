@@ -138,7 +138,8 @@ Copyist arranges in as many styles as can be written as correct scores: everyone
 - [x] Exact-preview first cut: phrase cycles in styles; waltz piano-vocal (no drums); quieter accompaniment mix (2026-10-18)
 - [x] Softened ballad, hymn, lullaby, broadway-ballad previews (2026-10-18)
 - [x] Softened straight, pop, rock, country, folk previews (2026-10-18)
-- [ ] Exact previews that don't sound like a 1990s arranger keyboard (builds across verses, more style melody voices, real stereo mix, remaining styles). YuE2 takes stay on demand; see SPEC §15
+- [x] Phrase cycles on every style (2026-10-18)
+- [ ] Exact previews that don't sound like a 1990s arranger keyboard (builds across verses, more style melody voices, real stereo mix). YuE2 takes stay on demand; see SPEC §15
 - [x] Test songs in 4/4 and 6/8: *When the Saints Go Marching In*, *Silent Night* (public domain)
 - [ ] More parts in the arranger: organ, guitar (strummed and picked, chord shapes), strings, brass and reeds, a lead line, choir; the ensemble chosen by the style
 - [ ] Wave 1, finished with real parts: music box (for *I Left the Lights On*), gospel and hymn with organ, country with acoustic guitar and fiddle, folk with fingerpicked guitar, pop and rock with guitars
