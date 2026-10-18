@@ -1,0 +1,27 @@
+format: copyist-song/0
+title: The Tyger
+key: Bb
+meter: 3/4
+unit: 1/16
+tempo: 80
+voice:
+  name: Voice
+  range: [G3, E5]
+  clef: treble
+style: waltz
+sections:
+  - {name: verse, bar: 1}
+written_with:
+  planner: yue-plan
+  model: YuE2-3B
+  seed: 4
+  style: English, gentle 3/4 waltz, acoustic piano, soft strings, warm bass, intimate and heartfelt, warm female alto vocal, 126 BPM
+melody: |
+  "Bb"D4 "Bbmaj7"F2 F4 A,2 | "Eb"A,3 B,3 B,4 z2 | "Bb"D4 "Bbmaj7"F2 F4 A,2 | "Eb"A,3 B,3 B,4 z2 |
+  "Gm"D3 F- "Gm7/F"F2 B2- "F6"B A3 | "Eb"G3 F- "Bb/D"F2 D2 z2 D2 | "Cm7"E4 D2 E4 D2 | "F7"E D C4 z6 |]
+lyrics:
+  - |
+    Ty-ger Ty-ger, burn-ing bright
+    In the fo-rests of the night
+    What im-mor-tal hand or eye
+    Could frame thy fear-ful sym-me-try

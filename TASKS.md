@@ -152,8 +152,8 @@ The owner's goal is "really good melodies and solid themes", for people who can'
 - [x] Tests: `tests/test_write.py` (33 tests: syllable table, hand-written plans in `tests/data/plans/`, exact/melisma/split/line-end fits, 2/4 pairing, sections, the whole command with a fake `yue-plan`, keep) and the page's actions in `tests/test_web.py`
 - [x] The page: "Write a song" in the drawer (title, lyrics, style, voice, how many), the candidates as they land with band previews and plain-words scores, "Keep this one" (keeps it and writes its score, then opens the song), "Write 4 more". Driven end to end in a browser with a fake planner
 - [x] Checked for real in the container: yue-plan on CPU wrote two candidates for "Hope is the thing with feathers" in the folk style (2 min 21 s each on 2 cores); both passed every check, one warning each
-- [x] On the Mac (18 Oct 2026): `copyist write` for Dickinson "Hope" (folk) and Blake "Tyger" (waltz), 4 candidates each, `--device MTL0`. About 30 s for four (plans + band previews). All eight usable. Waltz style line was dropping its trailing `3/4` tag (dedupe ate it); fixed, and ranking now prefers the style's meter. Owner still to listen and pick by ear: `out/hope/write/`, `out/the-tyger/write/`
-- [ ] Owner listens to the Mac write previews and notes what goes wrong (page or CLI)
+- [x] On the Mac (18 Oct 2026): `copyist write` for Dickinson "Hope" (folk) and Blake "Tyger" (waltz), 4 candidates each, `--device MTL0`. About 30 s for four (plans + band previews). All eight usable. Waltz style line was dropping its trailing `3/4` tag (dedupe ate it); fixed, and ranking now prefers the style's meter
+- [x] Owner listened (18 Oct 2026): "sounds fine"; Tyger candidate 4 ("maybe the liveliest") kept as `songs/the-tyger.yaml`. Hope still in `out/hope/write/` if she wants one
 - [ ] Section rewriting ("again", "higher", "simpler") and a rule-based writer of Copyist's own (spec, "Later")
 - [ ] Let the page edit a kept song's lyrics and refit them (the fit code is ready)
 

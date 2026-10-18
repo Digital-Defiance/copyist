@@ -21,7 +21,7 @@ The work moved fast and may change hands at any moment. Here is where things sta
 - `copyist write` and `copyist transcribe` (built 18 October 2026). Mac write timed: ~8 s a candidate on MTL0.
 
 **Next, in this order:**
-1. **Melody writing:** owner listens to `out/hope/write/` and `out/the-tyger/write/` (or runs more from the page); fix what she finds. Then section rewriting (TASKS 3g).
+1. **Melody writing:** owner listened (Tyger #4 kept). Next: section rewriting ("again" / "higher" / "simpler") — TASKS 3g.
 2. **Transcribing recordings:** TASKS.md section 7 — more sung test recordings, then the owner's songs.
 3. **Less-cheesy exact previews (rest of 3f):** crank/comb music box when a CC0 set can be hosted (celesta is in).
 4. **The open singer (plan B):** TASKS.md section 3h, spec in [docs/open-singer.md](docs/open-singer.md). Start with phase B0 (feasibility).
