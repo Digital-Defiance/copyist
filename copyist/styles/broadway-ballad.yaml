@@ -1,10 +1,10 @@
 format: copyist-style/0
 name: Broadway ballad
 family: Musical theatre
-about: The big emotional number. The piano flows in changing arpeggio figures over sustained bass notes. No drums.
+about: The big emotional number. The concert harp flows in changing arpeggio figures over sustained bass notes. No drums.
 tempo: [56, 84]
-instruments: {bass: upright-bass}
-production: Broadway ballad, emotional, theatrical, lush strings, piano, cast recording, soaring
+instruments: {piano: harp, bass: upright-bass}
+production: Broadway ballad, emotional, theatrical, lush strings, harp, piano, cast recording, soaring
 meters:
   "4/4":
     # Two-bar phrase: rising figure, then a falling answer — not the same eight notes forever.

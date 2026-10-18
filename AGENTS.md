@@ -30,7 +30,7 @@ The work moved fast and may change hands at any moment. Here is where things sta
 - An M4 Max Mac with 64 GB, the repository at `/Volumes/Code/copyist`, a `.venv` there.
 - yue2.cpp built with Metal in `.cache/yue2.cpp/build/` (`yue-synth`, `yue-plan`, `yue-transcribe`, `yue-tokenize`).
 - YuE2 weights in `.cache/yue/`.
-- Instruments install with `scripts/setup-sfizz.sh --instruments` (band) and `copyist models download keys` (pipe organ, ~86 MB).
+- Instruments install with `scripts/setup-sfizz.sh --instruments` (band) and `copyist models download keys` (pipe organ + concert harp, ~120 MB).
 - Run YuE2 with `--device MTL0`.
 - GPU work (takes, planning, training) runs there, started by the owner in Terminal or from the page.
 - An agent in a cloud container can't use the Mac's GPU. Write scripts and commands for her to run, and say how long they take.

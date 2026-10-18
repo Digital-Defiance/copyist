@@ -2,9 +2,11 @@
 
 Newest first. One entry per decision: what, why, and what we gave up.
 
-## 2026-10-18 (pipe organ)
+## 2026-10-18 (pipe organ and harp)
 
-- **Hymn and gospel previews use the VCSL pipe organ** (manuals only, Quiet + Loud; Copyist writes the SFZ like the clarinet). Hymn: organ on the melody and the held chords, upright bass under. Gospel: organ on the piano comps (stand-in until a tonewheel exists). Pack `keys` downloads it (~86 MB). Gave up: pedals and a real Hammond for this cut.
+- **Hymn and gospel previews use the VCSL pipe organ** (manuals only, Quiet + Loud; Copyist writes the SFZ like the clarinet). Hymn: organ on the melody and the held chords, upright bass under. Pack `keys` downloads it (~86 MB). Gave up: pedals and a real Hammond for this cut.
+- **Gospel comps are held pads, not triplet chops.** Re-striking the organ eight times a bar made the preview stumble; sustain is what organs do. Bass and drums stay a plain backbeat.
+- **Broadway ballad plays the VSCO concert harp** (~35 MB, same `keys` pack) on the arpeggio part. The pit needs a harp more than another piano.
 
 ## 2026-10-18 (prosody in compound meters)
 

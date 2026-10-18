@@ -166,7 +166,7 @@ class WebTests(unittest.TestCase):
                          ["piano", "electric-bass", "upright-bass", "drums", "clarinet"])
         self.assertGreater(band["size"], 500_000_000)
         keys = next(g for g in listing["instruments"] if g["id"] == "instruments-keys")
-        self.assertEqual([i["id"] for i in keys["models"]], ["organ"])
+        self.assertEqual([i["id"] for i in keys["models"]], ["organ", "harp"])
         self.assertIn("sfizz", listing)
 
     def test_the_band_recording_says_what_played_it(self):

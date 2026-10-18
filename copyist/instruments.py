@@ -64,6 +64,9 @@ CATALOG = {i.id: i for i in (
     Instrument("organ", "VCSL pipe organ (manuals, Quiet and Loud)", "sgossner/VCSL",
                "c1ea7bcc3c7309650ab0da9d15c9cd1fbc4a4c7e", "organ.sfz", "CC0", "",
                "https://github.com/sgossner/VCSL", generated=True),
+    Instrument("harp", "VSCO 2 Community Edition concert harp", "sgossner/VSCO-2-CE",
+               "440300901dfe9275fd84e0b7763af1f8443ae62e", "harp.sfz", "CC0", "",
+               "https://versilian-studios.com/vsco-community/", generated=True),
 )}
 
 # What a person downloads, in packs, so nobody fetches an orchestra they won't use.
@@ -71,8 +74,8 @@ PACKS = {
     "band": {"label": "The band", "why": "plays the score preview and the parts: a grand piano, two basses, "
                                           "a drum kit, and a clarinet for the melody",
              "instruments": ["piano", "electric-bass", "upright-bass", "drums", "clarinet"]},
-    "keys": {"label": "Keys", "why": "pipe organ for hymns and gospel (more keys instruments later)",
-             "instruments": ["organ"]},
+    "keys": {"label": "Keys", "why": "pipe organ and concert harp for hymns, gospel and Broadway",
+             "instruments": ["organ", "harp"]},
 }
 
 # Which instrument plays each part of the arrangement (roles from perform.roles), unless the

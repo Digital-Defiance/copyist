@@ -30,6 +30,7 @@ EXTRA = {
     "organ": ["LICENSE", "README.md",
               "Aerophones/Edge-blown Aerophones/Pipe Organ/Quiet/",
               "Aerophones/Edge-blown Aerophones/Pipe Organ/Loud/"],
+    "harp": ["LICENSE", "README.md", "Strings/Harp/"],
 }
 
 
