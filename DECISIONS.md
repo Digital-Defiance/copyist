@@ -5,10 +5,11 @@ Newest first. One entry per decision: what, why, and what we gave up.
 ## 2026-10-18 (rule-based writer)
 
 - **`copyist write --engine rules` is Copyist's own MIT melody writer**, and `--engine auto` falls back to it when `yue-plan` isn't installed. YuE2's planner stays the default when present (`plan`). Gave up: waiting on an open neural planner before anyone without YuE2 can write a song.
+- **Rules melodies stay diatonic in the key.** An early version stepped by chromatic semitones, so Hope in E♭ mixed `_G`/`G` and `=e` against flat chords and sounded sharp and flat at once. Contour and motif now move by scale degree; strong beats are chord tones.
 
 ## 2026-10-18 (GitHub Pages site)
 
-- **The public site lives in `site/` and deploys with GitHub Actions**, not the repo `docs/` folder. `docs/` stays project documentation (markdown for agents and contributors). The Pages site is a static advert: score-first pitch, features, install — desk colours and staff motif from `copyist serve`, served at `https://copyist.digitaldefiance.org/` (`site/CNAME`). **Type on the public site is Instrument Serif + Instrument Sans + Source Serif 4**, not the local app’s Shantell Sans (too handwritten for a marketing page). Gave up: a CDN-built framework; plain HTML/CSS/JS, no build step.
+- **The public site lives in `site/` and deploys with GitHub Actions**, not the repo `docs/` folder. `docs/` stays project documentation (markdown for agents and contributors). The Pages site is a static advert: score-first pitch, features, install — same desk colours, staff motif and type as `copyist serve`, at `https://copyist.digitaldefiance.org/` (`site/CNAME`). **Type everywhere is Instrument Serif + Instrument Sans + Source Serif 4** (SIL OFL); Shantell Sans is gone (too handwritten). Gave up: a CDN-built framework; plain HTML/CSS/JS, no build step.
 
 ## 2026-10-18 (section rewrite)
 
@@ -169,7 +170,7 @@ Newest first. One entry per decision: what, why, and what we gave up.
 - **A local page served by Python's own HTTP server** (`copyist serve`), not a framework or a hosted app. No new dependencies, and the work has to run where the GPU is. Gave up: hosting for other people, for now.
 - **The page runs the `copyist` commands as jobs, one at a time.** The command line stays the one way things get made, and the GPU can't do two renders at once.
 - **Sheets are shown as page images** rendered from the PDFs with PyMuPDF, because browsers' PDF viewers aren't reliable (Chromium headless shows nothing).
-- **Fonts are bundled** (Shantell Sans for what you do, Source Serif 4 for what Copyist wrote; both SIL OFL), so the page fetches nothing from the internet.
+- **Fonts are bundled** (Instrument Serif for brand/titles, Instrument Sans for controls, Source Serif 4 for reading; SIL OFL), so the page fetches nothing from the internet. Shantell Sans was dropped 2026-10-18.
 - **Guards:** 127.0.0.1 only, files from `out/` only, a Host check against DNS rebinding, and jobs only from the page itself (a custom header plus an Origin check).
 
 ## 2026-10-17 (voice LoRA)

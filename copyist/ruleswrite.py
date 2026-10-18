@@ -144,6 +144,28 @@ def _midi_near(pc: int, target: int) -> int:
     return min(options, key=lambda m: abs(m - target))
 
 
+def _deg_midi(key: str, degree_0: int, target: int, low: int, high: int) -> int:
+    """MIDI for scale degree 0=tonic .. 6, nearest `target`, clamped to [low, high]."""
+    pc = _scale_pcs(key)[degree_0 % 7]
+    m = _midi_near(pc, target)
+    while m < low:
+        m += 12
+    while m > high:
+        m -= 12
+    if not low <= m <= high:
+        m = _midi_near(pc, (low + high) // 2)
+    return m
+
+
+def _midi_degree(key: str, midi: int) -> int:
+    """0-based scale degree of `midi` (snapped to the nearest scale pitch class)."""
+    scale = _scale_pcs(key)
+    pc = midi % 12
+    if pc in scale:
+        return scale.index(pc)
+    return min(range(7), key=lambda i: min((pc - scale[i]) % 12, (scale[i] - pc) % 12))
+
+
 def _spell_midi(midi: int, key: str) -> Tok:
     letter, alter, octave = abcplan._spell(midi, key)
     ka = abcplan.key_accidentals(key)
@@ -152,7 +174,11 @@ def _spell_midi(midi: int, key: str) -> Tok:
 
 
 def compose(lyrics: str, style_id: str | None, voice: str, seed: int) -> Draft:
-    """Lyrics + style + voice + seed → bars in the singer's range."""
+    """Lyrics + style + voice + seed → bars in the singer's range.
+
+    The tune stays diatonic in the key (no chromatic sharps against flats): contour and
+    motif move by scale degree, strong beats land on chord tones.
+    """
     from .write import VOICES
     if voice not in VOICES:
         raise WriteError(f"Unknown voice {voice!r}.")
@@ -173,8 +199,8 @@ def compose(lyrics: str, style_id: str | None, voice: str, seed: int) -> Draft:
     middle = (low + high) // 2
 
     bars: list[Bar] = []
-    # Motif: first line's interval sequence, reused with small changes.
-    motif_intervals: list[int] | None = None
+    # Motif: first line's scale-degree steps (not semitones), reused with small changes.
+    motif_steps: list[int] | None = None
     chord_i = 0
     section_name = sections[0].name if sections else "verse"
 
@@ -198,15 +224,13 @@ def compose(lyrics: str, style_id: str | None, voice: str, seed: int) -> Draft:
                     base = 2
                 lengths.append(Fraction(base))
             # Pad or trim so bars fill cleanly: group into bars of bar_len.
-            events: list[tuple[Fraction, syllables.Syllable | None]] = []  # (length, syll or rest)
+            events: list[tuple[Fraction, syllables.Syllable | None]] = []
             for length, sy in zip(lengths, line_sylls):
                 events.append((length, sy))
-            # Fill last bar with a rest if short; split overlong runs into bars.
             packed: list[list[tuple[Fraction, syllables.Syllable | None]]] = [[]]
             filled = Fraction(0)
             for length, sy in events:
                 if filled + length > bar_len and packed[-1]:
-                    # Rest out the bar, then start a new one.
                     gap = bar_len - filled
                     if gap > 0:
                         packed[-1].append((gap, None))
@@ -224,12 +248,13 @@ def compose(lyrics: str, style_id: str | None, voice: str, seed: int) -> Draft:
                 packed.pop()
 
             line_midis: list[int] = []
+            line_degs: list[int] = []
             for bar_events in packed:
                 degree = progression[chord_i % len(progression)]
                 chord_i += 1
                 symbol = _chord_symbol(key, degree)
-                tones = _chord_tones(key, degree)
-                scale = _scale_pcs(key)
+                root_deg = (degree - 1) % 7
+                chord_degs = [root_deg, (root_deg + 2) % 7, (root_deg + 4) % 7]
                 toks: list[Tok] = [Tok("chord", symbol)]
                 pos_in_bar = Fraction(0)
                 for length, sy in bar_events:
@@ -237,45 +262,46 @@ def compose(lyrics: str, style_id: str | None, voice: str, seed: int) -> Draft:
                         toks.append(Tok("rest", length=length))
                         pos_in_bar += length
                         continue
-                    # Contour index + motif variation.
                     idx = len(line_midis)
-                    if motif_intervals and idx < len(motif_intervals) and idx > 0:
-                        step = motif_intervals[idx - 1] + rng.choice((-1, 0, 0, 1))
-                        prev = line_midis[-1]
-                        target = prev + step
-                    else:
-                        off = contour[idx % len(contour)]
-                        # Strong beat → chord tone; weak → scale neighbour.
-                        strong = pos_in_bar == 0 or (pos_in_bar / (bar_len / 2)).denominator == 1
+                    off = contour[idx % len(contour)]
+                    strong = pos_in_bar == 0 or (pos_in_bar / (bar_len / 2)).denominator == 1
+                    if motif_steps and idx < len(motif_steps) and idx > 0:
+                        deg = (line_degs[-1] + motif_steps[idx - 1] + rng.choice((-1, 0, 0, 1))) % 7
+                        # Keep stressed / downbeat notes as chord tones.
                         if strong or sy.weight >= 1.5:
-                            pc = tones[off % len(tones)]
-                        else:
-                            pc = scale[(scale.index(tones[0]) + off) % len(scale)]
-                        target = _midi_near(pc, middle + (2 if sy.weight >= 1.5 else 0))
-                    # Cadence: last syllable of the line toward tonic root/third.
+                            deg = min(chord_degs, key=lambda d: min((d - deg) % 7, (deg - d) % 7))
+                    elif strong or sy.weight >= 1.5:
+                        deg = chord_degs[off % len(chord_degs)]
+                    else:
+                        deg = (root_deg + off) % 7
                     if sy.line_end:
-                        tonic = _chord_tones(key, 1)
-                        target = _midi_near(tonic[0] if sy.weight >= 1 else tonic[1], target)
-                    target = max(low, min(high, target))
+                        deg = 0 if sy.weight >= 1 else 2   # tonic or mediant
+                    aim = middle + (2 if sy.weight >= 1.5 else 0)
+                    if line_midis:
+                        aim = line_midis[-1] + (2 if deg > line_degs[-1] else -2 if deg < line_degs[-1] else 0)
+                    target = _deg_midi(key, deg, aim, low, high)
                     if line_midis and abs(target - line_midis[-1]) > 7:
-                        # Prefer a smaller leap into range.
-                        step = 2 if target > line_midis[-1] else -2
-                        target = max(low, min(high, line_midis[-1] + step))
+                        # Step along the scale toward the aim instead of leaping.
+                        step = 1 if target > line_midis[-1] else -1
+                        deg = (line_degs[-1] + step) % 7
+                        target = _deg_midi(key, deg, line_midis[-1] + 2 * step, low, high)
                     note = _spell_midi(target, key)
                     note.length = length
                     toks.append(note)
                     line_midis.append(target)
+                    line_degs.append(_midi_degree(key, target))
                     pos_in_bar += length
                 bars.append(Bar(toks, section=section_name))
 
-            if motif_intervals is None and len(line_midis) >= 3:
-                motif_intervals = [b - a for a, b in zip(line_midis, line_midis[1:])]
+            if motif_steps is None and len(line_degs) >= 3:
+                motif_steps = [b - a for a, b in zip(line_degs, line_degs[1:])]
+                # Wrap to signed steps in -3..3 so the motif stays singable.
+                motif_steps = [((s + 3) % 7) - 3 for s in motif_steps]
 
     if not bars:
         raise WriteError("Couldn't shape a melody from these lyrics.")
-    # Tag bars with section names already set; ensure first bar of each section is marked.
     notes = [f"Rule-based melody in {key} {meter} at {tempo}; seed {seed}.",
-             f"Progression {[ _chord_symbol(key, d) for d in progression ]}, contour varied by seed."]
+             f"Progression {[ _chord_symbol(key, d) for d in progression ]}, diatonic contour."]
     return Draft(bars, key, meter, unit, tempo, notes)
 
 

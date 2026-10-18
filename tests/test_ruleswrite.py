@@ -47,6 +47,18 @@ class ComposeTests(unittest.TestCase):
         with self.assertRaises(write.WriteError):
             ruleswrite.compose("   ", "waltz", "alto", 1)
 
+    def test_melody_stays_diatonic(self):
+        # Chromatic sharps against flats made Hope candidate 1 sound sharp and flat at once.
+        from copyist import abcplan
+        for seed in (1, 2, 3, 7, 11):
+            draft = ruleswrite.compose(LYRICS, "folk", "alto", seed)
+            scale = set(ruleswrite._scale_pcs(draft.key))
+            midis = abcplan.pitches(draft.bars, draft.key)
+            off = [m for m in midis if (m % 12) not in scale]
+            self.assertEqual(off, [], f"seed {seed} key {draft.key}: off-scale {off}")
+            melody = abcplan.write(draft.bars, draft.unit, draft.unit)
+            self.assertNotRegex(melody, r"[=^_]", f"seed {seed}: chromatic mark in {melody!r}")
+
 
 class WriteCommandRulesTests(unittest.TestCase):
     def setUp(self):
