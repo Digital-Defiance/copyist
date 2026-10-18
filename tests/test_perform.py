@@ -92,6 +92,28 @@ class PerformTests(unittest.TestCase):
         for a, b in zip(line, line[1:]):
             self.assertLessEqual(a.end, b.start, (a.pitch, b.pitch, a.end, b.start))
 
+    def test_the_band_builds_across_the_song(self):
+        """Accompaniment opens softer and is fuller in the middle; the melody is left alone."""
+        self.assertTrue(self.info.get("form_build"))
+        shape = perform.shape_for(self.song.meter, self.pickup, self.tpq)
+        last_bar, _ = shape.where(max(n.end for n in self.after) - 1)
+        early, mid = [], []
+        for n in self.after:
+            if self.roles.get(n.track) not in ("piano_lh", "bass"):
+                continue
+            bar, _ = shape.where(n.start)
+            if bar < 0:
+                continue
+            if bar <= 2:
+                early.append(n.velocity)
+            elif last_bar // 3 <= bar <= 2 * last_bar // 3:
+                mid.append(n.velocity)
+        self.assertTrue(early and mid)
+        self.assertLess(sum(early) / len(early), sum(mid) / len(mid))
+        self.assertAlmostEqual(perform.form_build(0, 16), 0.70, places=2)
+        self.assertAlmostEqual(perform.form_build(8, 16), 1.0, places=2)
+        self.assertLess(perform.form_build(15, 16), 0.95)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -8,12 +8,15 @@ numpy only, so it runs wherever Copyist does.
 - One shared room: a short, natural reverb (a synthetic impulse response,
   about 1.1 s, darker as it decays), with more of it on the melody and piano
   than on the bass, so the parts sound like they were played together.
+- A simple stereo place for each part (melody and bass in the middle, piano a
+  little left, drums a little right), so the mix isn't a mono pile.
 - The master: the whole mix to -16 LUFS, then a look-ahead limiter that keeps
   peaks under -1 dBFS. If that would need more than a few dB of limiting, the
   mix is left quieter instead: gentle, not loud.
 """
 from __future__ import annotations
 
+import math
 import wave
 from dataclasses import dataclass
 from pathlib import Path
@@ -23,6 +26,8 @@ import numpy as np
 TARGET_LUFS = -16.0
 CEILING_DB = -1.0
 MAX_LIMIT_DB = 4.0
+# Constant-power pan: -1 = full left, 0 = centre, +1 = full right.
+PAN = {"melody": 0.0, "piano": -0.28, "other": 0.18, "bass": 0.0, "drums": 0.32}
 
 
 # ------------------------------------------------------------------ files
@@ -197,20 +202,30 @@ class Mixed:
     limited_db: float
 
 
+def pan(x: np.ndarray, amount: float) -> np.ndarray:
+    """Place a part in the stereo field (constant-power). Amount is −1…+1."""
+    amount = float(max(-1.0, min(1.0, amount)))
+    angle = (amount + 1.0) * 0.25 * math.pi
+    g_l, g_r = math.cos(angle) * math.sqrt(2), math.sin(angle) * math.sqrt(2)
+    mid = x.mean(axis=1, keepdims=True).astype(np.float32)
+    return np.concatenate([mid * np.float32(g_l), mid * np.float32(g_r)], axis=1)
+
+
 def mix(parts: dict[str, np.ndarray], sr: int, balance_db: dict[str, float], reverb: dict[str, float],
-        reference: str = "melody") -> Mixed:
-    """Balance the parts by loudness, put them in one room, and master the sum."""
+        reference: str = "melody", pan_amount: dict[str, float] | None = None) -> Mixed:
+    """Balance the parts by loudness, place them, put them in one room, and master the sum."""
     length = max(len(a) for a in parts.values())
     ir = room_impulse(sr)
     measured = {name: loudness(a, sr) for name, a in parts.items()}
     ref = reference if np.isfinite(measured.get(reference, float("-inf"))) else None
+    place = pan_amount if pan_amount is not None else PAN
     stems, gains = {}, {}
     for name, a in parts.items():
         if not np.isfinite(measured[name]):
             continue
         offset = balance_db.get(name, -6.0) - (balance_db.get(ref, 0.0) if ref else 0.0)
         gain_db = -23.0 + offset - measured[name]
-        dry = a * np.float32(10 ** (gain_db / 20))
+        dry = pan(a * np.float32(10 ** (gain_db / 20)), place.get(name, 0.0))
         stem = np.zeros((length + len(ir) - 1, 2), dtype=np.float32)
         stem[: len(dry)] += dry
         wet = convolve(dry, ir) * reverb.get(name, 0.1)

@@ -3,9 +3,10 @@
 Turns the plain arrangement MIDI, every note at one velocity and exactly on
 the grid, into a performance, without changing a single note:
 
-- dynamics: each phrase rises and settles, strong beats lean, the melody
-  sings over the band and swells with its contour, and no two notes are hit
-  quite alike;
+- dynamics: each phrase rises and settles, the band builds across the song
+  (soft open → full middle → settle), strong beats lean, the melody sings
+  over the band and swells with its contour, and no two notes are hit quite
+  alike;
 - timing: small human variation, the melody a hair ahead of the band, piano
   chords rolled upward by a few milliseconds, a breath at each phrase end, and
   a ritardando into the last chord, which then rings;
@@ -33,6 +34,22 @@ ROLL_MS = 7.0          # per note of a piano chord, bottom up
 METRIC = {"down": 1.08, "secondary": 1.03, "beat": 0.97, "off": 0.92}
 RIT_TO = 0.80          # the final tempo, as a share of the written tempo
 BREATH = 0.95          # tempo on the last beat of each phrase
+BAND_ROLES = frozenset({"piano_rh", "piano_lh", "bass", "drums", "other"})
+
+
+def form_build(bar: int, n_bars: int) -> float:
+    """How loud the band sits in the song: soft open → full → settle at the end.
+
+    The melody is left alone so the tune stays clear; accompaniment follows this.
+    """
+    if n_bars <= 4 or bar < 0:
+        return 1.0
+    x = bar / (n_bars - 1)
+    if x < 0.35:
+        return 0.70 + 0.30 * (x / 0.35)
+    if x > 0.80:
+        return 1.0 - 0.18 * ((x - 0.80) / 0.20)
+    return 1.0
 
 
 @dataclass
@@ -225,6 +242,8 @@ def perform(midi_in: Path, midi_out: Path, meter: str, pickup_q: float = 0.0, se
         phrase = max(0, bar) // phrase_bars
         song_arc = 1 + 0.06 * math.sin(math.pi * (phrase + 0.5) / n_phrases)
         arc = phrase_arc(x) * song_arc
+        if r in BAND_ROLES:
+            arc *= form_build(bar, n_bars)
         metric = METRIC[shape.strength(n.start)]
         v = float(n.velocity)
         if r == "drums":
@@ -328,7 +347,7 @@ def perform(midi_in: Path, midi_out: Path, meter: str, pickup_q: float = 0.0, se
     write(mid, notes, others, midi_out, extra)
     return {"notes": len(notes), "seed": seed, "phrases": n_phrases, "pedal_changes": len(pedal) // 2,
             "ritardando_bars": rit_bars, "timing_ms": max(SIGMA_MS.values()) * 2.5 + MELODY_LEAD_MS,
-            "swing": swing if swung else 0.5, "swung_notes": swung}
+            "swing": swing if swung else 0.5, "swung_notes": swung, "form_build": True}
 
 
 def pickup_of(song) -> Fraction:

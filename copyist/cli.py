@@ -87,8 +87,9 @@ def cmd_build(args) -> int:
     extra += [f"- {n}" for n in band.notes]
     if performed:
         extra += ["", "## Performance", "",
-                  f"Played, not just written (seed {performed['seed']}): phrases rise and settle, downbeats lean, "
-                  f"the melody sings over the band, timing varies by up to about {performed['timing_ms']:.0f} ms, "
+                  f"Played, not just written (seed {performed['seed']}): phrases rise and settle, the band builds "
+                  f"across the song, downbeats lean, the melody sings over the band, timing varies by up to about "
+                  f"{performed['timing_ms']:.0f} ms, "
                   f"the piano pedals {performed['pedal_changes']} times with the harmony, and the last "
                   f"{performed['ritardando_bars']} bars slow down into a ringing final chord. Every note is the "
                   "written one. `--plain` writes the MIDI exactly on the grid instead."]

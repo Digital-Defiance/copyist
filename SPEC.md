@@ -349,7 +349,7 @@ Three layers; each has a job:
 | Sung guide | SoulX melody over that band or piano | Optional, when words-on-notes matter | longer |
 | Finished take | YuE2 production of the score | On demand (`--takes`, Make a take) | ~1 min/song |
 
-The exact band must stop sounding like a 1990s arranger keyboard (TASKS 3f). Style files can cycle a phrase of bars (not one bar forever), pick a melody instrument per style (piano for the waltz), and omit drums when they only add cheese. YuE2 is not the default audition for new melodies.
+The exact band must stop sounding like a 1990s arranger keyboard (TASKS 3f). Style files can cycle a phrase of bars (not one bar forever), pick a melody instrument per style (piano for the waltz), and omit drums when they only add cheese. The performance builds the band across the song (soft open → full → settle), and the mix places parts in stereo. YuE2 is not the default audition for new melodies.
 
 ## 16. Open questions
 

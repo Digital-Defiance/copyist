@@ -153,6 +153,24 @@ class MixdownTests(unittest.TestCase):
         self.assertAlmostEqual(diff, 6.0, delta=0.5)
         self.assertAlmostEqual(m.loudness, mixdown.TARGET_LUFS, delta=0.5)
 
+    def test_parts_sit_in_the_stereo_field(self):
+        x = self.tone(-20, seconds=1.0)
+        left = mixdown.pan(x, -1.0)
+        right = mixdown.pan(x, 1.0)
+        centre = mixdown.pan(x, 0.0)
+        self.assertGreater(np.abs(left[:, 0]).mean(), np.abs(left[:, 1]).mean() * 8)
+        self.assertGreater(np.abs(right[:, 1]).mean(), np.abs(right[:, 0]).mean() * 8)
+        self.assertAlmostEqual(float(np.abs(centre[:, 0]).mean()), float(np.abs(centre[:, 1]).mean()), delta=1e-4)
+        parts = {"melody": self.tone(-20, freq=440), "piano": self.tone(-20, freq=330),
+                 "drums": self.tone(-20, freq=200)}
+        m = mixdown.mix(parts, self.sr, {k: 0.0 for k in parts}, {k: 0.0 for k in parts})
+        piano_l = float(np.abs(m.stems["piano"][:, 0]).mean())
+        piano_r = float(np.abs(m.stems["piano"][:, 1]).mean())
+        drums_l = float(np.abs(m.stems["drums"][:, 0]).mean())
+        drums_r = float(np.abs(m.stems["drums"][:, 1]).mean())
+        self.assertGreater(piano_l, piano_r)
+        self.assertGreater(drums_r, drums_l)
+
     def test_wav_round_trip_in_24_bits(self):
         path = Path(tempfile.mkdtemp()) / "x.wav"
         x = self.tone(-6, seconds=0.1)
