@@ -3,7 +3,7 @@
 If you're picking up this work, start here. Tick a box when its task is done and verified, and add new tasks where they fit.
 Background: [SPEC.md](SPEC.md) says what to build, [ROADMAP.md](ROADMAP.md) lays out the milestones, [DECISIONS.md](DECISIONS.md) records why, and [AGENTS.md](AGENTS.md) has the rules.
 
-Last updated: 2026-10-17.
+Last updated: 2026-10-18.
 
 ## Ground rules
 
@@ -126,16 +126,17 @@ The SoundFont band plus a SoulX vocal will never sound like Suno: they're checki
 The owner's goal is "really good melodies and solid themes", for people who can't write music. Take these in order; each has its test for "done".
 
 - [x] Spike: `yue-plan` writes a full score (melody, chords, sections) from lyrics and a style, with no audio. Tested on "Hope is the thing with feathers": 3/4 in D, and 4/4 in B-flat with a different style line; 2 min 42 s on a 2-core CPU. Format notes in the spec
-- [x] `copyist/syllables.py`: English syllables and stress (CMU dictionary through `pronouncing`, plus spelling rules). Written and checked by hand on 40+ words; the table test is still to write (next item)
-- [x] `copyist/abcplan.py`: reads yue-plan's dialect (sections, Vocal and Ins voices, `Zn`, ties, chords on rests; refuses tuplets), trims to the sung bars, `place_in_range` (down YuE2's octave, best octave for the voice, a semitone transposition with a new key when more than 10% is still outside), `respell` (writes every accidental explicitly, because music21 doesn't carry accidentals through a bar while YuE2's plans do), rescales units. Checked on the two real plans and on the hand-written plans in `tests/data/plans/`
-- [x] `copyist/fit.py`: dynamic-programming fit of syllables to notes with the spec's cost table, plus a rule that a word's stressed syllable mustn't land on a weaker beat than its neighbour (what `copyist check` warns about); splits notes when there are more syllables. Both real plans fit "Hope is the thing with feathers" with no prosody warnings and `lyrics.align` reports `fits`
-- [x] Song format: optional `sections:` and `written_with:` (`song.py`: `Song.sections`, `Song.section_at`, `read_sections`); `yue.score_abc` labels `% chorus` and `yue.lyrics_text` writes `[Chorus]` from them. All 136 existing tests pass
-- [x] `copyist/write.py` core: `song_from_plan(plan_text, lyrics, title, voice, style, written_with, credits)` returns a `Candidate` (song data, placement, fit, report notes); `song_yaml` writes a readable song file; `VOICES` presets. Smoke-tested: alto-waltz (D, 1/4, chorus at bar 11), tenor-march (G, 1/8), wide-range (C transposed to F, 1/16), tuplet refused
-- [ ] **NEXT: `tests/test_write.py`** for everything above (spec section "Tests"): the 40-word syllable table (feathers fea-thers [2,0], extremity ex-tre-mi-ty [0,2,0,0], alleluia al-le-lu-ia [1,0,2,0], being be-ing, fire, hour, every ev-ery, heaven hea-ven, sweetest sweet-est, morning morn-ing, running run-ning...); the plans in `tests/data/plans/` (each `.abc` has a matching `.txt` lyric with exactly as many syllables as notes); alignment cases: exact, one syllable fewer (expect one hold at a line end), one more (expect one split), a line that must end on a rest; `sections:` loading, bad sections refused, and a YuE2 request with `[Chorus]`
-- [ ] `copyist write LYRICS --title --style --voice --candidates --seed [--takes]` (CLI in `cli.py`, loop in `write.py` around `song_from_plan`): planner requests (`lora.yue_lyrics` for the lyrics, the style's `production` words plus `VOICES[voice][3]`, `"cot": "full"`, `"abc": ""`, `lm_seed` = seed + k), run `yue-plan` (`paths.find_program("yue-plan", "COPYIST_YUE_PLAN")`, model from `models.path_of("yue2")`), candidates folder, song files, reports, band previews, `candidates.json` ranked by the spec's scores; `--keep k`. Done when a fake `yue-plan` (as tests/test_yue.py fakes yue-synth) drives an end-to-end test
-- [ ] On the Mac: `copyist write` on a few lyrics (public-domain poems first) with 4 candidates each; time it; the owner listens and picks. Note what goes wrong
-- [ ] The page: "Write a song" (lyrics box, style, voice, number of candidates), candidates as they land with players and scores, "Keep this one", "Write more"
-- [ ] Docs: README, SPEC 8.3, docs/web.md, and the spec's status line
+- [x] `copyist/syllables.py`: English syllables and stress (CMU dictionary through `pronouncing`, plus spelling rules: `-est`/`-ing` keep their syllable, stop+liquid onsets go with the next vowel, `tch` stays together). A 40-word table test passes
+- [x] `copyist/abcplan.py`: reads yue-plan's dialect (sections, Vocal and Ins voices, `Zn`, ties, chords on rests; refuses tuplets), trims to the sung bars, writes 2/4 plans as 4/4 (`pair_bars`, putting chord changes on the downbeats), `place_in_range` (down YuE2's octave, best octave for the voice, a semitone transposition with a new key when more than 10% is still outside), `respell` (every accidental explicit, because music21 doesn't carry accidentals through a bar while YuE2's plans do), rescales units, drops repeated chord symbols
+- [x] `copyist/fit.py`: dynamic-programming fit of syllables to notes with the spec's cost table, plus a rule that a word's stressed syllable mustn't land on a weaker beat than its neighbour; splits notes when there are more syllables
+- [x] Song format: optional `sections:` (rehearsal marks on the lead sheet and score; `[Chorus]` in YuE2 requests) and `written_with:`
+- [x] `copyist write LYRICS --title --style --words --voice --candidates --seed [--takes] [--no-preview] [--words-by --music-by]`: planner requests, plans reused when the request is unchanged, candidate folders with plan, request, song file, report and band preview, `candidates.json` ranked by the spec's scores (fails, fit cost, prosody, range, leaps over a 9th, chord tones, the chorus hook). New lyrics start a fresh list. `--keep SEED [--replace] [--build]` copies one into `songs/` and can write its score
+- [x] Tests: `tests/test_write.py` (33 tests: syllable table, hand-written plans in `tests/data/plans/`, exact/melisma/split/line-end fits, 2/4 pairing, sections, the whole command with a fake `yue-plan`, keep) and the page's actions in `tests/test_web.py`
+- [x] The page: "Write a song" in the drawer (title, lyrics, style, voice, how many), the candidates as they land with band previews and plain-words scores, "Keep this one" (keeps it and writes its score, then opens the song), "Write 4 more". Driven end to end in a browser with a fake planner
+- [x] Checked for real in the container: yue-plan on CPU wrote two candidates for "Hope is the thing with feathers" in the folk style (2 min 21 s each on 2 cores); both passed every check, one warning each
+- [ ] **NEXT, on the Mac:** `copyist write` on a few lyrics (public-domain poems first) with 4 candidates each, from the page; time it (expect seconds per melody with Metal); the owner listens and picks. Note what goes wrong
+- [ ] Section rewriting ("again", "higher", "simpler") and a rule-based writer of Copyist's own (spec, "Later")
+- [ ] Let the page edit a kept song's lyrics and refit them (the fit code is ready)
 
 ## 3h. The open singer, plan B (ROADMAP milestone OS, spec: docs/open-singer.md)
 
@@ -179,3 +180,5 @@ A singer anyone may use commercially that follows Copyist's score: HeartMuLa-oss
 ## 7. Transcribing recordings (MT, SPEC §12)
 
 - [ ] Stems, then measurement, then a draft score, then refinement by rendering and comparing against the recording
+- [ ] Resolving doubtful notes and chords by musical logic (SPEC 12.2a): keep candidates, context search (key, chord, range, beat, stepwise motion), repeats vote, parts cross-check, lyrics fix the count, simpler notation wins a tie, A/B by ear when still unsure
+- [ ] Try `yue-transcribe` (SheetSage2, in yue2.cpp) for the first draft of melody and chords; measure it against Copyist's own songs rendered by the band

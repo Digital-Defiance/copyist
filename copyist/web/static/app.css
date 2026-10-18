@@ -211,3 +211,11 @@ progress { accent-color: var(--blue); width: min(100%, 24rem); height: 0.9rem; v
   .staff-title { margin-left: -1rem; padding-left: 1rem; }
 }
 @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+
+/* ------------------------------------------------------- writing a song */
+.drawer-action { margin: 0.75rem 0 0; }
+.drawer .song-list .meta { display: block; font-size: 0.85rem; color: var(--ink-soft); margin: -0.15rem 0 0.35rem; }
+.lyrics-box { min-height: 16rem; font-family: var(--engraved); font-size: 1.02rem; line-height: 1.6; }
+.lyrics-text { font-family: var(--engraved); white-space: pre-wrap; }
+.candidates li.unusable { opacity: 0.75; }
+.facts + .make { margin-top: 1.5rem; }

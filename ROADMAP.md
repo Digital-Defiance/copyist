@@ -148,9 +148,10 @@ Copyist arranges in as many styles as can be written as correct scores: everyone
 Lyrics and a style in; several finished songs out to choose between by ear, each with a correct score.
 
 - [x] Spike: YuE2's planner (`yue-plan`) writes melody, chords and sections from lyrics and a style
-- [ ] Syllables and stress; the planner's ABC into Copyist song files; lyrics fitted to the notes
-- [ ] `copyist write` with ranked candidates, band previews and optional takes; `--keep`
-- [ ] The page's "Write a song"
+- [x] Syllables and stress; the planner's ABC into Copyist song files; lyrics fitted to the notes
+- [x] `copyist write` with ranked candidates, band previews and optional takes; `--keep`
+- [x] The page's "Write a song"
+- [ ] The owner writes a song with it on the Mac and keeps one
 - [ ] Section-level rewriting ("again", "higher", "simpler")
 - [ ] A rule-based writer of Copyist's own (MIT), for use without YuE2
 

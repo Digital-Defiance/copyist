@@ -3,6 +3,7 @@
     copyist build songs/amazing-grace.yaml   # every output into out/amazing-grace/
     copyist check songs/amazing-grace.yaml   # validators only; exit code 1 if anything fails
     copyist produce songs/amazing-grace.yaml # a YuE2 recording from the score
+    copyist write lyrics.txt --title Hope     # melodies for new lyrics, to choose by ear
 """
 from __future__ import annotations
 
@@ -296,6 +297,48 @@ def cmd_gallery(args) -> int:
     return 0
 
 
+def cmd_write(args) -> int:
+    """Melodies for new lyrics: several candidate songs to choose between by ear (docs/melody-writing.md)."""
+    from . import write
+    if not (args.lyrics or args.title):
+        print("Give the lyrics file (or, with --keep, the song's --title).", file=sys.stderr)
+        return 2
+    title = args.title or Path(args.lyrics).stem.replace("-", " ").replace("_", " ").title()
+    try:
+        if args.keep is not None:
+            target = write.keep(Path(args.out), title, args.keep, Path(args.songs), args.replace)
+            if not args.build:
+                print(f"Kept candidate {args.keep} as {target}. Build it with: copyist build {target}")
+                return 0
+            print(f"Kept candidate {args.keep} as {target}. Writing its score...", flush=True)
+            return cmd_build(argparse.Namespace(song=str(target), out=args.out, cache=args.cache, no_audio=False,
+                                                plain=False, seed=1, images=False))
+        lyrics = Path(args.lyrics).read_text(encoding="utf-8")
+        credits = {k: v for k, v in (("words", args.words_by), ("music", args.music_by)) if v}
+
+        def progress(done, total, name):
+            if name:
+                print(f"[{done + 1}/{total}] {name}", flush=True)
+        index = write.write_songs(lyrics, title, Path(args.out), args.style, args.words, args.voice, args.candidates,
+                                  args.seed, args.takes, args.device, Path(args.cache), credits or None,
+                                  previews=not args.no_preview, progress=progress)
+    except write.WriteError as e:
+        print(e, file=sys.stderr)
+        return 2
+    folder = Path(args.out) / index["slug"] / "write"
+    print(f"Candidates in {folder} (best first):")
+    for e in index["candidates"]:
+        if e.get("ok"):
+            sc = e["scores"]
+            print(f"  {e['rank']}. candidate {e['seed']}: {e['key']}, {e['meter']}, {e['tempo']}; "
+                  f"{sc['fails']} failing, {sc['warnings']} warnings, fit {sc['fit_cost']}"
+                  + (f"; preview {folder / e['preview']}" if e.get("preview") else ""))
+        else:
+            print(f"  -  candidate {e['seed']}: not usable ({e.get('reason')})")
+    print(f"Keep one with: copyist write --title {json.dumps(title)} --keep N")
+    return 0
+
+
 def cmd_use_style(args) -> int:
     """Set a song's style (and tempo), then write the score again."""
     from . import styles
@@ -428,6 +471,28 @@ def main(argv: list[str] | None = None) -> int:
     ga.add_argument("--prefix", help="with --takes: words before every style line (a voice's trigger line)")
     ga.add_argument("--device", help="with --takes: yue2.cpp device (default COPYIST_YUE_DEVICE)")
     ga.set_defaults(func=cmd_gallery)
+
+    wr = sub.add_parser("write", help="write melodies for new lyrics, to choose by ear (docs/melody-writing.md)")
+    wr.add_argument("lyrics", nargs="?", help="a text file of lyrics, sections tagged [Verse], [Chorus], ...")
+    wr.add_argument("--title", help="the song's title (default: from the file name)")
+    wr.add_argument("--style", help="a style from `copyist styles`; its words steer the planner")
+    wr.add_argument("--words", help="more words for the planner's style line (or instead of a style)")
+    wr.add_argument("--voice", default="alto", choices=["soprano", "alto", "tenor", "baritone"],
+                    help="the singer's range (default alto)")
+    wr.add_argument("--candidates", type=int, default=4, help="how many songs to write (default 4)")
+    wr.add_argument("--seed", type=int, default=1, help="the first planner seed; candidates use seed, seed+1, ...")
+    wr.add_argument("--takes", action="store_true", help="also make a finished YuE2 take of each candidate")
+    wr.add_argument("--no-preview", action="store_true", help="skip the band previews")
+    wr.add_argument("--words-by", help="credit for the words")
+    wr.add_argument("--music-by", help="credit for the music")
+    wr.add_argument("--keep", type=int, metavar="SEED", help="copy candidate SEED's song file into songs/")
+    wr.add_argument("--replace", action="store_true", help="with --keep: replace a different song of the same name")
+    wr.add_argument("--build", action="store_true", help="with --keep: then write its score, parts and audio")
+    wr.add_argument("--songs", default="songs", help="with --keep: the songs folder (default songs)")
+    wr.add_argument("--out", default="out", help="output folder (default: out)")
+    wr.add_argument("--cache", default=".cache")
+    wr.add_argument("--device", help="yue2.cpp device (default COPYIST_YUE_DEVICE)")
+    wr.set_defaults(func=cmd_write)
 
     us = sub.add_parser("use-style", help="set a song's style (and tempo) and write the score again")
     us.add_argument("song", help="path to a song file (.yaml)")

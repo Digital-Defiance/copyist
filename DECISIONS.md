@@ -2,6 +2,14 @@
 
 Newest first. One entry per decision: what, why, and what we gave up.
 
+## 2026-10-18 (melody writing built; transcription rules)
+
+- **Song files write every accidental.** YuE2's plans carry an accidental through the bar; music21, which reads Copyist's songs, doesn't (measured: `^F f F` reads F#4 F5 F4). Written songs repeat the accidental on every altered note, so they read the same under both rules. Gave up: the shortest possible ABC.
+- **2/4 plans become 4/4.** The planner writes 2/4 even when asked for 4/4, and no style plays 2/4; two bars become one, paired so the chords change on the downbeats. Gave up: the planner's own barring when it really meant 2/4 (a march); a 2/4 style can bring it back.
+- **The lyric fit adds a within-word stress rule** to the spec's costs: a word's stressed syllable mustn't land on a weaker beat than its neighbour, the rule `copyist check` warns about. The first real plan sang "A-bash" without it.
+- **Keeping a candidate writes its score** from the page, so one press gives a finished song with lead sheet, score and parts.
+- **Transcribing recordings (when it's built) resolves doubt by musical logic** and asks by ear when still unsure (SPEC 12.2a), rather than taking the loudest frame. The owner asked for it.
+
 ## 2026-10-17 (melody writing and the open singer)
 
 - **Melody writing starts with YuE2's own planner** (`yue-plan`), not a melody model of Copyist's own. YuE2 writes melodies learned from real songs, and its planning stage runs alone, text in and text out, so Copyist gets the score without rendering audio. Copyist's part is everything around it: the right octave and range, lyrics fitted by stress and phrasing, validation, ranking, and choosing by ear. Gave up: a melody source free of YuE2's licence, for now. A rule-based writer and the open singer's planner come later.

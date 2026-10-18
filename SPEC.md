@@ -228,7 +228,7 @@ The arranger only plays what the profile and brief allow. New profiles can be dr
 
 ### 8.3 Writing melody to directions
 
-**First version (docs/melody-writing.md):** YuE2's planner (`yue-plan`) writes several whole-song scores from the lyrics and the style. Copyist reads each one, lowers it into the singer's range, fits the lyrics to the notes by stress and phrasing, validates it, ranks the candidates, and plays them so the person picks by ear. The general approach below still holds; the planner is the first generator, and a rule-based writer of Copyist's own comes later.
+**First version, built (`copyist write`, docs/melody-writing.md):** YuE2's planner (`yue-plan`) writes several whole-song scores from the lyrics and the style. Copyist reads each one, lowers it into the singer's range, fits the lyrics to the notes by stress and phrasing, validates it, ranks the candidates, and plays them so the person picks by ear. The general approach below still holds; the planner is the first generator, and a rule-based writer of Copyist's own comes later.
 
 Melody candidates are generated under hard constraints (the lyrics' syllables and stresses, the chord chart, the singer's range, the style's rhythm habits), then:
 
@@ -291,6 +291,20 @@ Many songs already exist as recordings (for example, songs made with Suno or Moz
 4. **Fit by analysis by synthesis:** render the draft with Copyist's own renderer and compare it to the original stem by stem: pitch contour for voice and bass, onset timing for drums, harmony (chroma) for chords. Make small edits (fix an octave, move a note to the beat, merge or split notes, relabel a chord, switch the feel) and keep an edit when it improves *closeness to the recording* plus *simplicity of notation*. Validators stay on throughout, so the score is always singable and correct.
 5. **Review by ear:** the person A/B-switches between the original and the fitted render and marks anything that sounds wrong; marked bars get refitted.
 
+### 12.2a When the recording doesn't make a note or chord clear
+
+Audio is often ambiguous: a slide between two pitches, a note buried under the band, a chord whose third is missing, a word that could be one note or two. The transcriber never settles these by taking the loudest frame. It reasons from the music around them, in this order:
+
+1. **Keep the candidates.** For every doubtful note or chord, keep the top few readings with their likelihood from the audio, not just the best one.
+2. **Musical context decides close calls.** Choose the sequence of notes that is both likely in the audio and likely as music: in the key, a chord tone on strong beats, within the singer's range, on the beat grid, with stepwise motion preferred over unexplained leaps. Use a Viterbi-style search over the candidates, so each choice also fits its neighbours.
+3. **Repeats vote.** Sections that repeat (a chorus sung three times, a riff) should be written the same way unless the audio clearly differs. The clearest instance settles the doubtful notes in the others.
+4. **Parts check each other.** The bass note against the chord's root (or its slash bass); the melody against the chord on strong beats; the chord label against the chroma of the bass and keyboard or guitar stems.
+5. **The lyrics fix the count.** The person's own lyric text fixes the words and syllables, so it fixes how many notes the vocal line has. Alignment works as in melody writing (`copyist/fit.py`, docs/melody-writing.md).
+6. **Simpler notation wins a tie.** When two readings sound the same against the recording, write the simpler one.
+7. **When it's still unsure, ask by ear.** Mark the spot as a doubt in the report, render both readings, and let the person choose by listening. Never guess silently.
+
+A first draft can come from yue2.cpp's `yue-transcribe` (SheetSage2: melody and chords as a lead sheet), checked against these rules and refined as above.
+
 ### 12.3 Expected accuracy (to be measured)
 
 | Part | Expectation | Main risk |
@@ -312,7 +326,7 @@ Only transcribe recordings the user owns or has rights to. The fitted score of s
 
 ## 13. In a browser
 
-`copyist serve` (docs/web.md) is a local web page for everything above: the songs, their lyrics and checks, the score as pages, every take with a player, making a new take (voice, strength, verses, seed, style), checking a take's melody, the band playing the score (with each part, its instrument and its stem, and a download for the instruments), and the progress of a voice training run. It also plays the song in every style that fits it and switches the song to the one you pick. It runs the same `copyist` commands, one at a time, on the machine with the GPU, listens on 127.0.0.1 only, and loads nothing from the internet. Choices are made by listening and pressing buttons; nothing on the page needs musical skills.
+`copyist serve` (docs/web.md) is a local web page for everything above: the songs, their lyrics and checks, the score as pages, every take with a player, making a new take (voice, strength, verses, seed, style), checking a take's melody, the band playing the score (with each part, its instrument and its stem, and a download for the instruments), and the progress of a voice training run. It also plays the song in every style that fits it and switches the song to the one you pick, and "Write a song" turns pasted lyrics into several melodies to choose between by ear (`copyist write`). It runs the same `copyist` commands, one at a time, on the machine with the GPU, listens on 127.0.0.1 only, and loads nothing from the internet. Choices are made by listening and pressing buttons; nothing on the page needs musical skills.
 
 The plan is for this page to become a free desktop app (Tauri, with the engine and yue2.cpp bundled, models downloaded on first run), so anyone can make songs on their own computer: docs/desktop-app.md.
 

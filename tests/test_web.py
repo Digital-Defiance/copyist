@@ -195,6 +195,50 @@ class WebTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 job_args(project, {"action": "use-style", "song": "amazing-grace", **bad})
 
+    def test_writing_a_song_from_the_page(self):
+        from copyist.web.server import job_args
+        project = self.server.RequestHandlerClass.project
+        label, slug, args = job_args(project, {"action": "write", "title": "Carry Me Home", "style": "waltz",
+                                               "voice": "tenor", "candidates": 3,
+                                               "lyrics": "[Verse]\nMorning comes across the hill"})
+        self.assertEqual(slug, "carry-me-home")
+        self.assertEqual(args, ["write", "out/carry-me-home/write/lyrics.txt", "--title", "Carry Me Home",
+                                "--voice", "tenor", "--candidates", "3", "--seed", "1", "--style", "waltz"])
+        self.assertEqual((self.root / "out/carry-me-home/write/lyrics.txt").read_text(),
+                         "[Verse]\nMorning comes across the hill\n")
+        for bad in ({"title": ""}, {"lyrics": ""}, {"style": "no-such-style"}, {"voice": "mezzo"},
+                    {"candidates": 40}):
+            with self.subTest(bad=bad), self.assertRaises(ValueError):
+                job_args(project, {"action": "write", "title": "T", "lyrics": "la la", **bad})
+        # Candidates as `copyist write` leaves them; the page lists them and plays the previews.
+        folder = self.root / "out" / "carry-me-home" / "write"
+        (folder / "candidate-1").mkdir(parents=True, exist_ok=True)
+        (folder / "candidate-1" / "preview.wav").write_bytes(b"RIFF")
+        (folder / "candidate-1" / "carry-me-home.yaml").write_text("title: Carry Me Home\n")
+        (folder / "candidates.json").write_text(json.dumps({"title": "Carry Me Home", "slug": "carry-me-home",
+            "style": "waltz", "voice": "tenor", "candidates": [
+                {"seed": 1, "folder": "candidate-1", "ok": True, "rank": 1, "song": "candidate-1/carry-me-home.yaml",
+                 "preview": "candidate-1/preview.wav", "key": "D", "meter": "3/4", "tempo": 86, "scores": {}},
+                {"seed": 2, "folder": "candidate-2", "ok": False, "reason": "tuplets"}]}))
+        listed = json.loads(self.request("GET", "/api/writing")[1])
+        self.assertEqual([(w["slug"], w["candidates"], w["usable"]) for w in listed], [("carry-me-home", 2, 1)])
+        d = json.loads(self.request("GET", "/api/writing/carry-me-home")[1])
+        self.assertEqual(d["candidates"][0]["preview_path"], "out/carry-me-home/write/candidate-1/preview.wav")
+        self.assertEqual((d["next_seed"], d["song_exists"]), (3, False))
+        self.assertIn("Morning comes", d["lyrics"])
+        self.assertEqual(self.request("GET", "/files/out/carry-me-home/write/candidate-1/preview.wav")[0].status, 200)
+        self.assertEqual(self.request("GET", "/api/writing/nothing-here")[0].status, 404)
+        self.assertEqual(job_args(project, {"action": "write-more", "slug": "carry-me-home", "candidates": 2})[2],
+                         ["write", "out/carry-me-home/write/lyrics.txt", "--title", "Carry Me Home", "--voice",
+                          "tenor", "--candidates", "2", "--seed", "3", "--style", "waltz"])
+        self.assertEqual(job_args(project, {"action": "keep", "slug": "carry-me-home", "seed": 1})[2],
+                         ["write", "--title", "Carry Me Home", "--keep", "1", "--build"])
+        for bad in ({"seed": 2}, {"seed": 9}, {"slug": "../songs"}):
+            with self.subTest(bad=bad), self.assertRaises(ValueError):
+                job_args(project, {"action": "keep", "slug": "carry-me-home", **bad})
+        styles = json.loads(self.request("GET", "/api/styles")[1])
+        self.assertIn("waltz", [s["id"] for s in styles])
+
     def test_an_instrument_download_needs_no_licence_box(self):
         from copyist import instruments
 

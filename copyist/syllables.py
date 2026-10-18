@@ -25,6 +25,7 @@ FUNCTION_WORDS = {
 }
 ONSETS = {"bl", "br", "cl", "cr", "dr", "fl", "fr", "gl", "gr", "pl", "pr", "sc", "sk", "sl", "sm", "sn", "sp",
           "st", "sw", "tr", "tw", "th", "sh", "ch", "ph", "wh", "qu", "wr"}
+STOP_LIQUID = {"bl", "br", "cl", "cr", "dr", "fl", "fr", "gl", "gr", "pl", "pr", "tr"}
 # Spellings the rules split wrongly, fixed by hand.
 EXCEPTIONS = {
     "every": ["ev", "ery"], "heaven": ["hea", "ven"], "being": ["be", "ing"], "fire": ["fire"],
@@ -131,6 +132,8 @@ def split_points(w: str, groups: list[tuple[int, int]]) -> list[int]:
             cuts.append(e1 + 2)                   # "pick-et", "laugh-ing"
         elif cluster in KEEP_WITH_NEXT:
             cuts.append(s2 - 2)                   # "fea-thers", "per-ches"
+        elif cluster in STOP_LIQUID:
+            cuts.append(e1)                       # "a-cross", "se-cret" (but "sis-ter", "win-ter")
         else:
             cuts.append(e1 + 1)                   # VC-CV: "win-dow"
     return cuts

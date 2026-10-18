@@ -180,6 +180,40 @@ class Project:
                             "take_path": self.rel(take) if take.is_file() else None})
         return out
 
+    def writings(self) -> list[dict]:
+        """Songs being written (`copyist write`): out/<slug>/write/candidates.json, newest first."""
+        from ..write import INDEX
+        found = []
+        for index in self.out.glob(f"*/write/{INDEX}"):
+            d = read_json(index) or {}
+            cands = d.get("candidates") or []
+            found.append({"slug": index.parent.parent.name, "title": d.get("title") or index.parent.parent.name,
+                          "candidates": len(cands), "usable": sum(bool(c.get("ok")) for c in cands),
+                          "kept": d.get("kept"), "when": index.stat().st_mtime})
+        return sorted(found, key=lambda w: w["when"], reverse=True)
+
+    def writing(self, slug: str) -> dict | None:
+        """One song being written: its candidates, best first, with paths the page can play."""
+        from ..write import INDEX, VOICES
+        if not SLUG.fullmatch(slug):
+            return None
+        folder = self.out / slug / "write"
+        d = read_json(folder / INDEX)
+        if d is None:
+            return None
+        for c in d.get("candidates") or []:
+            for key in ("preview", "take", "song"):
+                f = folder / str(c.get(key) or "-")
+                c[f"{key}_path"] = self.rel(f) if c.get(key) and f.is_file() else None
+            report = folder / c["folder"] / "report.md"
+            c["report_path"] = self.rel(report) if report.is_file() else None
+        lyrics = folder / "lyrics.txt"
+        d["lyrics"] = lyrics.read_text(encoding="utf-8") if lyrics.is_file() else ""
+        d["song_exists"] = (self.songs_dir / f"{slug}.yaml").is_file()
+        d["voices"] = list(VOICES)
+        d["next_seed"] = max([c["seed"] for c in d.get("candidates") or []] + [0]) + 1
+        return d
+
     def voices(self) -> list[dict]:
         """Trained LoRAs, newest checkpoint first, with the style line their songs trained under."""
         voices = []
@@ -420,9 +454,74 @@ def styles_for(meter) -> list[dict]:
             for s in styles.for_meter(str(meter))] if meter else []
 
 
+def write_args(project: Project, body: dict) -> tuple[str, str | None, list[str]]:
+    """Writing melodies for new lyrics (`copyist write`): a new song, more candidates, or keeping one."""
+    from .. import styles
+    from ..write import VOICES, slug as slug_of
+    action = body.get("action")
+    if action == "write":
+        title = str(body.get("title") or "").strip()
+        lyrics = str(body.get("lyrics") or "").strip()
+        if not 1 <= len(title) <= 120 or not re.search(r"[A-Za-z0-9]", title):
+            raise ValueError("Give the song a title.")
+        if not lyrics or len(lyrics) > 20000:
+            raise ValueError("Paste the lyrics (up to 20,000 characters).")
+        slug = slug_of(title)
+        if project.writing(slug) and body.get("seed") is None:
+            seed = project.writing(slug)["next_seed"]
+        else:
+            seed = int(body.get("seed") or 1)
+        folder = project.out / slug / "write"
+        style, words, voice = body.get("style") or None, (body.get("words") or "").strip()[:300] or None, \
+            body.get("voice") or "alto"
+    elif action == "write-more":
+        slug = body.get("slug")
+        d = project.writing(slug) if isinstance(slug, str) else None
+        if not d:
+            raise ValueError("No such song being written.")
+        title, style, words, voice, seed = d.get("title") or slug, d.get("style"), d.get("words"), \
+            d.get("voice") or "alto", d["next_seed"]
+        folder = project.out / slug / "write"
+    elif action == "keep":
+        slug = body.get("slug")
+        d = project.writing(slug) if isinstance(slug, str) else None
+        seed = body.get("seed")
+        if not d or not any(c["seed"] == seed and c.get("ok") for c in d.get("candidates") or []):
+            raise ValueError("No such candidate.")
+        args = ["write", "--title", d.get("title") or slug, "--keep", str(int(seed)), "--build"]
+        if body.get("replace") is True:
+            args.append("--replace")
+        return f"Keeping candidate {seed} and writing its score", slug, args
+    else:
+        raise ValueError("Unknown action.")
+    if style and not styles.get(style):
+        raise ValueError("No such style.")
+    if voice not in VOICES:
+        raise ValueError("No such voice.")
+    count = int(body.get("candidates") or 4)
+    if not (1 <= count <= 8 and 0 < seed < 2**31):
+        raise ValueError("Between 1 and 8 candidates at a time.")
+    if action == "write":                             # only once everything is known to be good
+        from ..write import INDEX, write_index
+        folder.mkdir(parents=True, exist_ok=True)
+        (folder / "lyrics.txt").write_text(lyrics + "\n", encoding="utf-8")
+        if not (folder / INDEX).is_file():            # so the page can open it before the first melody lands
+            write_index(folder, {"title": title, "slug": slug, "style": style, "words": words, "voice": voice,
+                                 "candidates": []})
+    args = ["write", project.rel(folder / "lyrics.txt"), "--title", title, "--voice", voice,
+            "--candidates", str(count), "--seed", str(seed)]
+    if style:
+        args += ["--style", style]
+    if words:
+        args += ["--words", words]
+    return f"Writing melodies for “{title}”", slug, args
+
+
 def job_args(project: Project, body: dict) -> tuple[str, str | None, list[str]]:
     """Turn a request from the page into a copyist command. Only these actions exist."""
     action = body.get("action")
+    if action in ("write", "write-more", "keep"):
+        return write_args(project, body)
     slug = body.get("song")
     path = project.song_path(slug) if isinstance(slug, str) else None
     if not path:
@@ -599,6 +698,18 @@ class Handler(BaseHTTPRequestHandler):
                                "sfizz": sfizz_program() is not None})
         if path == "/api/voices":
             return self._json(p.voices())
+        if path == "/api/styles":
+            from .. import styles
+            return self._json([{"id": s.id, "name": s.name, "family": s.family, "about": s.about,
+                                "meters": list(s.meters)}
+                               for s in sorted(styles.catalog().values(),
+                                               key=lambda s: (styles.FAMILIES.index(s.family), s.name))])
+        if path == "/api/writing":
+            return self._json(p.writings())
+        m = re.fullmatch(r"/api/writing/([^/]+)", path)
+        if m:
+            w = p.writing(unquote(m.group(1)))
+            return self._json(w) if w else self._error(404, "No such song being written.")
         if path == "/api/training":
             return self._json(p.training())
         if path == "/api/jobs":

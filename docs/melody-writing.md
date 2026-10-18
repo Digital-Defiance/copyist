@@ -2,7 +2,7 @@
 
 **Goal:** someone who can't read or write music gives Copyist lyrics and a few words of direction, and gets back several finished songs to choose between by ear. Each one has a real melody and chords, the lyrics placed correctly under the notes, and every Copyist output: lead sheet, score, parts, band preview, YuE2 take. This is milestone MW in ROADMAP.md. The owner's stated goal for Copyist is "really good melodies and solid themes", so this is the heart of the product.
 
-Status, 17 October 2026, evening: the planner tested by hand (below). Built: syllables (`copyist/syllables.py`), plan reading, range placement and respelling (`copyist/abcplan.py`), the lyric fit (`copyist/fit.py`), plan to song file (`copyist/write.py`, `song_from_plan`), and the `sections:` / `written_with:` song fields. Still to do: the tests, the `copyist write` command (planner runs, candidates, ranking, previews, `--keep`) and the page. TASKS.md section 3g lists them in order.
+Status, 18 October 2026: built and tested (`copyist write`, `copyist/write.py`, the page's "Write a song"), and run for real with yue-plan on CPU. Next: the owner tries it on the Mac (TASKS.md section 3g).
 
 ## The idea in one paragraph
 
@@ -90,9 +90,9 @@ copyist write LYRICS.txt --title "Hope" [--style folk | --words "free style word
 - `candidate-k/preview.wav`: the band preview in the chosen style;
 - with `--takes`, `candidate-k/take/production.wav`.
 
-Plus `candidates.json`, the index the page reads, ranked.
+Plus `candidates.json`, the index the page reads, ranked. Candidate folders are named by seed (`candidate-1`, `candidate-2`, ...), so "Write more" continues with the next seeds. A plan is reused when its request hasn't changed, so running again only re-reads it. When the lyrics change, the list starts afresh.
 
-`copyist write --keep k` (or the page's "Keep this one") copies the candidate's song file to `songs/<slug>.yaml`. From there, everything else applies.
+`copyist write --title T --keep SEED` (or the page's "Keep this one") copies the candidate's song file to `songs/<slug>.yaml`. It refuses to overwrite a different song unless given `--replace`; `--build` then writes the score, as the page does. From there, everything else applies.
 
 ## Turning a plan into a song file
 
@@ -115,12 +115,14 @@ Plus `candidates.json`, the index the page reads, ranked.
    - If more than 10% of notes are still outside, transpose by the fewest semitones that fit, change `K:` to match, and say so in the report.
    - Write octaves in ABC as uppercase = octave 4, lowercase = 5, `'` adds one, `,` takes one away.
    - **Accidentals:** YuE2's plans carry an accidental through the bar for that letter in every octave; music21, which reads Copyist's song files, carries none (measured: `^F f F` reads F#4 F5 F4). So the song file writes every accidental explicitly, and repeats it after another accidental on the same letter in the bar (`abcplan.respell`).
-4. **Units:** pick the largest unit (1/4, 1/8 or 1/16) that makes every length a whole number, and rescale. Readable files matter, because people open them.
-5. **Tempo, key and meter** come from `Q:`, `K:` and `M:`. A `Q:1/4=n` becomes `tempo: n`; anything else stays a string (as in songs/silent-night.yaml).
-6. **Sections:** record `sections: [{name: verse, bar: 1}, {name: chorus, bar: 17}]` in the song file.
+4. **Meter:** the planner sometimes writes 2/4 even when asked for 4/4. No style plays 2/4, and it doubles the bars to read, so two bars become one 4/4 bar, paired so chord changes and section starts fall on the downbeats (`abcplan.pair_bars`).
+5. **Units:** pick the largest unit (1/4, 1/8 or 1/16) that makes every length a whole number, and rescale. Readable files matter, because people open them.
+6. **Tempo, key and meter** come from `Q:`, `K:` and `M:`. A `Q:1/4=n` becomes `tempo: n`; anything else stays a string (as in songs/silent-night.yaml).
+7. **Sections:** record `sections: [{name: verse, bar: 1}, {name: chorus, bar: 17}]` in the song file.
    - This is a new optional field: add it to SPEC section 4 and to `song.py`.
-   - `yue.lyrics_text` should use it so a later take sings `[chorus]` where the planner wrote a chorus.
-7. **Provenance:** add `written_with: {planner: yue-plan, model: YuE2-3B-Q6_K, seed: N, style: "..."}` (optional, ignored by the loader). Leave `credits:` to the person: `--words-by` and `--music-by` fill them, otherwise they're left empty.
+   - `yue.lyrics_text` uses it so a later take sings `[chorus]` where the planner wrote a chorus, and the lead sheet and score print rehearsal marks ("Verse", "Chorus").
+   - A one-bar section followed by another is that section's pickup (the planner often leaves it in the intro), so it joins the next one.
+8. **Provenance:** add `written_with: {planner: yue-plan, model: YuE2-3B-Q6_K, seed: N, style: "..."}` (optional, ignored by the loader). Leave `credits:` to the person: `--words-by` and `--music-by` fill them, otherwise they're left empty.
 
 ## Fitting the lyrics (`copyist/fit.py`)
 
@@ -193,7 +195,7 @@ It starts a job (`copyist write`) and shows each candidate as it lands:
 - its sections;
 - its scores.
 
-Each candidate has "Keep this one". "Write more" runs the next seeds. The kept song opens on its Song tab.
+Each candidate has "Keep this one", which keeps it, writes its score and opens it on its Song tab. "Write 4 more" runs the next seeds. The songs being written are listed in the drawer under "Being written". The scores are said in words ("passes every check; the words sit well on the beat"), with the numbers in the report.
 
 ## Tests (tests/test_write.py)
 

@@ -141,6 +141,38 @@ def trim(plan: Plan) -> list[Bar]:
     return plan.vocal[sung[0]:sung[-1] + 1]
 
 
+def written_meter(meter: str) -> str:
+    """The meter a plan is written in for Copyist: 2/4 becomes 4/4 (`pair_bars`)."""
+    return "4/4" if meter == "2/4" else meter
+
+
+def pair_bars(bars: list[Bar], meter: str) -> tuple[list[Bar], str]:
+    """A 2/4 plan as 4/4: two bars become one. No style plays 2/4, and a 2/4 lead sheet is twice as
+    many bars to read. The pairing puts chord changes and section starts on the new downbeats."""
+    if meter != "2/4":
+        return bars, meter
+    full = sum((t.length for t in bars[0].toks if t.kind != "chord"), Fraction(0))
+
+    def starts(offset: int) -> int:
+        score = 0
+        for k, bar in enumerate(bars):
+            first = next((t for t in bar.toks), None)
+            on_downbeat = (k + offset) % 2 == 0
+            if on_downbeat and first is not None and first.kind == "chord":
+                score += 1
+            if on_downbeat and (k == 0 or bars[k - 1].section != bar.section):
+                score += 2
+        return score
+
+    work = list(bars)
+    if starts(1) > starts(0):
+        work.insert(0, Bar([Tok("rest", length=full)], bars[0].section))
+    if len(work) % 2:
+        work.append(Bar([Tok("rest", length=full)], work[-1].section))
+    paired = [Bar(a.toks + b.toks, a.section) for a, b in zip(work[::2], work[1::2])]
+    return paired, "4/4"
+
+
 KEY_SHARPS = ["F", "C", "G", "D", "A", "E", "B"]
 NATURAL = {"C": 0, "D": 2, "E": 4, "F": 5, "G": 7, "A": 9, "B": 11}
 LETTER_FIFTHS = {"F": -1, "C": 0, "G": 1, "D": 2, "A": 3, "E": 4, "B": 5}
@@ -381,11 +413,14 @@ def write(bars: list[Bar], unit_from: Fraction, unit_to: Fraction, per_line: int
     """The bars as Copyist melody ABC in units of `unit_to`."""
     scale = unit_from / unit_to
     lines, current = [], []
+    chord = None                         # a chord lasts until the next one, so a repeat says nothing
     for k, bar in enumerate(bars):
         out = []
         for t in bar.toks:
             if t.kind == "chord":
-                out.append(f'"{t.text}"')
+                if t.text != chord:
+                    out.append(f'"{t.text}"')
+                chord = t.text
             elif t.kind == "rest":
                 out.append("z" + _length_text(t.length * scale))
             else:

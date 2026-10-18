@@ -211,6 +211,7 @@ def load_song(path: str | Path) -> Song:
     fits = lyr.align(part, [str(v) for v in verses])
     lyr.melisma_slurs(part, fits)
     sections = read_sections(data.get("sections"), path)
+    mark_sections(part, sections)
     written_with = data.get("written_with") or {}
     if not isinstance(written_with, dict):
         raise SongError(f"{path.name}: written_with should be a mapping (planner:, model:, seed:, style:).")
@@ -235,6 +236,21 @@ def load_song(path: str | Path) -> Song:
         sections=sections,
         written_with=written_with,
     )
+
+
+SECTION_LABELS = {"prechorus": "Pre-chorus"}
+
+
+def mark_sections(part: stream.Part, sections: list[dict]) -> None:
+    """Rehearsal marks where sections start ("Verse", "Chorus"), when a song has more than one."""
+    if len(sections) < 2:
+        return
+    from music21 import expressions
+    measures = {m.number: m for m in part.getElementsByClass(stream.Measure)}
+    for sec in sections:
+        m = measures.get(sec["bar"])
+        if m is not None:
+            m.insert(0, expressions.RehearsalMark(SECTION_LABELS.get(sec["name"], sec["name"].capitalize())))
 
 
 def read_sections(raw, path: Path) -> list[dict]:
