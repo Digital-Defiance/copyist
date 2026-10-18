@@ -1,0 +1,41 @@
+// Copyist flute: VSCO 2 Community Edition flute, susvib (CC0, Versilian Studios).
+// Written by scripts/instruments/flute.py; see that file for how each number was measured.
+<control>
+default_path=Woodwinds/Flute/susvib/
+
+<global>
+ampeg_attack=0.015
+ampeg_release=0.2
+amp_veltrack=40
+loop_crossfade=0.1
+
+<group> lokey=0 hikey=62 pitch_keycenter=60 volume=6.4
+<region> lovel=1 hivel=127 offset=5645 tune=0 loop_mode=loop_sustain loop_start=19845 loop_end=319725 sample=LDFlute_susvib_C3_v1_1.wav
+
+<group> lokey=63 hikey=66 pitch_keycenter=64 volume=4.7
+<region> lovel=1 hivel=127 offset=3440 tune=0 loop_mode=loop_sustain loop_start=15435 loop_end=438795 sample=LDFlute_susvib_E3_v1_1.wav
+
+<group> lokey=67 hikey=70 pitch_keycenter=69 volume=3.6
+<region> lovel=1 hivel=127 offset=1676 tune=0 loop_mode=loop_sustain loop_start=15435 loop_end=317520 sample=LDFlute_susvib_A3_v1_1.wav
+
+<group> lokey=71 hikey=74 pitch_keycenter=72 volume=2.5
+<region> lovel=1 hivel=127 offset=353 tune=0 loop_mode=loop_sustain loop_start=13230 loop_end=299880 sample=LDFlute_susvib_C4_v1_1.wav
+
+<group> lokey=75 hikey=78 pitch_keycenter=76 volume=0.5
+<region> lovel=1 hivel=127 offset=794 tune=0 loop_mode=loop_sustain loop_start=13230 loop_end=306495 sample=LDFlute_susvib_E4_v1_1.wav
+
+<group> lokey=79 hikey=82 pitch_keycenter=81 volume=-0.5
+<region> lovel=1 hivel=127 offset=794 tune=0 loop_mode=loop_sustain loop_start=13230 loop_end=280035 sample=LDFlute_susvib_A4_v1_1.wav
+
+<group> lokey=83 hikey=86 pitch_keycenter=84 volume=-3.3
+<region> lovel=1 hivel=127 offset=1676 tune=0 loop_mode=loop_sustain loop_start=15435 loop_end=264600 sample=LDFlute_susvib_C5_v1_1.wav
+
+<group> lokey=87 hikey=90 pitch_keycenter=88 volume=-3.9
+<region> lovel=1 hivel=127 offset=353 tune=0 loop_mode=loop_sustain loop_start=13230 loop_end=224910 sample=LDFlute_susvib_E5_v1_1.wav
+
+<group> lokey=91 hikey=94 pitch_keycenter=93 volume=-5.4
+<region> lovel=1 hivel=127 offset=794 tune=0 loop_mode=loop_sustain loop_start=13230 loop_end=202860 sample=LDFlute_susvib_A5_v1_1.wav
+
+<group> lokey=95 hikey=127 pitch_keycenter=96 volume=-7.6
+<region> lovel=1 hivel=127 offset=2558 tune=0 loop_mode=loop_sustain loop_start=15435 loop_end=167580 sample=LDFlute_susvib_C6_v1_1.wav
+

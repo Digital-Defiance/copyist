@@ -7,10 +7,10 @@ so what lands on disk is byte for byte what the library's authors published.
 A file is only moved into place once it checks out, so an interrupted download
 picks up where it stopped.
 
-The clarinet, pipe organ, harp, music box, steel guitar and fiddle are exceptions
-to "as published": VSCO/VCSL/Discord ship WAV-only or awkward paths, so Copyist
-writes their SFZs (copyist/sound/*.sfz) next to the samples. The tonewheel organ
-is fully synthetic (sfizz *sine oscillators).
+The clarinet, flute, pipe organ, harp, music box, steel guitar and fiddle are
+exceptions to "as published": VSCO/VCSL/Discord ship WAV-only or awkward paths,
+so Copyist writes their SFZs (copyist/sound/*.sfz) next to the samples. The
+tonewheel organ is fully synthetic (sfizz *sine oscillators).
 """
 from __future__ import annotations
 
@@ -92,6 +92,9 @@ CATALOG = {i.id: i for i in (
     Instrument("fiddle", "VSCO 2 Community Edition solo violin (fiddle)", "sgossner/VSCO-2-CE",
                "440300901dfe9275fd84e0b7763af1f8443ae62e", "fiddle.sfz", "CC0", "",
                "https://versilian-studios.com/vsco-community/", generated=True),
+    Instrument("flute", "VSCO 2 Community Edition flute (sustained vibrato)", "sgossner/VSCO-2-CE",
+               "440300901dfe9275fd84e0b7763af1f8443ae62e", "flute.sfz", "CC0", "",
+               "https://versilian-studios.com/vsco-community/", generated=True),
 )}
 
 # What a person downloads, in packs, so nobody fetches an orchestra they won't use.
@@ -110,6 +113,8 @@ PACKS = {
     "electric": {"label": "Electric guitar", "why": "clean electric for pop, rock, blues and power-ballad chord "
                                                      "patterns",
                  "instruments": ["electric-guitar"]},
+    "winds": {"label": "Winds", "why": "flute for Broadway and march melodies (clarinet stays in the band pack)",
+              "instruments": ["flute"]},
 }
 
 # Generated SFZs that need a space-free samples/ link into a nested folder in the clone.

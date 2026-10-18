@@ -2,6 +2,10 @@
 
 Newest first. One entry per decision: what, why, and what we gave up.
 
+## 2026-10-18 (flute)
+
+- **Broadway ballad, Broadway uptempo and march melodies use the VSCO flute** (susvib, CC0, ~25 MB, `winds` pack). Take 1 only (no round-robin) so previews stay deterministic. Clarinet remains the default melody elsewhere; harp still covers Broadway ballad accompaniment.
+
 ## 2026-10-18 (fiddle)
 
 - **Country, country-waltz and Celtic jig melodies use the VSCO solo violin** (arco vib, CC0, ~74 MB, `folk` pack) as a fiddle. Copyist writes the SFZ (p/f layers, loops, evened forte). Steel/nylon still cover the accompaniment; clarinet stays the default melody elsewhere.

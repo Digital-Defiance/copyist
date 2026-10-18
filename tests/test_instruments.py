@@ -108,6 +108,16 @@ class ManifestTests(unittest.TestCase):
         for n in names:
             self.assertIn(folder + n, listed)
 
+    def test_the_flute_sfz_only_names_samples_that_are_downloaded(self):
+        text = (instruments.SOUND / "flute.sfz").read_text()
+        folder = re.search(r"default_path=(.+)", text).group(1).strip()
+        listed = {f[0] for f in instruments.manifest()["flute"]}
+        names = [line.split("sample=", 1)[1].strip()
+                 for line in text.splitlines() if "sample=" in line]
+        self.assertEqual(len(names), 10)
+        for n in names:
+            self.assertIn(folder + n, listed)
+
     def test_instruments_that_ask_for_credit_have_a_credit_line(self):
         for inst in instruments.CATALOG.values():
             if "BY" in inst.licence:
@@ -133,6 +143,9 @@ class ManifestTests(unittest.TestCase):
         self.assertEqual(instruments.instrument_for("melody", "country-waltz"), "fiddle")
         self.assertEqual(instruments.instrument_for("piano", "country-waltz"), "steel-guitar")
         self.assertEqual(instruments.instrument_for("melody", "celtic-jig"), "fiddle")
+        self.assertEqual(instruments.instrument_for("melody", "broadway-ballad"), "flute")
+        self.assertEqual(instruments.instrument_for("melody", "broadway-uptempo"), "flute")
+        self.assertEqual(instruments.instrument_for("melody", "march"), "flute")
         self.assertEqual(instruments.instrument_for("piano", "pop"), "electric-guitar")
         self.assertEqual(instruments.instrument_for("piano", "rock"), "electric-guitar")
         self.assertEqual(instruments.instrument_for("piano", "power-ballad"), "electric-guitar")

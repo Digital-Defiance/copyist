@@ -3,7 +3,7 @@ name: March
 family: Hymns and classical
 about: A parade. Oom-pah that answers with a held bar; snare march rhythm, bass drum on one and three.
 tempo: [104, 128]
-instruments: {bass: upright-bass}
+instruments: {melody: flute, bass: upright-bass}
 production: brass band march, sousaphone, snare drum, cymbals, trumpets, festive, parade
 meters:
   "4/4":

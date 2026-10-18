@@ -3,7 +3,7 @@ name: Broadway uptempo
 family: Musical theatre
 about: A show tune in two. Oom-pah that opens every other bar; bass walks into the next chord.
 tempo: [112, 168]
-instruments: {bass: upright-bass}
+instruments: {melody: flute, bass: upright-bass}
 production: Broadway show tune, uptempo, theatrical, pit orchestra, brass, bright piano, energetic cast recording
 meters:
   "4/4":

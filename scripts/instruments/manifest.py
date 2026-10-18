@@ -36,6 +36,7 @@ EXTRA = {
     "steel-guitar": ["Discord GM/Melodic/026-Acoustic Guitar (steel)/"],
     "electric-guitar": ["LICENSE", "readme.txt"],
     "fiddle": ["LICENSE", "README.md", "Strings/Solo Violin/Arco Vib/"],
+    "flute": ["LICENSE", "README.md", "Woodwinds/Flute/susvib/"],
 }
 
 
