@@ -5,8 +5,9 @@ default_path=Idiophones/Struck Idiophones/Glockenspiel/
 
 <global>
 ampeg_attack=0.001
-ampeg_release=2.2
-amp_veltrack=65
+ampeg_release=1.4
+amp_veltrack=80
+volume=3
 
 <group> lokey=0 hikey=70 pitch_keycenter=68
 <region> lovel=100 hivel=127 offset=0 tune=0 sample=glock_loud_G4_01.wav

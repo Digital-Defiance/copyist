@@ -5,6 +5,7 @@ Newest first. One entry per decision: what, why, and what we gave up.
 ## 2026-10-18 (music box)
 
 - **Music-box exact preview uses the VCSL glockenspiel** as a stand-in (~17 MB, `bells` pack). No free real music-box library turned up; glock is what docs/sound-set.md already named. New `music-box` style: tinkling melody over soft piano arps, no bass/drums. A true music box and celesta stay on the find list for *I Left the Lights On*.
+- **The music box plays an octave above the written melody** (`PLAY_SHIFT`). Its samples start at G4; Amazing Grace and Silent Night sit lower, and stretching them down sounded flat and dull. The score stays as written.
 
 ## 2026-10-18 (pipe organ and harp)
 

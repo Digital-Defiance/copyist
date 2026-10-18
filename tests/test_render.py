@@ -171,6 +171,23 @@ class MixdownTests(unittest.TestCase):
         self.assertGreater(piano_l, piano_r)
         self.assertGreater(drums_r, drums_l)
 
+    def test_transpose_midi_raises_notes(self):
+        path = Path(tempfile.mkdtemp()) / "t.mid"
+        mid = mido.MidiFile(type=0, ticks_per_beat=480)
+        tr = mido.MidiTrack()
+        tr.append(mido.Message("note_on", note=60, velocity=80, time=0))
+        tr.append(mido.Message("note_off", note=60, velocity=0, time=480))
+        mid.tracks.append(tr)
+        mid.save(str(path))
+        render.transpose_midi(path, 12)
+        out = mido.MidiFile(str(path))
+        notes = [m.note for m in out.tracks[0] if m.type in ("note_on", "note_off")]
+        self.assertEqual(notes, [72, 72])
+
+    def test_musicbox_plays_an_octave_up(self):
+        self.assertEqual(instruments.play_shift("musicbox"), 12)
+        self.assertEqual(instruments.play_shift("piano"), 0)
+
     def test_room_keeps_a_panned_part_on_its_side(self):
         # Wet used to collapse to mono; broadband left-panned dry must stay left (sines
         # can hit a null on one IR channel and lie).

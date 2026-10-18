@@ -122,6 +122,19 @@ def split_parts(midi_path: Path, folder: Path) -> dict[str, Path]:
     return out
 
 
+def transpose_midi(midi: Path, semitones: int, dest: Path | None = None) -> Path:
+    """Raise or lower every note in a MIDI file by `semitones` (in place if `dest` is None)."""
+    import mido
+    mid = mido.MidiFile(str(midi))
+    for track in mid.tracks:
+        for msg in track:
+            if msg.type in ("note_on", "note_off"):
+                msg.note = max(0, min(127, msg.note + semitones))
+    out = dest or midi
+    mid.save(str(out))
+    return out
+
+
 def play_part(program: Path, sfz: Path, midi: Path, wav: Path) -> Path:
     """Render one part's MIDI through one SFZ instrument."""
     cmd = [str(program), "--sfz", str(sfz), "--midi", str(midi), "--wav", str(wav),
@@ -165,7 +178,9 @@ def render_band(midi_path: Path, wav_path: Path, style: str | None = None, cache
                 program = sfizz_program()
                 audio = {}
                 for part, midi in parts.items():
-                    raw = play_part(program, instruments.sfz_path(plan[part]), midi, work / f"{part}.wav")
+                    shift = instruments.play_shift(plan[part])
+                    play = transpose_midi(midi, shift, work / f"{part}-play.mid") if shift else midi
+                    raw = play_part(program, instruments.sfz_path(plan[part]), play, work / f"{part}.wav")
                     audio[part], sr = mixdown.read(raw)
                     if sr != SAMPLE_RATE:
                         raise AudioUnavailable(f"sfizz played the {part} part at {sr} Hz, not {SAMPLE_RATE}")

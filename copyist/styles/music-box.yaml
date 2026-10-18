@@ -1,7 +1,7 @@
 format: copyist-style/0
 name: Music box
 family: Children's
-about: Tiny and tinkling. The music box carries the tune over a slow broken figure on the piano. No bass, no drums.
+about: Tiny and tinkling. The music box plays the tune an octave up (its samples live high) over a slow broken figure on the piano. No bass, no drums.
 tempo: [56, 84]
 instruments: {melody: musicbox}
 production: music box, celesta, soft piano, gentle, delicate, lullaby, tinkling, intimate

@@ -98,6 +98,10 @@ PACKS = {
 ROLE_INSTRUMENT = {"melody": "clarinet", "piano_rh": "piano", "piano_lh": "piano", "piano": "piano",
                    "bass": "electric-bass", "drums": "drums", "other": "piano"}
 
+# Semitones to shift a part when rendering (score stays as written). The music-box stand-in's
+# samples sit high; sung melodies in C4–C5 sound dull when stretched down from G4.
+PLAY_SHIFT = {"musicbox": 12}
+
 
 def instrument_for(role: str, style: str | None = None) -> str:
     from . import styles
@@ -106,6 +110,11 @@ def instrument_for(role: str, style: str | None = None) -> str:
     if chosen and part in chosen.instruments:
         return chosen.instruments[part]
     return ROLE_INSTRUMENT.get(role, "piano")
+
+
+def play_shift(instrument_id: str) -> int:
+    """How many semitones to raise this instrument when playing a part (0 = as written)."""
+    return PLAY_SHIFT.get(instrument_id, 0)
 
 
 @lru_cache(maxsize=1)
