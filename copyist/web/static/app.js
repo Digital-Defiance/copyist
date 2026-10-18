@@ -144,6 +144,13 @@ function wireRewrite(song) {
       start({ action: "rewrite", song: song.slug, how: b.dataset.rewrite, section, candidates: 4 }, "rewrite");
     });
   }
+  const refit = $("#refit-go");
+  if (refit) {
+    refit.addEventListener("click", () => {
+      const lyrics = ($("#refit-lyrics") && $("#refit-lyrics").value) || "";
+      start({ action: "refit", song: song.slug, lyrics }, "refit");
+    });
+  }
 }
 
 // ---------------------------------------------------------------- the song
@@ -159,8 +166,18 @@ function songTab(song) {
          <li><span class="mark ${c.result === "pass" ? "pass" : c.result === "fail" ? "fail" : "warn"}" aria-label="${esc(c.result)}">${c.result === "pass" ? "✓" : c.result === "fail" ? "✗" : "?"}</span>
          <span><b>${esc(c.check)}</b>: ${esc(c.details)}${c.where ? ` (${esc(c.where)})` : ""}</span></li>`).join("")}</ul>`
     : `<p class="hint">Not checked yet.</p><p><button data-job="build">Write the score</button></p>`;
+  const edit = song.lyrics_edit || "";
   return `<div class="song-tab">
       <section><h2>Lyrics</h2><div class="verses" style="margin-top:.75rem">${verses || '<p class="hint">No lyrics.</p>'}</div>
+        <div class="section-gap">
+          <h2>Edit the lyrics</h2>
+          <p class="hint">Change the words and fit them under the same melody. You can mark [Verse] and [Chorus].
+            The score and band preview are written again when you save.</p>
+          <textarea id="refit-lyrics" class="lyrics-box" rows="8">${esc(edit)}</textarea>
+          <div class="actions" style="margin-top:.5rem">
+            <button class="small" id="refit-go">Fit lyrics and write the score</button></div>
+          <div class="job" data-job-panel="refit"></div>
+        </div>
         ${rewritePanel(song)}</section>
       <aside><h2>Checks</h2>${checks}<div class="job" data-job-panel></div></aside>
     </div>`;
@@ -748,7 +765,7 @@ function showJob(job) {
     ? `<p><progress max="${pr[1]}" value="${pr[0]}"></progress> ${(pr[0] / 1e9).toFixed(2)} of ${(pr[1] / 1e9).toFixed(1)} GB</p>` : "";
   panel.innerHTML = `<p class="status ${job.status}">${esc(job.label)}: ${words[job.status] || job.status}</p>${bar}
     <details ${job.status === "failed" ? "open" : ""}><summary>Output</summary><pre>${esc(job.output || "")}</pre></details>`;
-  for (const b of document.querySelectorAll("button[data-job], button[data-use], button[data-keep], button[data-keep-rewrite], button[data-rewrite], [data-write-more], [data-keep-transcription], #make, #install, #get-band, #w-go, #t-go")) b.disabled = job.status === "running";
+  for (const b of document.querySelectorAll("button[data-job], button[data-use], button[data-keep], button[data-keep-rewrite], button[data-rewrite], [data-write-more], [data-keep-transcription], #make, #install, #get-band, #w-go, #t-go, #refit-go")) b.disabled = job.status === "running";
 }
 
 // The "Make a take" choices survive the page redrawing after a job.

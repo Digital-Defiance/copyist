@@ -1,6 +1,11 @@
-Shantell Sans: Copyright 2022 The Shantell Sans Project Authors (https://github.com/arrowtype/shantell-sans).
+Instrument Serif: Copyright 2022 The Instrument Serif Project Authors
+  (https://github.com/Instrument/instrument-serif)
+Instrument Sans: Copyright 2022 The Instrument Sans Project Authors
+  (https://github.com/Instrument/instrument-sans)
 Source Serif 4: Copyright 2014-2021 Adobe (http://www.adobe.com/), with Reserved Font Name 'Source'.
-Both are licensed under the SIL Open Font License, Version 1.1, reproduced below.
+
+These Font Softwares are licensed under the SIL Open Font License, Version 1.1,
+reproduced below. (Shantell Sans is no longer used on this site.)
 
 PREAMBLE
 The goals of the Open Font License (OFL) are to stimulate worldwide
@@ -20,7 +25,7 @@ to any document created using the fonts or their derivatives.
 
 DEFINITIONS
 "Font Software" refers to the set of files released by the Copyright
-Holder(s) under this license and clearly marked as such. This may
+Holder(s) under this License and clearly marked as such. This may
 include source files, build scripts and documentation.
 
 "Reserved Font Name" refers to any names specified as such after the

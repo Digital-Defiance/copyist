@@ -1,12 +1,31 @@
-/* Copyist: a copyist's desk. Engraved serif for what Copyist wrote, a pencil hand for
-   what you do with it; red and blue pencil marks; music-paper staff lines. */
+/* Copyist: a copyist's desk. Instrument Serif for the brand and titles, Instrument
+   Sans for controls, Source Serif for reading; red and blue marks; staff lines. */
 
-@font-face { font-family: "Pencil"; src: url("fonts/shantell-sans.woff2") format("woff2");
-  font-weight: 300 800; font-display: swap; }
-@font-face { font-family: "Engraved"; src: url("fonts/source-serif-4.woff2") format("woff2");
-  font-weight: 200 900; font-display: swap; }
-@font-face { font-family: "Engraved"; src: url("fonts/source-serif-4-italic.woff2") format("woff2");
-  font-weight: 200 900; font-style: italic; font-display: swap; }
+@font-face {
+  font-family: "Instrument Serif";
+  src: url("fonts/instrument-serif.woff2") format("woff2");
+  font-weight: 400; font-display: swap;
+}
+@font-face {
+  font-family: "Instrument Serif";
+  src: url("fonts/instrument-serif-italic.woff2") format("woff2");
+  font-weight: 400; font-style: italic; font-display: swap;
+}
+@font-face {
+  font-family: "Instrument Sans";
+  src: url("fonts/instrument-sans.woff2") format("woff2");
+  font-weight: 400 700; font-stretch: 75% 100%; font-display: swap;
+}
+@font-face {
+  font-family: "Source Serif";
+  src: url("fonts/source-serif-4.woff2") format("woff2");
+  font-weight: 200 900; font-display: swap;
+}
+@font-face {
+  font-family: "Source Serif";
+  src: url("fonts/source-serif-4-italic.woff2") format("woff2");
+  font-weight: 200 900; font-style: italic; font-display: swap;
+}
 
 :root {
   --paper: #fafbf9;
@@ -16,8 +35,9 @@
   --ink-soft: #5a6080;
   --red: #b8322b;
   --blue: #2c5ba8;
-  --pencil: "Pencil", "Comic Sans MS", system-ui, sans-serif;
-  --engraved: "Engraved", "Iowan Old Style", Georgia, serif;
+  --display: "Instrument Serif", "Iowan Old Style", Georgia, serif;
+  --ui: "Instrument Sans", "Avenir Next", "Segoe UI", sans-serif;
+  --body: "Source Serif", "Iowan Old Style", Georgia, serif;
   --gap: 0.6rem;
   color-scheme: light;
 }
@@ -32,14 +52,15 @@
 html { font-size: 106.25%; }
 body {
   margin: 0; background: var(--paper); color: var(--ink);
-  font-family: var(--engraved); font-size: 1rem; line-height: 1.6;
+  font-family: var(--body); font-size: 1rem; line-height: 1.6;
   font-variant-numeric: oldstyle-nums;
 }
 a { color: var(--blue); }
 :focus-visible { outline: 2.5px solid var(--blue); outline-offset: 3px; border-radius: 4px; }
-h1, h2, h3 { font-family: var(--pencil); font-weight: 600; line-height: 1.25; margin: 0; }
-h2 { font-size: 1.15rem; }
-h3 { font-size: 1.05rem; }
+h1 { font-family: var(--display); font-weight: 400; line-height: 1.15; margin: 0; letter-spacing: -0.02em; }
+h2, h3 { font-family: var(--ui); font-weight: 600; line-height: 1.25; margin: 0; letter-spacing: -0.01em; }
+h2 { font-size: 1.1rem; }
+h3 { font-size: 1.02rem; }
 
 /* ---------------------------------------------------------------- masthead */
 .masthead {
@@ -47,10 +68,10 @@ h3 { font-size: 1.05rem; }
   padding: 1rem 1.5rem 0.75rem; border-bottom: 1.5px solid var(--staff);
 }
 .wordmark {
-  font-family: var(--pencil); font-weight: 700; font-size: 1.5rem; color: var(--ink);
-  text-decoration: none; font-variation-settings: "INFM" 40;
+  font-family: var(--display); font-weight: 400; font-size: 1.65rem; color: var(--ink);
+  text-decoration: none; letter-spacing: -0.02em;
 }
-.tagline { margin: 0; font-style: italic; color: var(--ink-soft); }
+.tagline { margin: 0; font-family: var(--display); font-style: italic; color: var(--ink-soft); }
 
 /* -------------------------------------------------------------------- desk */
 .desk { display: grid; grid-template-columns: 16rem minmax(0, 1fr); min-height: calc(100vh - 3.6rem); }
@@ -76,15 +97,15 @@ main:focus { outline: none; }
   border-left: 1.5px solid var(--staff); z-index: 0;
 }
 .staff-title h1 {
-  position: relative; z-index: 1; font-size: clamp(2rem, 4.5vw, 2.9rem); font-weight: 650;
-  font-variation-settings: "INFM" 55; letter-spacing: -0.01em;
+  position: relative; z-index: 1; font-size: clamp(2.1rem, 4.8vw, 3.1rem); font-weight: 400;
+  letter-spacing: -0.025em;
 }
 .facts { margin: 0.25rem 0 0; color: var(--ink-soft); max-width: 70ch; }
 
 /* -------------------------------------------------------------------- tabs */
 .tabs { display: flex; gap: 1.75rem; margin: 1.5rem 0 1.75rem; flex-wrap: wrap; }
 .tabs a {
-  font-family: var(--pencil); font-size: 1.15rem; font-weight: 500; color: var(--ink-soft); text-decoration: none;
+  font-family: var(--ui); font-size: 1.05rem; font-weight: 500; color: var(--ink-soft); text-decoration: none;
   padding: 0.15rem 0;
 }
 .tabs a:hover { color: var(--ink); }
@@ -94,10 +115,10 @@ main:focus { outline: none; }
 
 /* ---------------------------------------------------------------- buttons */
 button, .button {
-  font-family: var(--pencil); font-size: 1rem; font-weight: 600; cursor: pointer;
-  border: 2px solid var(--blue); color: var(--blue); background: transparent;
-  padding: 0.35rem 1rem; border-radius: 255px 14px 225px 14px / 14px 225px 14px 255px;
-  text-decoration: none; display: inline-block; line-height: 1.4;
+  font-family: var(--ui); font-size: 0.95rem; font-weight: 600; cursor: pointer;
+  border: 1.5px solid var(--blue); color: var(--blue); background: transparent;
+  padding: 0.4rem 1rem; border-radius: 4px;
+  text-decoration: none; display: inline-block; line-height: 1.4; letter-spacing: 0.01em;
 }
 button:hover, .button:hover { background: color-mix(in srgb, var(--blue) 10%, transparent); }
 button.go { background: var(--red); border-color: var(--red); color: var(--paper); }
@@ -109,15 +130,15 @@ button.small, .button.small { font-size: 0.9rem; padding: 0.15rem 0.7rem; }
 .song-tab { display: grid; grid-template-columns: minmax(0, 1fr) minmax(16rem, 22rem); gap: 3rem; }
 .verses { columns: 2 17rem; column-gap: 2.5rem; }
 .verse { break-inside: avoid; margin: 0 0 1.4rem; }
-.verse .n { font-family: var(--pencil); color: var(--ink-soft); font-size: 0.9rem; }
+.verse .n { font-family: var(--ui); color: var(--ink-soft); font-size: 0.9rem; }
 .verse p { margin: 0.1rem 0 0; font-size: 1.08rem; line-height: 1.7; max-width: 34ch; }
 .checks { list-style: none; padding: 0; margin: 0.6rem 0 0; }
 .checks li { display: grid; grid-template-columns: 1.5rem 1fr; gap: 0.25rem; margin-bottom: 0.55rem; font-size: 0.95rem; }
-.mark { font-family: var(--pencil); font-weight: 700; font-size: 1.15rem; line-height: 1.3; }
+.mark { font-family: var(--ui); font-weight: 700; font-size: 1.15rem; line-height: 1.3; }
 .mark.pass { color: var(--blue); }
 .mark.fail, .mark.warn { color: var(--red); }
 .checks b { font-weight: 600; }
-.verdict { font-family: var(--pencil); margin: 0.4rem 0 0; }
+.verdict { font-family: var(--ui); margin: 0.4rem 0 0; }
 
 /* ----------------------------------------------------------- the score tab */
 .sheet-picker { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1rem; align-items: center; }
@@ -134,7 +155,7 @@ button.small, .button.small { font-size: 0.9rem; padding: 0.15rem 0.7rem; }
 .fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr)); gap: 1rem 1.5rem; }
 .field { display: grid; gap: 0.3rem; }
 .field.wide { grid-column: 1 / -1; }
-label, .label { font-family: var(--pencil); font-weight: 500; font-size: 0.95rem; }
+label, .label { font-family: var(--ui); font-weight: 500; font-size: 0.95rem; }
 select, input, textarea {
   font: inherit; color: var(--ink); background: var(--paper); border: 1.5px solid var(--staff);
   border-radius: 6px; padding: 0.35rem 0.55rem; width: 100%;
@@ -149,7 +170,7 @@ textarea { min-height: 5.5rem; resize: vertical; line-height: 1.45; }
   max-height: 14rem; overflow: auto; background: var(--paper); border: 1.5px solid var(--staff);
   border-radius: 6px; padding: 0.6rem 0.75rem; font-size: 0.8rem; line-height: 1.45; white-space: pre-wrap;
 }
-.status { font-family: var(--pencil); }
+.status { font-family: var(--ui); }
 progress { accent-color: var(--blue); width: min(100%, 24rem); height: 0.9rem; vertical-align: middle; margin-right: 0.5rem; }
 .check { display: inline-flex; gap: 0.5rem; align-items: center; cursor: pointer; }
 .check input { width: auto; accent-color: var(--blue); }
@@ -168,10 +189,10 @@ progress { accent-color: var(--blue); width: min(100%, 24rem); height: 0.9rem; v
 .players { list-style: none; padding: 0; margin: 0.7rem 0 0.4rem; max-width: 40rem; }
 .players li { display: flex; gap: 0.7rem; align-items: baseline; padding: 0.2rem 0;
   border-bottom: 1px solid color-mix(in srgb, var(--staff) 40%, transparent); }
-.players .part { font-family: var(--pencil); color: var(--red); min-width: 4.5rem; }
+.players .part { font-family: var(--ui); color: var(--red); min-width: 4.5rem; }
 .players a { margin-left: auto; color: var(--blue); font-size: 0.9rem; }
 .offer { margin-top: 1rem; max-width: 44rem; }
-.family { font-family: var(--pencil); color: var(--blue); font-weight: 600; margin: 1.6rem 0 0.2rem; }
+.family { font-family: var(--ui); color: var(--blue); font-weight: 600; margin: 1.6rem 0 0.2rem; }
 .styles { list-style: none; padding: 0; margin: 0; max-width: 52rem; }
 .styles li { padding: 0.7rem 0 0.9rem; border-bottom: 1.5px solid color-mix(in srgb, var(--staff) 45%, transparent); }
 .styles li.current { border-left: 3px solid var(--red); padding-left: 0.7rem; }
@@ -179,7 +200,7 @@ progress { accent-color: var(--blue); width: min(100%, 24rem); height: 0.9rem; v
 .style-head h4 { margin: 0; font-weight: 600; }
 .style-head .meta { color: var(--ink-soft); font-size: 0.9rem; }
 .style-head button, .style-head .tag { margin-left: auto; }
-.tag { font-family: var(--pencil); color: var(--red); font-size: 0.95rem; }
+.tag { font-family: var(--ui); color: var(--red); font-size: 0.95rem; }
 .styles .player { display: grid; gap: 0.15rem; margin-top: 0.45rem; max-width: 36rem; }
 .player-label { font-size: 0.85rem; color: var(--ink-soft); }
 .styles audio { width: 100%; display: block; }
@@ -195,7 +216,7 @@ progress { accent-color: var(--blue); width: min(100%, 24rem); height: 0.9rem; v
 .bars .head { fill: var(--blue); }
 .losses { display: grid; grid-template-columns: 1fr auto; gap: 0.1rem 0.75rem; font-size: 0.85rem; margin-top: 0.4rem; }
 .losses span:nth-child(even) { text-align: right; font-variant-numeric: lining-nums tabular-nums; }
-.ready a { font-family: var(--pencil); }
+.ready a { font-family: var(--ui); }
 .warn-text { color: var(--red); }
 
 .empty { max-width: 40rem; }
@@ -215,8 +236,8 @@ progress { accent-color: var(--blue); width: min(100%, 24rem); height: 0.9rem; v
 /* ------------------------------------------------------- writing a song */
 .drawer-action { margin: 0.75rem 0 0; }
 .drawer .song-list .meta { display: block; font-size: 0.85rem; color: var(--ink-soft); margin: -0.15rem 0 0.35rem; }
-.lyrics-box { min-height: 16rem; font-family: var(--engraved); font-size: 1.02rem; line-height: 1.6; }
-.lyrics-text { font-family: var(--engraved); white-space: pre-wrap; }
+.lyrics-box { min-height: 16rem; font-family: var(--body); font-size: 1.02rem; line-height: 1.6; }
+.lyrics-text { font-family: var(--body); white-space: pre-wrap; }
 .candidates li.unusable { opacity: 0.75; }
 .facts + .make { margin-top: 1.5rem; }
 .drawer-action .button + .button { margin-top: 0.4rem; }

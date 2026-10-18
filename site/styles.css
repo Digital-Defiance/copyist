@@ -1,20 +1,34 @@
-/* Copyist public site — same desk brand as the local page: engraved serif,
-   pencil hand, staff lines, red and blue marks. No build step. */
+/* Copyist public site — desk colours and staff motif; Instrument for display,
+   Source Serif for reading. No build step. */
 
 @font-face {
-  font-family: "Pencil";
-  src: url("fonts/shantell-sans.woff2") format("woff2");
-  font-weight: 300 800;
+  font-family: "Instrument Serif";
+  src: url("fonts/instrument-serif.woff2") format("woff2");
+  font-weight: 400;
   font-display: swap;
 }
 @font-face {
-  font-family: "Engraved";
+  font-family: "Instrument Serif";
+  src: url("fonts/instrument-serif-italic.woff2") format("woff2");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Instrument Sans";
+  src: url("fonts/instrument-sans.woff2") format("woff2");
+  font-weight: 400 700;
+  font-stretch: 75% 100%;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Source Serif";
   src: url("fonts/source-serif-4.woff2") format("woff2");
   font-weight: 200 900;
   font-display: swap;
 }
 @font-face {
-  font-family: "Engraved";
+  font-family: "Source Serif";
   src: url("fonts/source-serif-4-italic.woff2") format("woff2");
   font-weight: 200 900;
   font-style: italic;
@@ -29,8 +43,9 @@
   --ink-soft: #5a6080;
   --red: #b8322b;
   --blue: #2c5ba8;
-  --pencil: "Pencil", "Comic Sans MS", system-ui, sans-serif;
-  --engraved: "Engraved", "Iowan Old Style", Georgia, serif;
+  --display: "Instrument Serif", "Iowan Old Style", Georgia, serif;
+  --ui: "Instrument Sans", "Avenir Next", "Segoe UI", sans-serif;
+  --body: "Source Serif", "Iowan Old Style", Georgia, serif;
   --pad: clamp(1.25rem, 4vw, 3.5rem);
   color-scheme: light;
 }
@@ -50,7 +65,7 @@ body {
   margin: 0;
   background: var(--paper);
   color: var(--ink);
-  font-family: var(--engraved);
+  font-family: var(--body);
   font-size: 1.0625rem;
   line-height: 1.65;
   font-variant-numeric: oldstyle-nums;
@@ -90,17 +105,19 @@ a:hover { color: var(--red); }
   border-bottom: 1.5px solid color-mix(in srgb, var(--staff) 70%, transparent);
 }
 .wordmark {
-  font-family: var(--pencil);
-  font-weight: 700;
-  font-size: 1.35rem;
+  font-family: var(--display);
+  font-weight: 400;
+  font-size: 1.55rem;
+  letter-spacing: -0.02em;
   color: var(--ink);
   text-decoration: none;
-  font-variation-settings: "INFM" 40;
 }
 .top nav { display: flex; gap: 1.35rem; flex-wrap: wrap; }
 .top nav a {
-  font-family: var(--pencil);
+  font-family: var(--ui);
   font-weight: 500;
+  font-size: 0.95rem;
+  letter-spacing: 0.01em;
   color: var(--ink-soft);
   text-decoration: none;
 }
@@ -174,22 +191,22 @@ a:hover { color: var(--red); }
 }
 .brand {
   margin: 0 0 0.35rem;
-  font-family: var(--pencil);
-  font-size: clamp(2.8rem, 9vw, 4.6rem);
-  font-weight: 700;
-  line-height: 1;
-  letter-spacing: -0.02em;
-  font-variation-settings: "INFM" 55;
+  font-family: var(--display);
+  font-size: clamp(3.4rem, 11vw, 5.6rem);
+  font-weight: 400;
+  line-height: 0.95;
+  letter-spacing: -0.03em;
   opacity: 0;
   animation: brand-in 0.9s ease-out 0.15s forwards;
 }
 .hero h1 {
   margin: 0 0 0.75rem;
-  font-family: var(--engraved);
+  font-family: var(--display);
   font-style: italic;
-  font-weight: 500;
-  font-size: clamp(1.45rem, 3.2vw, 2rem);
-  line-height: 1.25;
+  font-weight: 400;
+  font-size: clamp(1.5rem, 3.4vw, 2.15rem);
+  line-height: 1.2;
+  letter-spacing: -0.015em;
   color: var(--ink);
   opacity: 0;
   animation: fade-in 0.8s ease-out 0.45s forwards;
@@ -218,17 +235,18 @@ a:hover { color: var(--red); }
 
 /* -------------------------------------------------------------- buttons */
 .button {
-  font-family: var(--pencil);
-  font-size: 1.05rem;
+  font-family: var(--ui);
+  font-size: 0.98rem;
   font-weight: 600;
   text-decoration: none;
   display: inline-block;
-  padding: 0.45rem 1.15rem;
-  border: 2px solid var(--blue);
+  padding: 0.55rem 1.25rem;
+  border: 1.5px solid var(--blue);
   color: var(--blue);
   background: transparent;
-  border-radius: 255px 14px 225px 14px / 14px 225px 14px 255px;
+  border-radius: 4px;
   line-height: 1.4;
+  letter-spacing: 0.01em;
   transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
 }
 .button:hover {
@@ -254,10 +272,11 @@ a:hover { color: var(--red); }
 }
 .band h2 {
   margin: 0 0 0.65rem;
-  font-family: var(--pencil);
-  font-weight: 650;
-  font-size: clamp(1.6rem, 3vw, 2.1rem);
-  font-variation-settings: "INFM" 40;
+  font-family: var(--display);
+  font-weight: 400;
+  font-size: clamp(2rem, 3.6vw, 2.65rem);
+  letter-spacing: -0.025em;
+  line-height: 1.15;
 }
 .section-lede {
   margin: 0 0 2rem;
@@ -277,9 +296,10 @@ a:hover { color: var(--red); }
 }
 .compare h3 {
   margin: 0 0 0.4rem;
-  font-family: var(--pencil);
-  font-size: 1.2rem;
+  font-family: var(--ui);
+  font-size: 1.05rem;
   font-weight: 600;
+  letter-spacing: -0.01em;
 }
 .compare li:last-child h3 { color: var(--blue); }
 .compare p { margin: 0; max-width: 40ch; }
@@ -309,9 +329,10 @@ a:hover { color: var(--red); }
 }
 .feature-list h3 {
   margin: 0 0 0.35rem;
-  font-family: var(--pencil);
-  font-size: 1.15rem;
+  font-family: var(--ui);
+  font-size: 1.05rem;
   font-weight: 600;
+  letter-spacing: -0.01em;
 }
 .feature-list p { margin: 0; color: var(--ink-soft); max-width: 38ch; }
 .feature-list code,
@@ -335,25 +356,28 @@ a:hover { color: var(--red); }
 }
 .step-n {
   display: block;
-  font-family: var(--pencil);
-  font-weight: 700;
-  font-size: 1.5rem;
+  font-family: var(--display);
+  font-weight: 400;
+  font-size: 1.75rem;
   color: var(--red);
   margin-bottom: 0.25rem;
+  line-height: 1;
 }
 .steps h3 {
   margin: 0 0 0.35rem;
-  font-family: var(--pencil);
-  font-size: 1.15rem;
+  font-family: var(--ui);
+  font-size: 1.05rem;
   font-weight: 600;
+  letter-spacing: -0.01em;
 }
 .steps p { margin: 0; color: var(--ink-soft); max-width: 32ch; }
 
 .install h3 {
   margin: 2rem 0 0.6rem;
-  font-family: var(--pencil);
-  font-size: 1.15rem;
+  font-family: var(--ui);
+  font-size: 1.05rem;
   font-weight: 600;
+  letter-spacing: -0.01em;
 }
 .install h3:first-of-type { margin-top: 0.5rem; }
 .install p { max-width: 58ch; }

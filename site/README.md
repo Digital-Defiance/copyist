@@ -8,4 +8,4 @@ Static public site for GitHub Pages: what Copyist is, its features, and how to i
 
 Open `index.html` in a browser to preview locally. Asset paths are relative.
 
-Fonts match the local app (Source Serif 4 and Shantell Sans, SIL OFL) and are bundled here so the site never fetches from a CDN.
+Fonts are Instrument Serif / Instrument Sans (display and UI) with Source Serif 4 (body), all SIL OFL, bundled so the site never fetches from a CDN — same faces as `copyist serve`.
