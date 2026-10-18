@@ -342,10 +342,24 @@ def walk_bars(song: Song, timeline, velocity: int) -> list[stream.Measure]:
                 if which == "approach":
                     after = chord_at(timeline, start_abs + b + beat) or cs
                     target = near(chord_tone(after, "root"), previous)
-                    below, above = target.transpose(-1), target.transpose(1)
-                    p = min((below, above), key=lambda q: (previous is not None and q.midi == previous.midi,
-                                                           not WALK_LOW <= q.midi <= WALK_HIGH,
-                                                           abs(q.midi - previous.midi) if previous else 0))
+                    if same_chord(cs, after):
+                        # Harmony isn't moving: stay inside the chord. A chromatic
+                        # half-step into the same root sounds like a wrong note under
+                        # a sung melody (Saints on C for bars at a time).
+                        choices = [near(chord_tone(cs, w), previous)
+                                   for w in ("third", "fifth", "sixth")]
+                        p = min(choices, key=lambda q: (
+                            previous is not None and q.midi == previous.midi,
+                            abs(q.midi - target.midi),
+                            abs(q.midi - previous.midi) if previous else 0,
+                        ))
+                    else:
+                        below, above = target.transpose(-1), target.transpose(1)
+                        p = min((below, above), key=lambda q: (
+                            previous is not None and q.midi == previous.midi,
+                            not WALK_LOW <= q.midi <= WALK_HIGH,
+                            abs(q.midi - previous.midi) if previous else 0,
+                        ))
                 else:
                     p = near(chord_tone(cs, which), previous)
                 el = note.Note(p, quarterLength=beat)

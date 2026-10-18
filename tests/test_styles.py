@@ -195,11 +195,36 @@ class ArrangeEveryStyleTests(unittest.TestCase):
         timeline = arrange.chord_timeline(song.melody)
         notes = list(bass.recurse().getElementsByClass("Note"))
         for a, b in zip(notes, notes[1:]):
+            off_a = float(a.getOffsetInHierarchy(bass))
             off_b = float(b.getOffsetInHierarchy(bass))
+            cs_a = arrange.chord_at(timeline, off_a)
             cs_b = arrange.chord_at(timeline, off_b)
             if float(b.beat) == 1.0:
                 self.assertEqual(b.pitch.name, cs_b.bass().name, f"bar {b.measureNumber}")
-                self.assertEqual(abs(b.pitch.midi - a.pitch.midi), 1, f"into bar {b.measureNumber}")
+                # Chromatic approach only when the chord actually changes; same-chord
+                # bars stay on chord tones (a half-step into the same root sounded sour).
+                if not arrange.same_chord(cs_a, cs_b):
+                    self.assertEqual(abs(b.pitch.midi - a.pitch.midi), 1, f"into bar {b.measureNumber}")
+                else:
+                    allowed = {p.name for p in cs_a.pitches} | {cs_a.root().transpose("M6").name}
+                    self.assertIn(a.pitch.name, allowed, f"bar {b.measureNumber} approach {a.pitch.name}")
+
+    def test_walking_bass_avoids_chromatic_approaches_while_a_chord_holds(self):
+        song = self.songs["4/4"]  # Saints: long stretches of C
+        band = arrange.arrange_band(dataclasses.replace(song, style="swing"))
+        bass = band.parts["bass"].parts[0]
+        timeline = arrange.chord_timeline(song.melody)
+        sour = []
+        for n in bass.recurse().getElementsByClass("Note"):
+            off = float(n.getOffsetInHierarchy(bass))
+            cs = arrange.chord_at(timeline, off)
+            nxt = arrange.chord_at(timeline, off + float(n.quarterLength))
+            if cs is None or not arrange.same_chord(cs, nxt or cs):
+                continue
+            chord_names = {p.name for p in cs.pitches} | {cs.root().transpose("M6").name}
+            if n.pitch.name not in chord_names:
+                sour.append((off, n.pitch.nameWithOctave, cs.figure))
+        self.assertEqual(sour, [], f"non-chord tones while harmony holds: {sour[:8]}")
 
     def test_a_boogie_line_climbs_from_the_root(self):
         band = arrange.arrange_band(dataclasses.replace(self.songs["4/4"], style="blues-shuffle"))
