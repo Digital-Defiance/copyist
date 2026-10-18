@@ -63,7 +63,8 @@ class Style:
     tempo: tuple[int, int]
     instruments: dict[str, str]        # part -> instrument id (copyist/instruments.py)
     production: str                    # words for YuE2's style line
-    meters: dict[str, dict] = field(repr=False)
+    keep_rh: bool = False              # piano-vocal: keep the right-hand figure (open melody pitches)
+    meters: dict[str, dict] = field(default_factory=dict, repr=False)
 
     def pattern(self, meter: str) -> dict | None:
         return self.meters.get(meter)
@@ -167,6 +168,9 @@ def parse(data: dict, style_id: str) -> Style:
     for part, inst in chosen.items():
         if part not in PARTS or inst not in instruments.CATALOG:
             raise StyleError(f"{style_id}: instruments: {part}: {inst} isn't a known part and instrument")
+    keep_rh = bool(data.get("keep_rh", False))
+    if keep_rh and chosen.get("melody") != "piano":
+        raise StyleError(f"{style_id}: keep_rh only makes sense when instruments.melody is piano")
     meters = {}
     for meter, parts in data["meters"].items():
         where = f"{style_id} {meter}"
@@ -200,7 +204,7 @@ def parse(data: dict, style_id: str) -> Style:
             p["drums"] = _drums_groove(kit, where, full, drums.KIT)
         meters[str(meter)] = p
     return Style(style_id, str(data["name"]), str(data["family"]), str(data["about"]).strip(), feel, swing,
-                 (tempo[0], tempo[-1]), chosen, " ".join(str(data["production"]).split()), meters)
+                 (tempo[0], tempo[-1]), chosen, " ".join(str(data["production"]).split()), keep_rh, meters)
 
 
 @lru_cache(maxsize=None)

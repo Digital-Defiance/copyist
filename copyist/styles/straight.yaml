@@ -1,15 +1,21 @@
 format: copyist-style/0
 name: Straight four
 family: Pop and rock
-about: A steady groove. Chords on every beat, the bass walking root and fifth, snare on two and four.
+about: A steady groove that breathes. Chords and bass answer across a two-bar phrase; snare on two and four.
 tempo: [88, 140]
 instruments: {bass: electric-bass}
 production: steady groove, acoustic piano, electric bass, drums, warm and upbeat
 meters:
   "4/4":
-    rh: [[0, 1, chord], [1, 1, chord], [2, 1, chord], [3, 1, chord]]
-    lh: [[0, 2, root], [2, 2, root]]
-    bass: [[0, 1, root], [1, 1, fifth], [2, 1, root], [3, 1, fifth]]
+    rh:
+      - [[0, 1, chord], [1, 1, chord], [2, 1, chord], [3, 1, chord]]
+      - [[0, 2, chord], [2, 2, chord]]
+    lh:
+      - [[0, 2, root], [2, 2, root]]
+      - [[0, 2, root], [2, 2, fifth]]
+    bass:
+      - [[0, 1, root], [1, 1, fifth], [2, 1, root], [3, 1, fifth]]
+      - [[0, 2, root], [2, 2, fifth]]
     drums:
       hands: [[0, 0.5, [hihat]], [0.5, 0.5, [hihat]], [1, 0.5, [hihat, snare]], [1.5, 0.5, [hihat]],
               [2, 0.5, [hihat]], [2.5, 0.5, [hihat]], [3, 0.5, [hihat, snare]], [3.5, 0.5, [hihat]]]

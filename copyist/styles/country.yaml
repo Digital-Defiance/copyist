@@ -1,15 +1,21 @@
 format: copyist-style/0
 name: Country two-step
 family: Country and folk
-about: Boom-chick. The bass on one and three, the piano's chords on two and four, side-stick backbeat.
+about: Boom-chick that answers itself. Bass on one and three, piano chords on two and four, side-stick backbeat.
 tempo: [96, 140]
 instruments: {bass: electric-bass}
 production: classic country, two-step, acoustic guitar, pedal steel, fiddle, honky-tonk piano, twangy, Nashville
 meters:
   "4/4":
-    rh: [[1, 1, chord], [3, 1, chord]]
-    lh: [[0, 1, root], [2, 1, fifth]]
-    bass: [[0, 2, root], [2, 2, fifth]]
+    rh:
+      - [[1, 1, chord], [3, 1, chord]]
+      - [[1, 1, chord], [2, 1, chord], [3, 1, chord]]
+    lh:
+      - [[0, 1, root], [2, 1, fifth]]
+      - [[0, 1, root], [2, 1, root]]
+    bass:
+      - [[0, 2, root], [2, 2, fifth]]
+      - [[0, 2, root], [2, 1, fifth], [3, 1, root]]
     drums:
       hands: [[0, 0.5, [hihat]], [0.5, 0.5, [hihat]], [1, 0.5, [hihat, sidestick]], [1.5, 0.5, [hihat]], [2, 0.5, [hihat]], [2.5, 0.5, [hihat]], [3, 0.5, [hihat, sidestick]], [3.5, 0.5, [hihat]]]
       feet: [[0, 1, [kick]], [2, 1, [kick]]]

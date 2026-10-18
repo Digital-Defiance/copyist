@@ -438,11 +438,12 @@ def arrange_band(song: Song) -> Arrangement:
     """Arrange the song for the instruments the song file asks for (default: all of them)."""
     style, pat, notes = pattern_for(song)
     # Piano-vocal: the melody is already on the piano. A band under it leaves the
-    # right hand open; a solo-piano texture keeps its figure but drops melody pitches.
+    # right hand open unless the style asks to keep its figure (`keep_rh`); solo
+    # piano and keep_rh drop only the pitches the melody is already singing.
     style_obj = styles.get(style)
     open_rh_for_melody = False
     if style_obj and style_obj.instruments.get("melody") == "piano":
-        if pat.get("bass") != "none":
+        if pat.get("bass") != "none" and not style_obj.keep_rh:
             pat = {**pat, "rh": []}
             notes.append("Piano-vocal: the right hand rests so the melody isn't struck twice.")
         else:

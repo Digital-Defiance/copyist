@@ -37,6 +37,7 @@ about: Swung eighths. A walking bass, the ride cymbal's spang-a-lang, ...
 feel: swing                   # straight (default), swing or shuffle
 tempo: [110, 200]             # usual range, in beats a minute (a dotted quarter is the beat in 6/8)
 instruments: {bass: upright-bass}   # which instrument plays a part (copyist/instruments.py)
+keep_rh: false                    # optional; with melody: piano, keep the right-hand figure (open melody pitches)
 production: swing jazz, 1940s, walking upright bass, ride cymbal, piano comping, clarinet, ...
 meters:
   "4/4":

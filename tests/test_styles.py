@@ -110,6 +110,30 @@ class CatalogTests(unittest.TestCase):
         self.assertNotIn("drums", band.parts)
         self.assertIn("right hand rests", " ".join(band.notes))
 
+    def test_folk_keeps_fingerpicking_under_a_piano_melody(self):
+        f = styles.get("folk")
+        self.assertTrue(f.keep_rh)
+        self.assertEqual(f.instruments.get("melody"), "piano")
+        band = arrange.arrange_band(dataclasses.replace(load_song(SONGS["4/4"]), style="folk"))
+        self.assertIn("leaves the melody", " ".join(band.notes))
+        rh = band.score.parts[1]
+        self.assertTrue(any(not isinstance(n, harmony.ChordSymbol) for n in rh.recurse().notes))
+
+    def test_straight_cycles_a_two_bar_phrase(self):
+        s = styles.get("straight")
+        self.assertTrue(styles.is_cycle(s.pattern("4/4")["rh"]))
+        band = arrange.arrange_band(dataclasses.replace(load_song(SONGS["4/4"]), style="straight"))
+        rh = band.score.parts[1]
+        full = [m for m in rh.getElementsByClass(stream.Measure)
+                if sum(e.quarterLength for e in m.notesAndRests
+                       if not isinstance(e, harmony.ChordSymbol)) >= 4]
+        counts = [len([n for n in m.notes if not isinstance(n, harmony.ChordSymbol)]) for m in full[:2]]
+        self.assertEqual(counts, [4, 2])   # four beat-chords, then two half-note chords
+
+    def test_keep_rh_without_piano_melody_is_refused(self):
+        with self.assertRaises(styles.StyleError):
+            styles.parse(minimal(keep_rh=True), "test")
+
     def test_lullaby_keeps_a_right_hand_that_avoids_the_melody(self):
         song = dataclasses.replace(load_song(SONGS["6/8"]), style="lullaby")
         band = arrange.arrange_band(song)
