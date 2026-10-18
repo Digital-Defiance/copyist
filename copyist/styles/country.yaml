@@ -3,7 +3,7 @@ name: Country two-step
 family: Country and folk
 about: Boom-chick that answers itself. Bass on one and three, guitar chords on two and four, side-stick backbeat.
 tempo: [96, 140]
-instruments: {piano: steel-guitar, bass: electric-bass}
+instruments: {melody: fiddle, piano: steel-guitar, bass: electric-bass}
 production: classic country, two-step, acoustic guitar, pedal steel, fiddle, honky-tonk piano, twangy, Nashville
 meters:
   "4/4":

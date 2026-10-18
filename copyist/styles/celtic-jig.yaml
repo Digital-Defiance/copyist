@@ -3,7 +3,7 @@ name: Celtic jig
 family: Country and folk
 about: A lively jig in two. Bass and left hand on the big beats; chords and toms answer across the phrase.
 tempo: [96, 132]
-instruments: {bass: upright-bass}
+instruments: {melody: fiddle, bass: upright-bass}
 production: lively Celtic jig, fiddle, tin whistle, bodhran, acoustic guitar, Irish folk, dancing
 meters:
   "6/8":

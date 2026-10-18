@@ -35,6 +35,7 @@ EXTRA = {
     "nylon-guitar": ["LICENSE", "README.md", "samples/"],
     "steel-guitar": ["Discord GM/Melodic/026-Acoustic Guitar (steel)/"],
     "electric-guitar": ["LICENSE", "readme.txt"],
+    "fiddle": ["LICENSE", "README.md", "Strings/Solo Violin/Arco Vib/"],
 }
 
 
@@ -93,8 +94,10 @@ def main(clones: Path) -> None:
         # files are listed under EXTRA (the nested folder in the clone).
         if inst.generated and inst.id not in SAMPLE_LINKS:
             text = (SOUND / inst.sfz).read_text()
-            default = re.search(r"default_path=(\S+)", text)
-            prefix = default.group(1) if default else ""
+            default = re.search(r"default_path=(.+)", text)
+            prefix = (default.group(1).strip() if default else "")
+            if prefix and not prefix.endswith("/"):
+                prefix += "/"
             names = [line.split("sample=", 1)[1].strip()
                      for line in text.splitlines() if "sample=" in line
                      and not line.split("sample=", 1)[1].strip().startswith("*")]

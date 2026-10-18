@@ -8896,6 +8896,172 @@
 "146c51d28ed87cbd1c847ec5c1b30b416fe05a94"
 ]
 ]
+},
+"fiddle":{
+"repo":"sgossner/VSCO-2-CE",
+"revision":"440300901dfe9275fd84e0b7763af1f8443ae62e",
+"files":[
+[
+"LICENSE",
+6555,
+"670154e3538863b2d9891fd5483160fbdfc89164"
+],
+[
+"README.md",
+751,
+"64362229eaee3d93aae6cb86446b6b5f4f0a1170"
+],
+[
+"Strings/Solo Violin/Arco Vib/LLVln_ArcoVib_A3_f.wav",
+2864482,
+"82964f15bb0ca3d34dbdfdd43ad0148f9d8767af"
+],
+[
+"Strings/Solo Violin/Arco Vib/LLVln_ArcoVib_A3_p.wav",
+2911130,
+"7122b440f4dbd148a81319fca1d04a550710cef3"
+],
+[
+"Strings/Solo Violin/Arco Vib/LLVln_ArcoVib_A4_f.wav",
+2488526,
+"3155c72c1f9ea1518ddb6c1a20eb5c0a094bd537"
+],
+[
+"Strings/Solo Violin/Arco Vib/LLVln_ArcoVib_A4_p.wav",
+2612122,
+"e8667671328e1cfcd769a7624c26fac133ad7b0f"
+],
+[
+"Strings/Solo Violin/Arco Vib/LLVln_ArcoVib_A5_f.wav",
+1986834,
+"eebb9f220dc2a93557acc849d5dd3273b8f0ff8f"
+],
+[
+"Strings/Solo Violin/Arco Vib/LLVln_ArcoVib_A5_p.wav",
+2562122,
+"5eb8185d8ca9b3f34110654c2779e587de513921"
+],
+[
+"Strings/Solo Violin/Arco Vib/LLVln_ArcoVib_A6_f.wav",
+2052254,
+"c296065592b8adf9e12f51af9d003b7259ecc6e2"
+],
+[
+"Strings/Solo Violin/Arco Vib/LLVln_ArcoVib_A6_p.wav",
+2614110,
+"32e4646793f68c897271fb7f97887c95dbaf59fc"
+],
+[
+"Strings/Solo Violin/Arco Vib/LLVln_ArcoVib_C4_f.wav",
+2334170,
+"8a700075b7ae2f19c1c56108738324dfba6959e8"
+],
+[
+"Strings/Solo Violin/Arco Vib/LLVln_ArcoVib_C4_p.wav",
+3096650,
+"9f876cafa572a8719e2e93fc994c5303992b8e62"
+],
+[
+"Strings/Solo Violin/Arco Vib/LLVln_ArcoVib_C5_f.wav",
+2497990,
+"93e9a2cf8106acc5e49ba18dab112c947473917f"
+],
+[
+"Strings/Solo Violin/Arco Vib/LLVln_ArcoVib_C5_p.wav",
+2498790,
+"71f0671d77cf8b79ce1a18ba20d9661e24f086fc"
+],
+[
+"Strings/Solo Violin/Arco Vib/LLVln_ArcoVib_C6_f.wav",
+2162774,
+"89f48f37313800df4c5901dc76b49b1c5c69e396"
+],
+[
+"Strings/Solo Violin/Arco Vib/LLVln_ArcoVib_C6_p.wav",
+2358906,
+"33bc7e87816637462d6e174da9949eb9b5e45ef4"
+],
+[
+"Strings/Solo Violin/Arco Vib/LLVln_ArcoVib_C7_f.wav",
+2176486,
+"2348056e211ef9b6d309f3718d8e4e49471f65ce"
+],
+[
+"Strings/Solo Violin/Arco Vib/LLVln_ArcoVib_C7_p.wav",
+2274706,
+"bc1f4c13bb7c9693f7c5ef5a44bfe27463aa8cda"
+],
+[
+"Strings/Solo Violin/Arco Vib/LLVln_ArcoVib_E4_f.wav",
+2416566,
+"6b1bcdf57513dd089a2172adc0ddbac4a335b3a0"
+],
+[
+"Strings/Solo Violin/Arco Vib/LLVln_ArcoVib_E4_p.wav",
+2600174,
+"99279ebc21258ab48aae6eb63d1eb7538f28d306"
+],
+[
+"Strings/Solo Violin/Arco Vib/LLVln_ArcoVib_E5_f.wav",
+2365174,
+"269658d510e82345227ac10d22f928cfae428c99"
+],
+[
+"Strings/Solo Violin/Arco Vib/LLVln_ArcoVib_E5_p.wav",
+2517094,
+"670865e19772aceab538850ea7a0d1a86024d955"
+],
+[
+"Strings/Solo Violin/Arco Vib/LLVln_ArcoVib_E6_f.wav",
+2363554,
+"26855bca28a7be29386cbd6db56d2ae6f7c3b66c"
+],
+[
+"Strings/Solo Violin/Arco Vib/LLVln_ArcoVib_E6_p.wav",
+2514702,
+"52407eb061956458643424aa623998ee43ce5136"
+],
+[
+"Strings/Solo Violin/Arco Vib/LLVln_ArcoVib_G3_f.wav",
+2936890,
+"a09b038528097878ad6b12d30da4ac1a227d5a98"
+],
+[
+"Strings/Solo Violin/Arco Vib/LLVln_ArcoVib_G3_p.wav",
+2788822,
+"bc5f7d33610abbc3000f432562f36063f1d3d725"
+],
+[
+"Strings/Solo Violin/Arco Vib/LLVln_ArcoVib_G4_f.wav",
+2366050,
+"f9c1a5547a7e062eb34ee6bef09e559d3839f46e"
+],
+[
+"Strings/Solo Violin/Arco Vib/LLVln_ArcoVib_G4_p.wav",
+2594066,
+"7324564c663bf239802020287c217b27c76b8142"
+],
+[
+"Strings/Solo Violin/Arco Vib/LLVln_ArcoVib_G5_f.wav",
+2222106,
+"f8745db337ebf8e82d59f90cea7c0f060a3615ce"
+],
+[
+"Strings/Solo Violin/Arco Vib/LLVln_ArcoVib_G5_p.wav",
+2596714,
+"a0ac97ce56dcbfb7b622abd2aa3c61678053f791"
+],
+[
+"Strings/Solo Violin/Arco Vib/LLVln_ArcoVib_G6_f.wav",
+2164026,
+"9bd2b0d9d6e5505a0c0ce0722bd10db7913ee97d"
+],
+[
+"Strings/Solo Violin/Arco Vib/LLVln_ArcoVib_G6_p.wav",
+2417222,
+"eca2508aa84cef89ee2002953d3b5f9867d53802"
+]
+]
 }
 }
 }

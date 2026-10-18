@@ -2,6 +2,10 @@
 
 Newest first. One entry per decision: what, why, and what we gave up.
 
+## 2026-10-18 (fiddle)
+
+- **Country, country-waltz and Celtic jig melodies use the VSCO solo violin** (arco vib, CC0, ~74 MB, `folk` pack) as a fiddle. Copyist writes the SFZ (p/f layers, loops, evened forte). Steel/nylon still cover the accompaniment; clarinet stays the default melody elsewhere.
+
 ## 2026-10-18 (electric guitar)
 
 - **Pop, rock, power-ballad and blues-shuffle use Karoryfer Emilyguitar** (CC0 Epiphone, clean program, ~123 MB, `electric` pack). Chord patterns stay on the piano staff; the electric just plays them. Black and Green Guitars stayed out for now (large, LFS-awkward). A dedicated guitar staff still open.

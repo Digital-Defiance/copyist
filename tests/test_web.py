@@ -170,7 +170,7 @@ class WebTests(unittest.TestCase):
         bells = next(g for g in listing["instruments"] if g["id"] == "instruments-bells")
         self.assertEqual([i["id"] for i in bells["models"]], ["musicbox"])
         folk = next(g for g in listing["instruments"] if g["id"] == "instruments-folk")
-        self.assertEqual([i["id"] for i in folk["models"]], ["nylon-guitar", "steel-guitar"])
+        self.assertEqual([i["id"] for i in folk["models"]], ["nylon-guitar", "steel-guitar", "fiddle"])
         electric = next(g for g in listing["instruments"] if g["id"] == "instruments-electric")
         self.assertEqual([i["id"] for i in electric["models"]], ["electric-guitar"])
         self.assertIn("sfizz", listing)

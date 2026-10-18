@@ -7,10 +7,10 @@ so what lands on disk is byte for byte what the library's authors published.
 A file is only moved into place once it checks out, so an interrupted download
 picks up where it stopped.
 
-The clarinet, pipe organ, harp, music box and steel guitar are exceptions to "as
-published": VSCO/VCSL/Discord ship WAV-only or awkward paths, so Copyist writes
-their SFZs (copyist/sound/*.sfz) next to the samples. The tonewheel organ is fully
-synthetic (sfizz *sine oscillators).
+The clarinet, pipe organ, harp, music box, steel guitar and fiddle are exceptions
+to "as published": VSCO/VCSL/Discord ship WAV-only or awkward paths, so Copyist
+writes their SFZs (copyist/sound/*.sfz) next to the samples. The tonewheel organ
+is fully synthetic (sfizz *sine oscillators).
 """
 from __future__ import annotations
 
@@ -89,6 +89,9 @@ CATALOG = {i.id: i for i in (
     Instrument("electric-guitar", "Karoryfer Emilyguitar (Epiphone, clean)", "sfzinstruments/karoryfer.emilyguitar",
                "b4920dc662fd9cad6dcaccdeecffdd91c8725d8c", "emily_clean.sfz", "CC0", "",
                "https://github.com/sfzinstruments/karoryfer.emilyguitar"),
+    Instrument("fiddle", "VSCO 2 Community Edition solo violin (fiddle)", "sgossner/VSCO-2-CE",
+               "440300901dfe9275fd84e0b7763af1f8443ae62e", "fiddle.sfz", "CC0", "",
+               "https://versilian-studios.com/vsco-community/", generated=True),
 )}
 
 # What a person downloads, in packs, so nobody fetches an orchestra they won't use.
@@ -101,9 +104,9 @@ PACKS = {
     "bells": {"label": "Music box and bells", "why": "a tinkling music-box stand-in (VCSL glockenspiel) for lullabies "
                                                       "and the musical",
               "instruments": ["musicbox"]},
-    "folk": {"label": "Folk and country", "why": "nylon guitar for folk fingerpicking, steel-string for country "
-                                                  "boom-chick",
-             "instruments": ["nylon-guitar", "steel-guitar"]},
+    "folk": {"label": "Folk and country", "why": "nylon and steel guitars, and a fiddle (solo violin) for country "
+                                                  "and Celtic melodies",
+             "instruments": ["nylon-guitar", "steel-guitar", "fiddle"]},
     "electric": {"label": "Electric guitar", "why": "clean electric for pop, rock, blues and power-ballad chord "
                                                      "patterns",
                  "instruments": ["electric-guitar"]},

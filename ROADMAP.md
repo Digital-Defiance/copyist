@@ -141,16 +141,16 @@ Copyist arranges in as many styles as can be written as correct scores: everyone
 - [x] Phrase cycles on every style (2026-10-18)
 - [x] Form build across the song + stereo place in the mix (2026-10-18)
 - [x] Richer stereo room (wet keeps pan; ~1.3 s hall) — 2026-10-18
-- [ ] Exact previews: more style melody voices beyond piano/clarinet (needs libraries). YuE2 takes stay on demand; see SPEC §15
+- [ ] Exact previews: more style melody voices beyond piano/clarinet/organ/fiddle (flute, sax, …). YuE2 takes stay on demand; see SPEC §15
 - [x] Test songs in 4/4 and 6/8: *When the Saints Go Marching In*, *Silent Night* (public domain)
 - [x] Pipe organ (VCSL, hymn), concert harp (VSCO, Broadway), tonewheel synth for gospel (2026-10-18)
-- [x] Nylon guitar on folk; steel-string on country / country-waltz; electric (Emily) on pop/rock/power-ballad/blues (2026-10-18); dedicated guitar staff still open
+- [x] Nylon guitar on folk; steel-string on country / country-waltz; electric (Emily) on pop/rock/power-ballad/blues; fiddle on country/Celtic melodies (2026-10-18); dedicated guitar staff still open
 - [ ] More parts in the arranger: guitar staff (strummed and picked, chord shapes), strings, brass and reeds, a lead line, choir; the ensemble chosen by the style
 - [x] Music-box stand-in (VCSL glock) + `music-box` style (2026-10-18); real music box/celesta still to find
-- [ ] Wave 1, finished with real parts: fiddle, dedicated guitar writing; real music box/celesta when found (steel and electric guitars in)
+- [ ] Wave 1, finished with real parts: dedicated guitar writing; real music box/celesta when found (steel/electric guitars and fiddle in)
 - [ ] Wave 2: salsa, cumbia, bolero, tango, Western swing, bluegrass, Motown, funk, Celtic reel and air, polka, calypso, 12/8 doo-wop
 - [ ] Wave 3: big band, orchestral and cinematic, string quartet, SATB choir, electronic (house, synthwave, lo-fi, ambient)
-- [ ] A melody voice per style for previews (flute, sax, violin, synth lead)
+- [ ] A melody voice per style for previews (flute, sax, synth lead; violin/fiddle is in)
 - [ ] Harmony, melody habits and form conventions in each profile (for melody proposals, M3)
 - [x] The prosody check reads compound meters (6/8) by dotted-quarter beats
 

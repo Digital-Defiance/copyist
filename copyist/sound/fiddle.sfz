@@ -1,0 +1,71 @@
+// Copyist fiddle: VSCO 2 Community Edition solo violin, arco vib (CC0, Versilian Studios).
+// Written by scripts/instruments/fiddle.py; see that file for how each number was measured.
+<control>
+default_path=Strings/Solo Violin/Arco Vib/
+
+<global>
+ampeg_attack=0.02
+ampeg_release=0.22
+amp_veltrack=50
+loop_crossfade=0.1
+
+<group> lokey=0 hikey=56 pitch_keycenter=55 volume=-0.3
+<region> lovel=1 hivel=79 offset=5292 tune=0 loop_mode=loop_sustain loop_start=33075 loop_end=599760 sample=LLVln_ArcoVib_G3_p.wav
+<region> lovel=80 hivel=127 offset=0 tune=0 loop_mode=loop_sustain loop_start=13230 loop_end=639450 sample=LLVln_ArcoVib_G3_f.wav
+
+<group> lokey=57 hikey=58 pitch_keycenter=57 volume=1.2
+<region> lovel=1 hivel=79 offset=0 tune=0 loop_mode=loop_sustain loop_start=26460 loop_end=659295 sample=LLVln_ArcoVib_A3_p.wav
+<region> lovel=80 hivel=127 offset=0 tune=0 loop_mode=loop_sustain loop_start=13230 loop_end=639450 sample=LLVln_ArcoVib_A3_f.wav
+
+<group> lokey=59 hikey=62 pitch_keycenter=60 volume=-4.4
+<region> lovel=1 hivel=79 offset=2646 tune=-20 loop_mode=loop_sustain loop_start=41895 loop_end=707805 sample=LLVln_ArcoVib_C4_p.wav
+<region> lovel=80 hivel=127 offset=0 tune=10 loop_mode=loop_sustain loop_start=13230 loop_end=533610 sample=LLVln_ArcoVib_C4_f.wav
+
+<group> lokey=63 hikey=65 pitch_keycenter=64 volume=-1.3
+<region> lovel=1 hivel=79 offset=882 tune=-10 loop_mode=loop_sustain loop_start=24255 loop_end=599760 sample=LLVln_ArcoVib_E4_p.wav
+<region> lovel=80 hivel=127 offset=0 tune=0 loop_mode=loop_sustain loop_start=13230 loop_end=538020 sample=LLVln_ArcoVib_E4_f.wav
+
+<group> lokey=66 hikey=68 pitch_keycenter=67 volume=1.1
+<region> lovel=1 hivel=79 offset=3087 tune=0 loop_mode=loop_sustain loop_start=55125 loop_end=595350 sample=LLVln_ArcoVib_G4_p.wav
+<region> lovel=80 hivel=127 offset=0 tune=0 loop_mode=loop_sustain loop_start=13230 loop_end=542430 sample=LLVln_ArcoVib_G4_f.wav
+
+<group> lokey=69 hikey=70 pitch_keycenter=69 volume=-0.4
+<region> lovel=1 hivel=79 offset=0 tune=0 loop_mode=loop_sustain loop_start=35280 loop_end=588735 sample=LLVln_ArcoVib_A4_p.wav
+<region> lovel=80 hivel=127 offset=0 tune=-10 loop_mode=loop_sustain loop_start=13230 loop_end=544635 sample=LLVln_ArcoVib_A4_f.wav
+
+<group> lokey=71 hikey=74 pitch_keycenter=72 volume=-3.1
+<region> lovel=1 hivel=79 offset=441 tune=0 loop_mode=loop_sustain loop_start=26460 loop_end=575505 sample=LLVln_ArcoVib_C5_p.wav
+<region> lovel=80 hivel=127 offset=0 tune=0 loop_mode=loop_sustain loop_start=13230 loop_end=590940 sample=LLVln_ArcoVib_C5_f.wav
+
+<group> lokey=75 hikey=77 pitch_keycenter=76 volume=0.2
+<region> lovel=1 hivel=79 offset=1764 tune=-10 loop_mode=loop_sustain loop_start=39690 loop_end=582120 sample=LLVln_ArcoVib_E5_p.wav
+<region> lovel=80 hivel=127 offset=0 tune=-20 loop_mode=loop_sustain loop_start=13230 loop_end=544635 sample=LLVln_ArcoVib_E5_f.wav
+
+<group> lokey=78 hikey=80 pitch_keycenter=79 volume=-0.0
+<region> lovel=1 hivel=79 offset=0 tune=0 loop_mode=loop_sustain loop_start=97020 loop_end=615195 sample=LLVln_ArcoVib_G5_p.wav
+<region> lovel=80 hivel=127 offset=0 tune=-10 loop_mode=loop_sustain loop_start=17640 loop_end=524790 sample=LLVln_ArcoVib_G5_f.wav
+
+<group> lokey=81 hikey=82 pitch_keycenter=81 volume=-3.2
+<region> lovel=1 hivel=79 offset=441 tune=0 loop_mode=loop_sustain loop_start=59535 loop_end=538020 sample=LLVln_ArcoVib_A5_p.wav
+<region> lovel=80 hivel=127 offset=0 tune=0 loop_mode=loop_sustain loop_start=13230 loop_end=432180 sample=LLVln_ArcoVib_A5_f.wav
+
+<group> lokey=83 hikey=86 pitch_keycenter=84 volume=-1.7
+<region> lovel=1 hivel=79 offset=441 tune=0 loop_mode=loop_sustain loop_start=17640 loop_end=551250 sample=LLVln_ArcoVib_C6_p.wav
+<region> lovel=80 hivel=127 offset=0 tune=0 loop_mode=loop_sustain loop_start=13230 loop_end=509355 sample=LLVln_ArcoVib_C6_f.wav
+
+<group> lokey=87 hikey=89 pitch_keycenter=88 volume=2.3
+<region> lovel=1 hivel=79 offset=2205 tune=-10 loop_mode=loop_sustain loop_start=61740 loop_end=566685 sample=LLVln_ArcoVib_E6_p.wav
+<region> lovel=80 hivel=127 offset=0 tune=-10 loop_mode=loop_sustain loop_start=13230 loop_end=560070 sample=LLVln_ArcoVib_E6_f.wav
+
+<group> lokey=90 hikey=92 pitch_keycenter=91 volume=1.1
+<region> lovel=1 hivel=79 offset=1323 tune=0 loop_mode=loop_sustain loop_start=28665 loop_end=562275 sample=LLVln_ArcoVib_G6_p.wav
+<region> lovel=80 hivel=127 offset=0 tune=0 loop_mode=loop_sustain loop_start=13230 loop_end=511560 sample=LLVln_ArcoVib_G6_f.wav
+
+<group> lokey=93 hikey=94 pitch_keycenter=93 volume=1.3
+<region> lovel=1 hivel=79 offset=12348 tune=0 loop_mode=loop_sustain loop_start=46305 loop_end=610785 sample=LLVln_ArcoVib_A6_p.wav
+<region> lovel=80 hivel=127 offset=0 tune=-10 loop_mode=loop_sustain loop_start=13230 loop_end=474075 sample=LLVln_ArcoVib_A6_f.wav
+
+<group> lokey=95 hikey=127 pitch_keycenter=96 volume=1.8
+<region> lovel=1 hivel=79 offset=0 tune=0 loop_mode=loop_sustain loop_start=13230 loop_end=531405 sample=LLVln_ArcoVib_C7_p.wav
+<region> lovel=80 hivel=127 offset=0 tune=10 loop_mode=loop_sustain loop_start=13230 loop_end=515970 sample=LLVln_ArcoVib_C7_f.wav
+
