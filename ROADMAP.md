@@ -89,6 +89,7 @@ Take the first unchecked item in the current milestone. Tick items when they're 
 ## W: Web front end (SPEC section 13)
 
 - [x] `copyist serve`: songs, lyrics and checks, the score as page images, takes with players, making a take, the melody check, voice-training progress; local only (docs/web.md)
+- [x] Public static site on GitHub Pages (`site/`): what Copyist is, features, install; Actions deploy from `main` to copyist.digitaldefiance.org
 - [ ] A real take from the page on the Mac, with a trained voice
 - [ ] Compare two takes side by side; mark a favorite
 - [ ] Write a new song from the page (after M2 and M3)
@@ -164,7 +165,7 @@ Lyrics and a style in; several finished songs out to choose between by ear, each
 - [x] `copyist write` with ranked candidates, band previews and optional takes; `--keep`
 - [x] The page's "Write a song"
 - [x] The owner writes a song with it on the Mac and keeps one (Tyger candidate 4 → `songs/the-tyger.yaml`)
-- [x] Section-level rewriting ("again", "higher", "simpler") via `copyist rewrite` (page buttons still open)
+- [x] Section-level rewriting ("again", "higher", "simpler") via `copyist rewrite` and the page's "Try another melody"
 - [ ] A rule-based writer of Copyist's own (MIT), for use without YuE2
 
 ## SE: Score editing (SPEC §14)

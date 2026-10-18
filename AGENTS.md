@@ -8,7 +8,7 @@ Instructions for AI coding agents (Claude, Cursor, anything else) and people pic
 
 The work moved fast and may change hands at any moment. Here is where things stand.
 
-**Done and working** (tests pass: `python -m unittest discover -s tests`, 224 tests):
+**Done and working** (tests pass: `python -m unittest discover -s tests`, 225 tests):
 - Song files become a lead sheet, band score and parts, MIDI, and a validation report.
 - 23 styles as data files, with a style gallery; styles can cycle a phrase of bars.
 - Expressive performance.
@@ -21,7 +21,7 @@ The work moved fast and may change hands at any moment. Here is where things sta
 - `copyist write`, `copyist rewrite` (again / higher / simpler) and `copyist transcribe`. Mac write timed: ~8 s a candidate on MTL0.
 
 **Next, in this order:**
-1. **Melody writing leftovers:** page buttons for rewrite; rule-based writer (TASKS 3g "Later"); owner can try `copyist rewrite` on Tyger/Hope by ear.
+1. **Melody writing leftovers:** rule-based writer (TASKS 3g "Later"); optional lyric refit on the page.
 2. **Transcribing recordings:** TASKS.md section 7 — more sung test recordings, then the owner's songs.
 3. **Less-cheesy exact previews (rest of 3f):** crank/comb music box when a CC0 set can be hosted (celesta is in).
 4. **The open singer (plan B):** TASKS.md section 3h, spec in [docs/open-singer.md](docs/open-singer.md). Start with phase B0 (feasibility).
@@ -99,6 +99,7 @@ songs/            song files (public domain or original only)
 tests/            unittest tests
 docs/             production.md, voice-lora.md, web.md, singing.md, sound-set.md, styles.md, desktop-app.md,
                   default-voices.md
+site/             the public GitHub Pages site (static HTML: advert, features, install)
 scripts/          setup-yue.sh, setup-yue-train.sh, setup-sfizz.sh, setup-demucs.sh, setup-soulx.sh;
                   yue-lora/ (prepare, train, run.sh); instruments/ (manifest.py, clarinet.py)
 app/              the desktop app (Tauri), which runs the engine as a sidecar (docs/desktop-app.md)

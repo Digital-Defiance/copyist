@@ -226,6 +226,5 @@ Use hand-written plans in the YuE2 dialect, not model output, kept in `tests/dat
 
 ## Later
 
-- **The page:** buttons on a kept song for "again" / "higher" / "simpler", listing rewrite candidates like the write page.
 - **A rule-based writer, entirely Copyist's own (MIT),** as a fallback without YuE2: rhythm from the syllables' stress, pitches from the chords with contour templates, motifs repeated and varied, cadences at line ends.
 - **The open singer** (docs/open-singer.md) will take Copyist's scores the same way, so melody writing doesn't depend on YuE2's planner forever. The rule-based writer and a planner trained on open data are how to get there.

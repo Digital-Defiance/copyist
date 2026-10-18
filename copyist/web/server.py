@@ -117,15 +117,20 @@ class Project:
                 sheets.append({"label": label, "path": self.rel(out / name)})
         for part in sorted((out / "parts").glob("*.pdf")):
             sheets.append({"label": f"{part.stem.capitalize()} part", "path": self.rel(part)})
+        sections = d.get("sections") or []
+        if not isinstance(sections, list):
+            sections = []
         return {"slug": slug, "title": d.get("title", slug), "credits": d.get("credits") or {},
                 "key": d.get("key"), "meter": d.get("meter"), "tempo": d.get("tempo"),
                 "style": d.get("style"), "production": d.get("production"),
                 "instruments": d.get("instruments"), "verses": d.get("lyrics") or [],
+                "sections": sections,
                 "report": report_checks(out / "report.md"), "sheets": sheets,
                 "recordings": self.recordings(slug), "built": (out / "lead-sheet.pdf").is_file(),
                 "band": self.band(slug), "gallery": self.gallery(slug), "styles": styles_for(d.get("meter")),
                 "style_in_use": d.get("style") or default_style_for(d.get("meter")),
-                "default_style": default_style(path)}
+                "default_style": default_style(path),
+                "rewrites": self.rewrites_for(slug)}
 
     def recordings(self, slug: str) -> list[dict]:
         out = self.out / slug
@@ -192,6 +197,61 @@ class Project:
                           "candidates": len(cands), "usable": sum(bool(c.get("ok")) for c in cands),
                           "kept": d.get("kept"), "when": index.stat().st_mtime})
         return sorted(found, key=lambda w: w["when"], reverse=True)
+
+    def rewrites_for(self, slug: str) -> list[dict]:
+        """Rewrite runs for one song (`again` / `higher` / `simpler`), newest first."""
+        from ..rewrite import HOW
+        from ..write import INDEX
+        if not SLUG.fullmatch(slug):
+            return []
+        found = []
+        for how in HOW:
+            index = self.out / slug / "rewrite" / how / INDEX
+            d = read_json(index)
+            if d is None:
+                continue
+            cands = d.get("candidates") or []
+            found.append({"how": how, "section": d.get("section") or "verse",
+                          "candidates": len(cands), "usable": sum(bool(c.get("ok")) for c in cands),
+                          "kept": d.get("kept"), "when": index.stat().st_mtime})
+        return sorted(found, key=lambda w: w["when"], reverse=True)
+
+    def rewrites(self) -> list[dict]:
+        """All rewrite runs across songs, newest first (for the drawer)."""
+        from ..write import INDEX
+        found = []
+        for index in self.out.glob(f"*/rewrite/*/{INDEX}"):
+            d = read_json(index) or {}
+            cands = d.get("candidates") or []
+            found.append({"slug": index.parent.parent.parent.name,
+                          "how": index.parent.name,
+                          "title": d.get("title") or index.parent.parent.parent.name,
+                          "section": d.get("section") or "verse",
+                          "candidates": len(cands), "usable": sum(bool(c.get("ok")) for c in cands),
+                          "kept": d.get("kept"), "when": index.stat().st_mtime})
+        return sorted(found, key=lambda w: w["when"], reverse=True)
+
+    def rewrite(self, slug: str, how: str) -> dict | None:
+        """One rewrite run: its candidates, best first, with paths the page can play."""
+        from ..rewrite import HOW
+        from ..write import INDEX
+        if not SLUG.fullmatch(slug) or how not in HOW:
+            return None
+        folder = self.out / slug / "rewrite" / how
+        d = read_json(folder / INDEX)
+        if d is None:
+            return None
+        for c in d.get("candidates") or []:
+            for key in ("preview", "song"):
+                f = folder / str(c.get(key) or "-")
+                c[f"{key}_path"] = self.rel(f) if c.get(key) and f.is_file() else None
+            report = folder / c["folder"] / "report.md"
+            c["report_path"] = self.rel(report) if report.is_file() else None
+        lyrics = folder / "lyrics.txt"
+        d["lyrics"] = lyrics.read_text(encoding="utf-8") if lyrics.is_file() else ""
+        d["song_exists"] = (self.songs_dir / f"{slug}.yaml").is_file()
+        d["how"] = how
+        return d
 
     def writing(self, slug: str) -> dict | None:
         """One song being written: its candidates, best first, with paths the page can play."""
@@ -485,6 +545,40 @@ def styles_for(meter) -> list[dict]:
             for s in styles.for_meter(str(meter))] if meter else []
 
 
+def rewrite_args(project: Project, body: dict) -> tuple[str, str | None, list[str]]:
+    """Rewriting one section of a kept song (`copyist rewrite`), or keeping a rewrite candidate."""
+    from ..rewrite import HOW
+    action = body.get("action")
+    if action == "keep-rewrite":
+        slug, how, seed = body.get("song"), body.get("how"), body.get("seed")
+        d = project.rewrite(slug, how) if isinstance(slug, str) and isinstance(how, str) else None
+        if not d or not any(c["seed"] == seed and c.get("ok") for c in d.get("candidates") or []):
+            raise ValueError("No such rewrite candidate.")
+        args = ["rewrite", "--title", d.get("title") or slug, "--how", how, "--keep", str(int(seed)), "--build"]
+        if body.get("replace") is True:
+            args.append("--replace")
+        return f"Keeping {how} candidate {seed} and writing its score", slug, args
+    if action != "rewrite":
+        raise ValueError("Unknown action.")
+    slug = body.get("song")
+    path = project.song_path(slug) if isinstance(slug, str) else None
+    if not path:
+        raise ValueError("No such song.")
+    how = body.get("how")
+    if how not in HOW:
+        raise ValueError("Choose again, higher or simpler.")
+    section = str(body.get("section") or "verse").strip().lower()
+    if not re.fullmatch(r"[a-z][a-z0-9-]{0,31}", section):
+        raise ValueError("No such section.")
+    count = int(body.get("candidates") or 4)
+    if not 1 <= count <= 8:
+        raise ValueError("Between 1 and 8 candidates at a time.")
+    args = ["rewrite", project.rel(path), "--section", section, "--how", how, "--candidates", str(count)]
+    if body.get("no_plan") is True:
+        args.append("--no-plan")
+    return f"Rewriting the {section} ({how})", slug, args
+
+
 def write_args(project: Project, body: dict) -> tuple[str, str | None, list[str]]:
     """Writing melodies for new lyrics (`copyist write`): a new song, more candidates, or keeping one."""
     from .. import styles
@@ -603,6 +697,8 @@ def job_args(project: Project, body: dict) -> tuple[str, str | None, list[str]]:
     action = body.get("action")
     if action in ("write", "write-more", "keep"):
         return write_args(project, body)
+    if action in ("rewrite", "keep-rewrite"):
+        return rewrite_args(project, body)
     if action in ("transcribe", "keep-transcription"):
         return transcribe_args(project, body)
     slug = body.get("song")
@@ -789,6 +885,8 @@ class Handler(BaseHTTPRequestHandler):
                                                key=lambda s: (styles.FAMILIES.index(s.family), s.name))])
         if path == "/api/writing":
             return self._json(p.writings())
+        if path == "/api/rewrites":
+            return self._json(p.rewrites())
         if path == "/api/transcriptions":
             return self._json({"items": p.transcriptions(), "sheetsage": sheetsage_ready()})
         m = re.fullmatch(r"/api/transcriptions/([^/]+)", path)
@@ -799,6 +897,10 @@ class Handler(BaseHTTPRequestHandler):
         if m:
             w = p.writing(unquote(m.group(1)))
             return self._json(w) if w else self._error(404, "No such song being written.")
+        m = re.fullmatch(r"/api/rewrites/([^/]+)/([^/]+)", path)
+        if m:
+            w = p.rewrite(unquote(m.group(1)), unquote(m.group(2)))
+            return self._json(w) if w else self._error(404, "No such rewrite.")
         if path == "/api/training":
             return self._json(p.training())
         if path == "/api/jobs":

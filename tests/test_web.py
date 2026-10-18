@@ -249,6 +249,42 @@ class WebTests(unittest.TestCase):
         styles = json.loads(self.request("GET", "/api/styles")[1])
         self.assertIn("waltz", [s["id"] for s in styles])
 
+    def test_rewriting_a_section_from_the_page(self):
+        from copyist.web.server import job_args
+        project = self.server.RequestHandlerClass.project
+        label, slug, args = job_args(project, {"action": "rewrite", "song": "amazing-grace", "how": "higher",
+                                               "section": "verse", "candidates": 2})
+        self.assertEqual(slug, "amazing-grace")
+        self.assertEqual(label, "Rewriting the verse (higher)")
+        self.assertEqual(args, ["rewrite", "songs/amazing-grace.yaml", "--section", "verse", "--how", "higher",
+                                "--candidates", "2"])
+        for bad in ({"how": "louder"}, {"section": "../x"}, {"candidates": 40}, {"song": "no-such-song"}):
+            with self.subTest(bad=bad), self.assertRaises(ValueError):
+                job_args(project, {"action": "rewrite", "song": "amazing-grace", "how": "higher", **bad})
+        folder = self.root / "out" / "amazing-grace" / "rewrite" / "higher"
+        (folder / "candidate-1").mkdir(parents=True)
+        (folder / "candidate-1" / "preview.wav").write_bytes(b"RIFF")
+        (folder / "candidate-1" / "amazing-grace.yaml").write_text("title: Amazing Grace\n")
+        (folder / "candidates.json").write_text(json.dumps({
+            "title": "Amazing Grace", "slug": "amazing-grace", "section": "verse", "how": "higher",
+            "candidates": [
+                {"seed": 1, "folder": "candidate-1", "ok": True, "rank": 1, "semitones": 2,
+                 "song": "candidate-1/amazing-grace.yaml", "preview": "candidate-1/preview.wav",
+                 "key": "G", "meter": "3/4", "tempo": 90, "scores": {"fails": 0, "warnings": 0, "fit_cost": 0.4}},
+            ]}))
+        listed = json.loads(self.request("GET", "/api/rewrites")[1])
+        self.assertEqual([(w["slug"], w["how"], w["usable"]) for w in listed], [("amazing-grace", "higher", 1)])
+        d = json.loads(self.request("GET", "/api/rewrites/amazing-grace/higher")[1])
+        self.assertEqual(d["candidates"][0]["preview_path"],
+                         "out/amazing-grace/rewrite/higher/candidate-1/preview.wav")
+        song = json.loads(self.request("GET", "/api/songs/amazing-grace")[1])
+        self.assertEqual(song["rewrites"][0]["how"], "higher")
+        self.assertEqual(job_args(project, {"action": "keep-rewrite", "song": "amazing-grace", "how": "higher",
+                                            "seed": 1})[2],
+                         ["rewrite", "--title", "Amazing Grace", "--how", "higher", "--keep", "1", "--build"])
+        with self.assertRaises(ValueError):
+            job_args(project, {"action": "keep-rewrite", "song": "amazing-grace", "how": "higher", "seed": 9})
+
     def test_transcribing_a_recording_from_the_page(self):
         from copyist.web.server import job_args
         project = self.server.RequestHandlerClass.project

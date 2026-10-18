@@ -10,9 +10,17 @@ let pendingVoice = null;     // a voice picked from the training drawer
 let training = [];           // runs from /api/training
 let models = null;           // /api/models: what's downloaded
 let writings = [];           // /api/writing: songs being written
+let rewrites = [];           // /api/rewrites: section rewrites in progress
 let allStyles = null;        // /api/styles, loaded when the "Write a song" form first opens
 let transcriptions = { items: [], sheetsage: false };   // /api/transcriptions
 const TABS = [["song", "The song"], ["score", "The score"], ["sound", "The sound"]];
+const REWRITE_HOW = [
+  ["again", "Try again", "Swap this section for another melody with the same feel."],
+  ["higher", "Higher", "Move this section up a few notes, with its chords."],
+  ["simpler", "Simpler", "Prefer a version of this section with smaller leaps."],
+];
+const SECTION_NAMES = { verse: "Verse", chorus: "Chorus", bridge: "Bridge", intro: "Intro", outro: "Outro",
+  prechorus: "Pre-chorus" };
 
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 const fileUrl = (path) => "/files/" + path.split("/").map(encodeURIComponent).join("/");
@@ -73,10 +81,14 @@ function renderWritingList() {
   const written = writings.length ? `<h2>Being written</h2><ul class="song-list">${writings.map((w) =>
     `<li><a href="#/write/${encodeURIComponent(w.slug)}" data-slug="write:${esc(w.slug)}">${esc(w.title)}</a>
       <span class="meta">${w.usable} of ${w.candidates} usable${w.kept ? ", one kept" : ""}</span></li>`).join("")}</ul>` : "";
+  const redone = rewrites.length ? `<h2>Rewrites</h2><ul class="song-list">${rewrites.map((w) =>
+    `<li><a href="#/rewrite/${encodeURIComponent(w.slug)}/${esc(w.how)}" data-slug="rewrite:${esc(w.slug)}:${esc(w.how)}">${esc(w.title)}</a>
+      <span class="meta">${esc(w.how)} · ${w.usable} of ${w.candidates}${w.kept ? ", one kept" : ""}</span></li>`).join("")}</ul>` : "";
   const heard = transcriptions.items.length ? `<h2>Transcribed</h2><ul class="song-list">${transcriptions.items.map((t) =>
     `<li><a href="#/transcribe/${encodeURIComponent(t.slug)}" data-slug="transcribe:${esc(t.slug)}">${esc(t.title)}</a>
       ${t.kept ? '<span class="meta">kept</span>' : ""}</li>`).join("")}</ul>` : "";
-  box.innerHTML = written + (written && heard ? '<div class="drawer-gap"></div>' : "") + heard;
+  const parts = [written, redone, heard].filter(Boolean);
+  box.innerHTML = parts.join('<div class="drawer-gap"></div>');
 }
 
 function markCurrent(slug) {
@@ -97,6 +109,8 @@ function header(song, tab) {
 async function route() {
   const w = location.hash.match(/^#\/write(?:\/([^/]+))?$/);
   if (w) return w[1] ? routeWriting(decodeURIComponent(w[1])) : routeWriteForm();
+  const rw = location.hash.match(/^#\/rewrite\/([^/]+)\/(again|higher|simpler)$/);
+  if (rw) return routeRewrite(decodeURIComponent(rw[1]), rw[2]);
   const t = location.hash.match(/^#\/transcribe(?:\/([^/]+))?$/);
   if (t) return t[1] ? routeTranscription(decodeURIComponent(t[1])) : routeTranscribeForm();
   const m = location.hash.match(/^#\/song\/([^/]+)\/(song|score|sound)$/);
@@ -118,8 +132,18 @@ async function route() {
   page.innerHTML = header(current, tab) + body;
   if (tab === "score") wireScore(current);
   if (tab === "sound") wireSound(current);
+  if (tab === "song") wireRewrite(current);
   wireJobButtons(current);
   if (watching) showJob(watching);
+}
+
+function wireRewrite(song) {
+  for (const b of document.querySelectorAll("[data-rewrite]")) {
+    b.addEventListener("click", () => {
+      const section = ($("#rewrite-section") && $("#rewrite-section").value) || "verse";
+      start({ action: "rewrite", song: song.slug, how: b.dataset.rewrite, section, candidates: 4 }, "rewrite");
+    });
+  }
 }
 
 // ---------------------------------------------------------------- the song
@@ -136,8 +160,30 @@ function songTab(song) {
          <span><b>${esc(c.check)}</b>: ${esc(c.details)}${c.where ? ` (${esc(c.where)})` : ""}</span></li>`).join("")}</ul>`
     : `<p class="hint">Not checked yet.</p><p><button data-job="build">Write the score</button></p>`;
   return `<div class="song-tab">
-      <section><h2>Lyrics</h2><div class="verses" style="margin-top:.75rem">${verses || '<p class="hint">No lyrics.</p>'}</div></section>
+      <section><h2>Lyrics</h2><div class="verses" style="margin-top:.75rem">${verses || '<p class="hint">No lyrics.</p>'}</div>
+        ${rewritePanel(song)}</section>
       <aside><h2>Checks</h2>${checks}<div class="job" data-job-panel></div></aside>
+    </div>`;
+}
+
+function rewritePanel(song) {
+  const sections = (song.sections && song.sections.length)
+    ? song.sections : [{ name: "verse", bar: 1 }];
+  const opts = sections.map((s) =>
+    `<option value="${esc(s.name)}">${esc(SECTION_NAMES[s.name] || s.name)} (bar ${s.bar})</option>`).join("");
+  const past = (song.rewrites || []).map((r) =>
+    `<li><a href="#/rewrite/${encodeURIComponent(song.slug)}/${esc(r.how)}">${esc(r.how)}</a>
+      <span class="meta">${r.usable} of ${r.candidates}${r.kept ? ", kept" : ""}</span></li>`).join("");
+  const buttons = REWRITE_HOW.map(([how, label]) =>
+    `<button class="small" data-rewrite="${esc(how)}">${esc(label)}</button>`).join("");
+  return `<div class="section-gap rewrite-panel">
+      <h2>Try another melody</h2>
+      <p class="hint">Change one section by ear: try again, sit higher, or prefer smaller leaps. Each choice
+        writes a few candidates with the band playing them.</p>
+      <p><label>Section <select id="rewrite-section">${opts}</select></label></p>
+      <div class="actions">${buttons}</div>
+      ${past ? `<ul class="song-list" style="margin-top:.75rem">${past}</ul>` : ""}
+      <div class="job" data-job-panel="rewrite"></div>
     </div>`;
 }
 
@@ -367,8 +413,6 @@ function wireSound(song) {
 
 const VOICE_LABELS = { soprano: "Soprano (high female)", alto: "Alto (low female)", tenor: "Tenor (high male)",
   baritone: "Baritone (low male)" };
-const SECTION_NAMES = { verse: "verse", chorus: "chorus", prechorus: "pre-chorus", bridge: "bridge", intro: "intro",
-  outro: "outro", interlude: "interlude" };
 
 async function routeWriteForm() {
   markCurrent(null);
@@ -490,6 +534,49 @@ function wireWriting(d) {
   }
   const more = $("[data-write-more]");
   if (more) more.addEventListener("click", () => start({ action: "write-more", slug: d.slug, candidates: 4 }));
+}
+
+function rewriteCandidateItem(d, c) {
+  if (!c.ok) {
+    return `<li class="unusable"><h3>Candidate ${c.seed}</h3><p class="hint">Couldn't be used: ${esc(c.reason || "see its report")}</p></li>`;
+  }
+  const keep = d.kept === c.seed ? '<span class="tag">Kept</span>'
+    : `<button class="small" data-keep-rewrite="${c.seed}">${d.song_exists ? "Keep this one (replaces the song)" : "Keep this one"}</button>`;
+  const extra = c.semitones ? ` (+${c.semitones})` : (c.donor ? ` (from write ${c.donor})` : "");
+  const player = c.preview_path
+    ? `<div class="player"><span class="player-label">Band preview</span><audio controls preload="none" src="${fileUrl(c.preview_path)}"></audio></div>` : "";
+  return `<li><div class="style-head"><h3>${c.rank}. Candidate ${c.seed}${extra}</h3>
+      <span class="meta">${esc(keyName(c.key))}, ${esc(c.meter)}</span>${keep}</div>
+    ${player}
+    <p>${esc(scoreWords(c))}</p>
+    <details><summary>Details</summary><ul>${(c.notes || []).map((n) => `<li>${esc(n)}</li>`).join("")}</ul>
+      ${c.report_path ? `<p><a href="${fileUrl(c.report_path)}" target="_blank" rel="noopener">The full report</a></p>` : ""}</details></li>`;
+}
+
+async function routeRewrite(slug, how) {
+  markCurrent(`rewrite:${slug}:${how}`);
+  current = null;
+  let d;
+  try { d = await api(`/api/rewrites/${encodeURIComponent(slug)}/${encodeURIComponent(how)}`); } catch (e) {
+    page.innerHTML = `<div class="empty"><p>Couldn't open that: ${esc(e.message)}</p></div>`;
+    return;
+  }
+  const label = (REWRITE_HOW.find((x) => x[0] === how) || [how, how])[1];
+  page.innerHTML = `<div class="staff-title"><h1>${esc(d.title)}</h1></div>
+    <p class="facts">${esc(label)} · ${esc(SECTION_NAMES[d.section] || d.section || "verse")}.
+      Listen, and keep the one you like.</p>
+    <div class="actions">
+      <a class="button small" href="#/song/${encodeURIComponent(slug)}/song">Back to the song</a>
+    </div>
+    <div class="job" data-job-panel></div>
+    <section class="section-gap" id="candidates"><ul class="styles candidates">${
+      (d.candidates || []).map((c) => rewriteCandidateItem(d, c)).join("") ||
+      '<p class="hint">The first rewrite is on its way.</p>'}</ul></section>`;
+  for (const b of document.querySelectorAll("[data-keep-rewrite]")) {
+    b.addEventListener("click", () => start({ action: "keep-rewrite", song: slug, how, seed: Number(b.dataset.keepRewrite),
+      replace: d.song_exists }));
+  }
+  if (watching) showJob(watching);
 }
 
 // Candidates land one at a time while a write runs: show each, without cutting off one that's playing.
@@ -656,7 +743,7 @@ function showJob(job) {
     ? `<p><progress max="${pr[1]}" value="${pr[0]}"></progress> ${(pr[0] / 1e9).toFixed(2)} of ${(pr[1] / 1e9).toFixed(1)} GB</p>` : "";
   panel.innerHTML = `<p class="status ${job.status}">${esc(job.label)}: ${words[job.status] || job.status}</p>${bar}
     <details ${job.status === "failed" ? "open" : ""}><summary>Output</summary><pre>${esc(job.output || "")}</pre></details>`;
-  for (const b of document.querySelectorAll("button[data-job], button[data-use], button[data-keep], [data-write-more], [data-keep-transcription], #make, #install, #get-band, #w-go, #t-go")) b.disabled = job.status === "running";
+  for (const b of document.querySelectorAll("button[data-job], button[data-use], button[data-keep], button[data-keep-rewrite], button[data-rewrite], [data-write-more], [data-keep-transcription], #make, #install, #get-band, #w-go, #t-go")) b.disabled = job.status === "running";
 }
 
 // The "Make a take" choices survive the page redrawing after a job.
@@ -676,11 +763,12 @@ function restoreForm() {
 async function poll() {
   if (!watching || watching.status !== "running") return;
   try { watching = await api(`/api/jobs/${watching.id}`); } catch { return; }
-  if (watching.status === "running") { showJob(watching); await refreshWriting(); setTimeout(poll, 2000); return; }
+  if (watching.status === "running") { showJob(watching); await refreshWriting(); await refreshRewrite(); setTimeout(poll, 2000); return; }
   saveForm();
   try { models = await api("/api/models"); } catch { /* keep the last answer */ }
   try {
-    [songs, writings, transcriptions] = await Promise.all([api("/api/songs"), api("/api/writing"), api("/api/transcriptions")]);
+    [songs, writings, rewrites, transcriptions] = await Promise.all([
+      api("/api/songs"), api("/api/writing"), api("/api/rewrites"), api("/api/transcriptions")]);
     renderSongList();
     renderWritingList();
   } catch { /* keep the last lists */ }
@@ -688,8 +776,29 @@ async function poll() {
     location.hash = `#/song/${encodeURIComponent(watching.song)}/song`;
     return;                       // the hash change draws the kept song
   }
+  const rewritten = watching.status === "done" && watching.label.match(/^Rewriting the \w+ \((again|higher|simpler)\)$/);
+  if (rewritten && watching.song) {
+    location.hash = `#/rewrite/${encodeURIComponent(watching.song)}/${rewritten[1]}`;
+    return;
+  }
   await route();    // shows the new take or score, then the finished job
   restoreForm();
+}
+
+async function refreshRewrite() {
+  const w = location.hash.match(/^#\/rewrite\/([^/]+)\/(again|higher|simpler)$/);
+  if (!w) return;
+  if ([...document.querySelectorAll("audio")].some((a) => !a.paused)) return;
+  try {
+    const d = await api(`/api/rewrites/${w[1]}/${w[2]}`);
+    const box = $("#candidates");
+    if (box) box.innerHTML = `<ul class="styles candidates">${
+      (d.candidates || []).map((c) => rewriteCandidateItem(d, c)).join("")}</ul>`;
+    for (const b of document.querySelectorAll("[data-keep-rewrite]")) {
+      b.addEventListener("click", () => start({ action: "keep-rewrite", song: decodeURIComponent(w[1]), how: w[2],
+        seed: Number(b.dataset.keepRewrite), replace: d.song_exists }));
+    }
+  } catch { /* keep the last list */ }
 }
 
 // ---------------------------------------------------------------- training
@@ -752,8 +861,9 @@ async function refreshTraining() {
 // ------------------------------------------------------------------- start
 
 async function main() {
-  [songs, voices, training, models, writings, transcriptions] = await Promise.all([api("/api/songs"), api("/api/voices"),
-    api("/api/training"), api("/api/models"), api("/api/writing"), api("/api/transcriptions")]);
+  [songs, voices, training, models, writings, rewrites, transcriptions] = await Promise.all([
+    api("/api/songs"), api("/api/voices"), api("/api/training"), api("/api/models"),
+    api("/api/writing"), api("/api/rewrites"), api("/api/transcriptions")]);
   renderSongList();
   renderWritingList();
   renderTraining(training);
