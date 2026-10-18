@@ -11,8 +11,8 @@ from pathlib import Path
 
 import yaml
 
-from . import abcplan, rewrite, write
-from .song import FORMAT, SongError
+from . import rewrite, write
+from .song import FORMAT
 from .write import WriteError
 
 
