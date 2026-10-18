@@ -215,8 +215,25 @@ def bar_window(m: stream.Measure, full: float, first: bool) -> tuple[float, floa
     return 0.0, length, length
 
 
-def build_role(song: Song, role: str, pattern: list, timeline, velocity: int) -> list[stream.Measure]:
-    """One list of measures for a role ("rh", "lh" or "bass")."""
+def melody_names_at(song: Song, t: float) -> set[str]:
+    """Pitch-class names of melody notes sounding at absolute quarter-note time `t`."""
+    names = set()
+    for n in song.melody.recurse().notes:
+        if isinstance(n, harmony.ChordSymbol):
+            continue
+        start = float(n.getOffsetInHierarchy(song.melody))
+        if start - 1e-9 <= t < start + float(n.quarterLength) - 1e-9:
+            names.add(n.pitch.name)
+    return names
+
+
+def build_role(song: Song, role: str, pattern: list, timeline, velocity: int,
+               open_for_melody: bool = False) -> list[stream.Measure]:
+    """One list of measures for a role ("rh", "lh" or "bass").
+
+    When `open_for_melody`, the right hand drops any pitch the melody is already
+    singing (solo-piano textures that keep an accompaniment figure).
+    """
     melody_bars = list(song.melody.getElementsByClass(stream.Measure))
     full = melody_bars[0].barDuration.quarterLength
     previous_voicing = None
@@ -243,17 +260,23 @@ def build_role(song: Song, role: str, pattern: list, timeline, velocity: int) ->
                 m.insert(t, note.Rest(quarterLength=off - t))
             cs = chord_at(timeline, start_abs + off)
             next_cs = chord_at(timeline, start_abs + off + dur)
+            blocked = melody_names_at(song, start_abs + off) if open_for_melody and role == "rh" else set()
             if cs is None:
                 el = note.Rest(quarterLength=dur)
             elif role == "rh" and which == "shell":
-                el = chord.Chord(shell(cs), quarterLength=dur)
+                kept = [p for p in shell(cs) if p.name not in blocked]
+                el = chord.Chord(kept, quarterLength=dur) if kept else note.Rest(quarterLength=dur)
             elif role == "rh":
                 previous_voicing = choose_voicing(cs, previous_voicing)
                 if which.startswith("arp"):
-                    ordered = sorted(previous_voicing, key=lambda q: q.midi)
-                    el = note.Note(ordered[(int(which[3:]) - 1) % len(ordered)], quarterLength=dur)
+                    ordered = [p for p in sorted(previous_voicing, key=lambda q: q.midi) if p.name not in blocked]
+                    if not ordered:
+                        el = note.Rest(quarterLength=dur)
+                    else:
+                        el = note.Note(ordered[(int(which[3:]) - 1) % len(ordered)], quarterLength=dur)
                 else:
-                    el = chord.Chord(previous_voicing, quarterLength=dur)
+                    kept = [p for p in previous_voicing if p.name not in blocked]
+                    el = chord.Chord(kept, quarterLength=dur) if kept else note.Rest(quarterLength=dur)
             elif role == "lh":
                 el = note.Note(tone(cs, which, LH_LOW, LH_HIGH, next_cs), quarterLength=dur)
             else:
@@ -414,12 +437,17 @@ def add_chord_symbols(part: stream.Part, timeline) -> None:
 def arrange_band(song: Song) -> Arrangement:
     """Arrange the song for the instruments the song file asks for (default: all of them)."""
     style, pat, notes = pattern_for(song)
-    # Piano-vocal: the melody is already on the piano. Playing the right-hand pattern
-    # too strikes the same keys twice (one sample library, two MIDI parts).
+    # Piano-vocal: the melody is already on the piano. A band under it leaves the
+    # right hand open; a solo-piano texture keeps its figure but drops melody pitches.
     style_obj = styles.get(style)
+    open_rh_for_melody = False
     if style_obj and style_obj.instruments.get("melody") == "piano":
-        pat = {**pat, "rh": []}
-        notes.append("Piano-vocal: the right hand rests so the melody isn't struck twice.")
+        if pat.get("bass") != "none":
+            pat = {**pat, "rh": []}
+            notes.append("Piano-vocal: the right hand rests so the melody isn't struck twice.")
+        else:
+            open_rh_for_melody = True
+            notes.append("Piano-vocal: the right hand leaves the melody's pitches open.")
     timeline = chord_timeline(song.melody)
     if not timeline:
         notes.append("No chord symbols, so piano and bass have nothing to play.")
@@ -465,7 +493,8 @@ def arrange_band(song: Song) -> Arrangement:
         rh = new_part(stream.PartStaff, "Piano", instrument.Piano(), PROGRAM["piano"])
         lh = new_part(stream.PartStaff, "Piano", instrument.Piano(), PROGRAM["piano"])
         for part, role, the_clef in ((rh, "rh", clef.TrebleClef()), (lh, "lh", clef.BassClef())):
-            bars = build_role(song, role, pat[role], timeline, VELOCITY[role])
+            bars = build_role(song, role, pat[role], timeline, VELOCITY[role],
+                              open_for_melody=open_rh_for_melody and role == "rh")
             start_bar(bars[0], song, the_clef)
             for m in bars:
                 part.append(m)

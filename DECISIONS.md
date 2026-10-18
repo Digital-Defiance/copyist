@@ -8,7 +8,8 @@ Newest first. One entry per decision: what, why, and what we gave up.
 - **The waltz is piano-vocal: melody on the piano, no drums.** The clarinet-plus-kit waltz was the cheese the owner named (rigidity, clarinet, om-pah-pah). Country waltz keeps the kit and the oom-pah on purpose. Piano-vocal mixes put the accompaniment further back and use less room.
 - **When the melody is on the piano, the right hand rests.** Same sample library on two MIDI parts was double-striking every shared chord tone. Left hand and bass stay under the tune.
 - **Piano melody skips voice-style legato.** Overlapping successive notes (~15 ms) sounds right on a clarinet and clicks on Salamander; `melody_legato=False` releases before the next hammer.
-- **Gave up for this cut:** builds across verses, more melody instruments (we only have clarinet besides piano), and rewriting every style. Those stay on TASKS 3f.
+- **Ballad, hymn and lullaby follow the same idea** (2026-10-18, continued): piano melody, no kit on ballad/hymn, phrase cycles under the tune. Broadway ballad keeps the clarinet and varies its arpeggio phrase. Solo-piano textures (lullaby, no bass) keep the right-hand figure but drop pitches the melody is already playing.
+- **Gave up for this cut:** builds across verses, more melody instruments (we only have clarinet besides piano), and rewriting every uptempo style. Those stay on TASKS 3f.
 
 ## 2026-10-18 (previews and score editing)
 

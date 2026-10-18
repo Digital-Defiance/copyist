@@ -1,17 +1,21 @@
 format: copyist-style/0
 name: Ballad
 family: Pop and rock
-about: Slow and sustained. Whole-bar chords, the bass on one and three, hi-hat eighths with a side-stick on two and four.
+about: Slow and sustained. The piano carries the tune; left hand and bass breathe under it. No drums.
 tempo: [56, 92]
-instruments: {bass: upright-bass}
-production: slow ballad, acoustic piano, soft strings, warm bass, light brushed drums, intimate and heartfelt
+instruments: {melody: piano, bass: upright-bass}
+production: slow ballad, acoustic piano, soft strings, warm bass, intimate and heartfelt
 meters:
   "4/4":
-    rh: [[0, 4, chord]]
-    lh: [[0, 4, root]]
-    bass: [[0, 2, root], [2, 2, fifth]]
-    drums:
-      hands: [[0, 0.5, [hihat]], [0.5, 0.5, [hihat]], [1, 0.5, [hihat, sidestick]], [1.5, 0.5, [hihat]],
-              [2, 0.5, [hihat]], [2.5, 0.5, [hihat]], [3, 0.5, [hihat, sidestick]], [3.5, 0.5, [hihat]]]
-      feet: [[0, 1, [kick]], [2, 1, [kick]]]
-      fill: [[2, 0.5, [snare]], [2.5, 0.5, [snare]], [3, 0.5, [snare]], [3.5, 0.5, [snare]]]
+    rh: []
+    lh:
+      - [[0, 4, root]]
+      - [[0, 2, root], [2, 2, fifth]]
+      - [[0, 4, root]]
+      - [[0, 3, root], [3, 1, fifth]]
+    bass:
+      - [[0, 4, root]]
+      - [[0, 2, root], [2, 2, fifth]]
+      - [[0, 4, root]]
+      - [[0, 2, fifth], [2, 2, root]]
+    drums: none

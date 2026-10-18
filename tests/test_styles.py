@@ -102,6 +102,31 @@ class CatalogTests(unittest.TestCase):
         counts = [len([n for n in m.notes if not isinstance(n, harmony.ChordSymbol)]) for m in full[:4]]
         self.assertEqual(counts, [1, 2, 1, 1])
 
+    def test_ballad_is_piano_vocal_without_drums(self):
+        b = styles.get("ballad")
+        self.assertEqual(b.instruments.get("melody"), "piano")
+        self.assertFalse(b.has_drums("4/4"))
+        band = arrange.arrange_band(dataclasses.replace(load_song(SONGS["4/4"]), style="ballad"))
+        self.assertNotIn("drums", band.parts)
+        self.assertIn("right hand rests", " ".join(band.notes))
+
+    def test_lullaby_keeps_a_right_hand_that_avoids_the_melody(self):
+        song = dataclasses.replace(load_song(SONGS["6/8"]), style="lullaby")
+        band = arrange.arrange_band(song)
+        self.assertIn("leaves the melody", " ".join(band.notes))
+        rh = band.score.parts[1]
+        self.assertTrue(any(not isinstance(n, harmony.ChordSymbol) for n in rh.recurse().notes))
+        timeline = arrange.chord_timeline(song.melody)
+        for n in rh.recurse().notes:
+            if isinstance(n, harmony.ChordSymbol):
+                continue
+            t = float(n.getOffsetInHierarchy(rh))
+            blocked = arrange.melody_names_at(song, t)
+            names = {p.name for p in (n.pitches if hasattr(n, "pitches") else [n.pitch])}
+            self.assertFalse(names & blocked, f"{names} doubles melody {blocked} at {t}")
+            cs = arrange.chord_at(timeline, t)
+            self.assertTrue(names <= {p.name for p in cs.pitches})
+
 
 class ArrangeEveryStyleTests(unittest.TestCase):
     """Every style, on a song in each of its meters: the parts line up and the piano plays the chords."""
