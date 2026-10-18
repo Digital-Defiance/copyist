@@ -5,7 +5,7 @@ Newest first. One entry per decision: what, why, and what we gave up.
 ## 2026-10-18 (pipe organ and harp)
 
 - **Hymn and gospel previews use the VCSL pipe organ** (manuals only, Quiet + Loud; Copyist writes the SFZ like the clarinet). Hymn: organ on the melody and the held chords, upright bass under. Pack `keys` downloads it (~86 MB). Gave up: pedals and a real Hammond for this cut.
-- **Gospel comps are held pads, not triplet chops.** Re-striking the organ eight times a bar made the preview stumble; sustain is what organs do. Bass and drums stay a plain backbeat.
+- **Gospel exact preview is piano-vocal, no drums and no clarinet.** Organ-plus-kit-plus-clarinet read as a kids' band; the owner said so. Sparse answering chords under the tune, upright bass, same quiet mix as other piano-vocal styles. YuE2's production line still asks for Hammond and choir. Pipe organ stays on hymn.
 - **Broadway ballad plays the VSCO concert harp** (~35 MB, same `keys` pack) on the arpeggio part. The pit needs a harp more than another piano.
 
 ## 2026-10-18 (prosody in compound meters)

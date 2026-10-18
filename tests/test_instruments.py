@@ -90,7 +90,7 @@ class ManifestTests(unittest.TestCase):
         self.assertEqual(instruments.instrument_for("melody", "waltz"), "piano")
         self.assertEqual(instruments.instrument_for("melody", "hymn"), "organ")
         self.assertEqual(instruments.instrument_for("piano", "hymn"), "organ")
-        self.assertEqual(instruments.instrument_for("piano", "gospel"), "organ")
+        self.assertEqual(instruments.instrument_for("melody", "gospel"), "piano")
         self.assertEqual(instruments.instrument_for("piano", "broadway-ballad"), "harp")
         self.assertEqual(instruments.instrument_for("piano"), "piano")
         self.assertEqual(instruments.instrument_for("bass", "waltz"), "upright-bass")

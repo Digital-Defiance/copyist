@@ -1,23 +1,21 @@
 format: copyist-style/0
 name: Gospel
 family: Soul and gospel
-about: Slow gospel with a 12/8 lean. The organ holds the chords; bass and drums keep a steady backbeat. No choppy comps.
+about: Slow gospel at the piano. The tune on the keys; soft answering chords and a patient bass. No drums — the kit and clarinet made it sound like a kids' band.
 tempo: [56, 84]
-instruments: {piano: organ, bass: electric-bass}
+instruments: {melody: piano, bass: upright-bass}
+keep_rh: true
 production: soulful gospel, Hammond organ, piano, choir, handclaps, slow 12/8 feel, church, powerful
 meters:
   "4/4":
-    # Held pads, not re-struck triplets — pipe organ (and a real Hammond) needs sustain.
+    # Sparse answers under the tune (open melody pitches). Hold, don't chatter.
     rh:
-      - [[0, 4, chord]]
+      - [[1, 1, shell], [3, 1, shell]]
       - [[0, 2, chord], [2, 2, chord]]
     lh:
       - [[0, 4, root]]
       - [[0, 2, root], [2, 2, fifth]]
     bass:
-      - [[0, 2, root], [2, 2, root]]
       - [[0, 4, root]]
-    drums:
-      hands: [[0, 1, [hihat]], [1, 1, [hihat, snare]], [2, 1, [hihat]], [3, 1, [hihat, snare]]]
-      feet: [[0, 2, [kick]], [2, 2, [kick]]]
-      fill: [[3, 0.5, [snare]], [3.5, 0.5, [tom]]]
+      - [[0, 2, root], [2, 2, fifth]]
+    drums: none
