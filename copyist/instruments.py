@@ -86,6 +86,9 @@ CATALOG = {i.id: i for i in (
     Instrument("steel-guitar", "Discord GM Martin HD28 steel-string guitar", "sfzinstruments/Discord-SFZ-GM-Bank",
                "7a9c478fe331f94f246d33332f0adedb25bbbe27", "steel-guitar.sfz", "CC0", "",
                "https://github.com/sfzinstruments/Discord-SFZ-GM-Bank", generated=True),
+    Instrument("electric-guitar", "Karoryfer Emilyguitar (Epiphone, clean)", "sfzinstruments/karoryfer.emilyguitar",
+               "b4920dc662fd9cad6dcaccdeecffdd91c8725d8c", "emily_clean.sfz", "CC0", "",
+               "https://github.com/sfzinstruments/karoryfer.emilyguitar"),
 )}
 
 # What a person downloads, in packs, so nobody fetches an orchestra they won't use.
@@ -101,6 +104,9 @@ PACKS = {
     "folk": {"label": "Folk and country", "why": "nylon guitar for folk fingerpicking, steel-string for country "
                                                   "boom-chick",
              "instruments": ["nylon-guitar", "steel-guitar"]},
+    "electric": {"label": "Electric guitar", "why": "clean electric for pop, rock, blues and power-ballad chord "
+                                                     "patterns",
+                 "instruments": ["electric-guitar"]},
 }
 
 # Generated SFZs that need a space-free samples/ link into a nested folder in the clone.

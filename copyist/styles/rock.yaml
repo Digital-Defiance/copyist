@@ -3,7 +3,7 @@ name: Rock
 family: Pop and rock
 about: Driving eighths that open up every other bar. Snare on two and four, a big fill into each section.
 tempo: [100, 160]
-instruments: {bass: electric-bass}
+instruments: {piano: electric-guitar, bass: electric-bass}
 production: classic rock, driving electric guitars, piano, electric bass, big drums, energetic, anthemic
 meters:
   "4/4":

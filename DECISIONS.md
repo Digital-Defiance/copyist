@@ -2,6 +2,10 @@
 
 Newest first. One entry per decision: what, why, and what we gave up.
 
+## 2026-10-18 (electric guitar)
+
+- **Pop, rock, power-ballad and blues-shuffle use Karoryfer Emilyguitar** (CC0 Epiphone, clean program, ~123 MB, `electric` pack). Chord patterns stay on the piano staff; the electric just plays them. Black and Green Guitars stayed out for now (large, LFS-awkward). A dedicated guitar staff still open.
+
 ## 2026-10-18 (steel guitar)
 
 - **Country uses Discord GM's Martin HD28 steel-string** (CC0, Jeff Learman, ~3 MB, `folk` pack). Folk keeps the nylon. Copyist writes a simple SFZ (no keyswitches) and links `samples/` to the nested folder so sfizz isn't fed a path with spaces. The guitar still plays the piano-staff patterns; a dedicated guitar staff and Meta Open Sound's larger steel set stay open.

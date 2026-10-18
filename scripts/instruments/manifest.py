@@ -34,6 +34,7 @@ EXTRA = {
     "musicbox": ["LICENSE", "README.md", "Idiophones/Struck Idiophones/Glockenspiel/"],
     "nylon-guitar": ["LICENSE", "README.md", "samples/"],
     "steel-guitar": ["Discord GM/Melodic/026-Acoustic Guitar (steel)/"],
+    "electric-guitar": ["LICENSE", "readme.txt"],
 }
 
 

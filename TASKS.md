@@ -128,6 +128,7 @@ The SoundFont band plus a SoulX vocal will never sound like Suno: they're checki
 - [x] Tonewheel organ from sfizz sine drawbars (`tonewheel` in the keys pack); gospel uses it under the piano tune
 - [x] Nylon acoustic guitar (FreePats Spanish classical, CC0); folk fingerpicking plays it. Decision: DECISIONS.md 2026-10-18 (nylon guitar)
 - [x] Steel-string acoustic guitar (Discord GM Martin HD28, CC0); country and country-waltz boom-chick play it. Decision: DECISIONS.md 2026-10-18 (steel guitar)
+- [x] Electric guitar (Karoryfer Emilyguitar clean, CC0); pop, rock, power-ballad and blues-shuffle play it. Decision: DECISIONS.md 2026-10-18 (electric guitar)
 - [ ] Guitar part as its own staff (strum patterns, chord shapes), beyond reusing the piano patterns
 - [x] Music box style and glockenspiel stand-in (the musical); real music box / celesta still open
 - [x] Prosody and strong-beat checks use Copyist's compound-meter grid (dotted-quarter beats in 6/8 / 12/8), same as the lyric fitter — not music21's beatStrength alone

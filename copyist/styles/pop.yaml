@@ -3,7 +3,7 @@ name: Pop
 family: Pop and rock
 about: Bright, modern pop. A 3-3-2 push that settles on the second bar; hi-hat eighths, snare on two and four.
 tempo: [90, 128]
-instruments: {bass: electric-bass}
+instruments: {piano: electric-guitar, bass: electric-bass}
 production: modern pop, piano-driven, punchy drums, electric bass, bright and polished, catchy
 meters:
   "4/4":
