@@ -36,6 +36,7 @@ class Tok:
 class Bar:
     toks: list[Tok]
     section: str
+    units: Fraction | None = None        # how long the bar should be, if the score changed meter for it
 
     @property
     def length(self) -> Fraction:
@@ -96,6 +97,7 @@ def parse(text: str) -> Plan:
     header: dict[str, str] = {}
     section, voice = "intro", None
     plan: Plan | None = None
+    inline_units: Fraction | None = None     # a meter changed inside the music (a pickup bar, say)
     for raw in text.splitlines():
         line = raw.strip()
         if not line:
@@ -104,6 +106,10 @@ def parse(text: str) -> Plan:
             section = line[1:].strip().lower() or section
             continue
         m = re.match(r"^([A-Za-z]):\s*(.*)$", line)
+        if m and plan is not None and m.group(1) == "M":
+            inline = Fraction(*(int(x) for x in m.group(2).strip().split("/"))) / plan.unit
+            inline_units = None if inline == plan.bar_units else inline
+            continue
         if m and not line.startswith("V:"):
             header[m.group(1)] = m.group(2).strip()
             if m.group(1) == "K":
@@ -122,16 +128,22 @@ def parse(text: str) -> Plan:
             toks, z_bars = tokenize_bar(chunk)
             if z_bars:
                 for _ in range(z_bars):
-                    plan.vocal.append(Bar([Tok("rest", length=plan.bar_units)], section))
+                    plan.vocal.append(Bar([Tok("rest", length=inline_units or plan.bar_units)], section,
+                                          inline_units))
                 continue
-            plan.vocal.append(Bar(toks, section))
+            plan.vocal.append(Bar(toks, section, inline_units))
     if plan is None:
         raise PlanError("That isn't a plan: there's no K: line.")
     if not any(b.sung for b in plan.vocal):
         raise PlanError("The plan has no sung notes.")
+    first_sung = next(k for k, b in enumerate(plan.vocal) if b.sung)
     for k, bar in enumerate(plan.vocal):
-        if bar.length != plan.bar_units:
-            raise PlanError(f"Bar {k + 1} of the plan's vocal line holds {bar.length} units, not {plan.bar_units}.")
+        expected = bar.units or plan.bar_units
+        if bar.length != expected:
+            raise PlanError(f"Bar {k + 1} of the plan's vocal line holds {bar.length} units, not {expected}.")
+        if bar.units and bar.sung and not (k == first_sung and bar.units < plan.bar_units):
+            raise PlanError(f"The plan changes meter at bar {k + 1}; Copyist songs keep one meter "
+                            "(a short first bar, a pickup, is fine).")
     return plan
 
 
@@ -151,6 +163,11 @@ def pair_bars(bars: list[Bar], meter: str) -> tuple[list[Bar], str]:
     many bars to read. The pairing puts chord changes and section starts on the new downbeats."""
     if meter != "2/4":
         return bars, meter
+    pickup = []
+    if bars and bars[0].units:                        # a pickup stays a pickup
+        pickup, bars = bars[:1], bars[1:]
+    if not bars:
+        return pickup, "4/4"
     full = sum((t.length for t in bars[0].toks if t.kind != "chord"), Fraction(0))
 
     def starts(offset: int) -> int:
@@ -170,7 +187,7 @@ def pair_bars(bars: list[Bar], meter: str) -> tuple[list[Bar], str]:
     if len(work) % 2:
         work.append(Bar([Tok("rest", length=full)], work[-1].section))
     paired = [Bar(a.toks + b.toks, a.section) for a, b in zip(work[::2], work[1::2])]
-    return paired, "4/4"
+    return pickup + paired, "4/4"
 
 
 KEY_SHARPS = ["F", "C", "G", "D", "A", "E", "B"]
@@ -384,6 +401,14 @@ def place_in_range(bars: list[Bar], key: str, low: int, high: int) -> Placement:
     total = shift - 12 * SUNG_OCTAVE_BELOW
     new_key = respell(bars, key, total)
     return Placement(new_key, total, transposed, outside(shift), len(midis))
+
+
+def place_as_sung(bars: list[Bar], key: str, octave_above: int = 0) -> Placement:
+    """A transcription keeps the octave it was sung in (moved down `octave_above` octaves for an engine
+    that writes YuE2's way); only the spelling changes. Respells the bars in place."""
+    midis = [m - 12 * octave_above for m in pitches(bars, key)]
+    new_key = respell(bars, key, -12 * octave_above)
+    return Placement(new_key, -12 * octave_above, 0, 0, len(midis))
 
 
 def best_unit(bars: list[Bar], unit: Fraction) -> Fraction:

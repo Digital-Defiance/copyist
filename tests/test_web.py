@@ -239,6 +239,49 @@ class WebTests(unittest.TestCase):
         styles = json.loads(self.request("GET", "/api/styles")[1])
         self.assertIn("waltz", [s["id"] for s in styles])
 
+    def test_transcribing_a_recording_from_the_page(self):
+        from copyist.web.server import job_args
+        project = self.server.RequestHandlerClass.project
+        r, data = self.request("POST", "/api/upload?name=My%20Song.wav", None,
+                               {"X-Copyist": "1", "Content-Type": "application/octet-stream"})
+        self.assertEqual(r.status, 400)                                          # empty
+        c = http.client.HTTPConnection("127.0.0.1", self.port, timeout=30)
+        c.request("POST", "/api/upload?name=My%20Song.wav", body=b"RIFF" + bytes(1000),
+                  headers={"Host": f"127.0.0.1:{self.port}", "X-Copyist": "1"})
+        resp = c.getresponse()
+        up = json.loads(resp.read())
+        c.close()
+        self.assertEqual(resp.status, 201)
+        self.assertTrue(up["upload"].startswith("out/uploads/") and up["upload"].endswith("-My-Song.wav"))
+        c = http.client.HTTPConnection("127.0.0.1", self.port, timeout=30)
+        c.request("POST", "/api/upload?name=notes.txt", body=b"hello", headers={"Host": f"127.0.0.1:{self.port}", "X-Copyist": "1"})
+        self.assertEqual(c.getresponse().status, 400)
+        c.close()
+        self.assertEqual(self.request("POST", "/api/upload?name=a.wav", None, {"Content-Type": "x"})[0].status, 403)
+        label, slug, args = job_args(project, {"action": "transcribe", "upload": up["upload"], "title": "My Song",
+                                               "lyrics": "la la la"})
+        self.assertEqual(slug, "my-song")
+        self.assertEqual(args, ["transcribe", up["upload"], "--title", "My Song", "--engine", "open",
+                                "--lyrics", "out/my-song/transcribe/lyrics-given.txt"])
+        for bad in ({"upload": "songs/amazing-grace.yaml"}, {"upload": "out/uploads/nothing.wav"}, {"title": ""},
+                    {"engine": "sheetsage", "accept_licence": True}, {"engine": "magic"}):
+            with self.subTest(bad=bad), self.assertRaises(ValueError):
+                job_args(project, {"action": "transcribe", "upload": up["upload"], "title": "T", **bad})
+        folder = self.root / "out" / "my-song" / "transcribe"
+        self.assertEqual(json.loads(self.request("GET", "/api/transcriptions/my-song")[1])["pending"], True)
+        (folder / "source.wav").write_bytes(b"RIFF")
+        (folder / "my-song.yaml").write_text("title: My Song\n")
+        (folder / "transcription.json").write_text(json.dumps({"title": "My Song", "slug": "my-song", "engine": "open",
+            "recording": "My Song.wav", "source": "source.wav", "song": "my-song.yaml", "key": "C", "meter": "4/4",
+            "tempo": "100", "doubts": ["Bar 2, beat 1: between E4 and F4; wrote E4"], "notes": [], "fails": 0,
+            "warnings": 1}))
+        d = json.loads(self.request("GET", "/api/transcriptions/my-song")[1])
+        self.assertEqual((d["source_path"], d["preview_path"], d["kept"]), ("out/my-song/transcribe/source.wav", None, False))
+        listed = json.loads(self.request("GET", "/api/transcriptions")[1])
+        self.assertEqual([t["slug"] for t in listed["items"]], ["my-song"])
+        self.assertEqual(job_args(project, {"action": "keep-transcription", "slug": "my-song"})[2],
+                         ["transcribe", "--title", "My Song", "--keep", "--build"])
+
     def test_an_instrument_download_needs_no_licence_box(self):
         from copyist import instruments
 

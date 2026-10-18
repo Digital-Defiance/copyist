@@ -28,6 +28,7 @@ STATIC = Path(__file__).parent / "static"
 AUDIO = (".wav", ".mp3", ".flac", ".m4a", ".ogg")
 SLUG = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.-]{0,99}")
 TAKE = re.compile(r"[A-Za-z0-9][A-Za-z0-9_-]{0,63}")
+UPLOAD_LIMIT = 400 * 1024 * 1024                 # a long lossless recording, with room to spare
 mimetypes.add_type("font/woff2", ".woff2")
 mimetypes.add_type("text/markdown", ".md")
 
@@ -212,6 +213,36 @@ class Project:
         d["song_exists"] = (self.songs_dir / f"{slug}.yaml").is_file()
         d["voices"] = list(VOICES)
         d["next_seed"] = max([c["seed"] for c in d.get("candidates") or []] + [0]) + 1
+        return d
+
+    def transcriptions(self) -> list[dict]:
+        """Recordings transcribed (`copyist transcribe`), newest first."""
+        from ..transcribe import INDEX
+        found = []
+        for index in self.out.glob(f"*/transcribe/{INDEX}"):
+            d = read_json(index) or {}
+            found.append({"slug": index.parent.parent.name, "title": d.get("title") or index.parent.parent.name,
+                          "kept": (self.songs_dir / f"{index.parent.parent.name}.yaml").is_file(),
+                          "when": index.stat().st_mtime})
+        return sorted(found, key=lambda w: w["when"], reverse=True)
+
+    def transcription(self, slug: str) -> dict | None:
+        """One transcription: its facts, doubts and notes, and the two recordings to compare."""
+        from ..transcribe import INDEX
+        if not SLUG.fullmatch(slug):
+            return None
+        folder = self.out / slug / "transcribe"
+        d = read_json(folder / INDEX)
+        if d is None:
+            return {"slug": slug, "title": slug, "pending": True} if folder.is_dir() else None
+        for key, name in (("source_path", d.get("source")), ("preview_path", d.get("preview")),
+                          ("report_path", "report.md"), ("song_path", d.get("song"))):
+            f = folder / str(name or "-")
+            d[key] = self.rel(f) if name and f.is_file() else None
+        target = self.songs_dir / f"{slug}.yaml"
+        song = folder / str(d.get("song") or "-")
+        d["kept"] = target.is_file() and song.is_file() and target.read_bytes() == song.read_bytes()
+        d["song_exists"] = target.is_file()
         return d
 
     def voices(self) -> list[dict]:
@@ -517,11 +548,63 @@ def write_args(project: Project, body: dict) -> tuple[str, str | None, list[str]
     return f"Writing melodies for “{title}”", slug, args
 
 
+def sheetsage_ready() -> bool:
+    from .. import paths
+    return bool(paths.find_program("yue-transcribe", "COPYIST_YUE_TRANSCRIBE")
+                and (os.environ.get("COPYIST_SHEETSAGE") or paths.find_model("SheetSage2-Q8_0.gguf", "COPYIST_SHEETSAGE")))
+
+
+def transcribe_args(project: Project, body: dict) -> tuple[str, str | None, list[str]]:
+    """Transcribing an uploaded recording, or keeping a transcription."""
+    from ..write import slug as slug_of
+    action = body.get("action")
+    if action == "keep-transcription":
+        slug = body.get("slug")
+        d = project.transcription(slug) if isinstance(slug, str) else None
+        if not d or d.get("pending"):
+            raise ValueError("No such transcription.")
+        args = ["transcribe", "--title", d.get("title") or slug, "--keep", "--build"]
+        if body.get("replace") is True:
+            args.append("--replace")
+        return "Keeping the transcription and writing its score", slug, args
+    title = str(body.get("title") or "").strip()
+    if not 1 <= len(title) <= 120 or not re.search(r"[A-Za-z0-9]", title):
+        raise ValueError("Give the song a title.")
+    upload = project.root / str(body.get("upload") or "-")
+    try:
+        upload.resolve().relative_to((project.out / "uploads").resolve())
+    except ValueError:
+        raise ValueError("Choose the recording first.") from None
+    if not upload.is_file():
+        raise ValueError("The recording didn't arrive; choose it again.")
+    engine = body.get("engine") or "open"
+    if engine not in ("open", "sheetsage"):
+        raise ValueError("No such engine.")
+    if engine == "sheetsage" and not sheetsage_ready():
+        raise ValueError("SheetSage2 isn't installed here.")
+    if engine == "sheetsage" and body.get("accept_licence") is not True:
+        raise ValueError("SheetSage2 is for non-commercial use only; accept that first.")
+    slug = slug_of(title)
+    folder = project.out / slug / "transcribe"
+    lyrics = str(body.get("lyrics") or "").strip()
+    if len(lyrics) > 20000:
+        raise ValueError("The lyrics are too long (up to 20,000 characters).")
+    folder.mkdir(parents=True, exist_ok=True)
+    (folder / "transcription.json").unlink(missing_ok=True)       # the page shows it as in progress
+    args = ["transcribe", project.rel(upload), "--title", title, "--engine", engine]
+    if lyrics:
+        (folder / "lyrics-given.txt").write_text(lyrics + "\n", encoding="utf-8")
+        args += ["--lyrics", project.rel(folder / "lyrics-given.txt")]
+    return f"Transcribing “{title}”", slug, args
+
+
 def job_args(project: Project, body: dict) -> tuple[str, str | None, list[str]]:
     """Turn a request from the page into a copyist command. Only these actions exist."""
     action = body.get("action")
     if action in ("write", "write-more", "keep"):
         return write_args(project, body)
+    if action in ("transcribe", "keep-transcription"):
+        return transcribe_args(project, body)
     slug = body.get("song")
     path = project.song_path(slug) if isinstance(slug, str) else None
     if not path:
@@ -706,6 +789,12 @@ class Handler(BaseHTTPRequestHandler):
                                                key=lambda s: (styles.FAMILIES.index(s.family), s.name))])
         if path == "/api/writing":
             return self._json(p.writings())
+        if path == "/api/transcriptions":
+            return self._json({"items": p.transcriptions(), "sheetsage": sheetsage_ready()})
+        m = re.fullmatch(r"/api/transcriptions/([^/]+)", path)
+        if m:
+            t = p.transcription(unquote(m.group(1)))
+            return self._json(t) if t else self._error(404, "No such transcription.")
         m = re.fullmatch(r"/api/writing/([^/]+)", path)
         if m:
             w = p.writing(unquote(m.group(1)))
@@ -723,6 +812,8 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self):
         if not (self._host_ok() and self._origin_ok()) or self.headers.get("X-Copyist") != "1":
             return self._error(403, "Requests come from the Copyist page only.")
+        if urlparse(self.path).path == "/api/upload":
+            return self._upload()
         if urlparse(self.path).path != "/api/jobs":
             return self._error(404, "Not found.")
         try:
@@ -736,6 +827,36 @@ class Handler(BaseHTTPRequestHandler):
         except (ValueError, TypeError) as e:
             return self._error(400, str(e))
         return self._json(self.jobs.view(job), 202)
+
+
+    def _upload(self):
+        """A recording from the page, streamed into out/uploads/ (the page can't hand over a path)."""
+        name = parse_qs(urlparse(self.path).query).get("name", [""])[0]
+        stem, ext = os.path.splitext(os.path.basename(name))
+        if ext.lower() not in AUDIO:
+            return self._error(400, f"That isn't an audio file Copyist reads ({', '.join(AUDIO)}).")
+        try:
+            length = int(self.headers.get("Content-Length") or 0)
+        except ValueError:
+            length = 0
+        if not 0 < length <= UPLOAD_LIMIT:
+            return self._error(400, "The recording is empty or too big (up to 400 MB).")
+        safe = re.sub(r"[^A-Za-z0-9_-]+", "-", stem).strip("-")[:60] or "recording"
+        folder = self.project.out / "uploads"
+        folder.mkdir(parents=True, exist_ok=True)
+        target = folder / f"{datetime.now().strftime('%Y%m%d-%H%M%S')}-{safe}{ext.lower()}"
+        left = length
+        with open(target, "wb") as f:
+            while left > 0:
+                chunk = self.rfile.read(min(left, 1 << 20))
+                if not chunk:
+                    break
+                f.write(chunk)
+                left -= len(chunk)
+        if left:
+            target.unlink(missing_ok=True)
+            return self._error(400, "The recording didn't arrive in full; try again.")
+        return self._json({"upload": self.project.rel(target), "name": os.path.basename(name)}, 201)
 
 
 def make_server(root: Path, port: int = 8765, demo: bool = False) -> ThreadingHTTPServer:

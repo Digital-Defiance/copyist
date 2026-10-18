@@ -37,6 +37,9 @@ dependencies = [
 # Singing (copyist sing): pitch checking and mixing. SoulX-Singer itself runs
 # in its own environment; see docs/singing.md.
 sing = ["librosa>=0.10", "soundfile>=0.12", "faster-whisper>=1.0"]
+# Transcribing recordings (copyist transcribe): the same audio tools; Demucs comes from
+# scripts/setup-demucs.sh. See docs/transcribing.md.
+transcribe = ["librosa>=0.10", "soundfile>=0.12", "faster-whisper>=1.0"]
 
 [project.scripts]
 copyist = "copyist.cli:main"

@@ -179,6 +179,16 @@ A singer anyone may use commercially that follows Copyist's score: HeartMuLa-oss
 
 ## 7. Transcribing recordings (MT, SPEC §12)
 
-- [ ] Stems, then measurement, then a draft score, then refinement by rendering and comparing against the recording
-- [ ] Resolving doubtful notes and chords by musical logic (SPEC 12.2a): keep candidates, context search (key, chord, range, beat, stepwise motion), repeats vote, parts cross-check, lyrics fix the count, simpler notation wins a tie, A/B by ear when still unsure
-- [ ] Try `yue-transcribe` (SheetSage2, in yue2.cpp) for the first draft of melody and chords; measure it against Copyist's own songs rendered by the band
+Spec: docs/transcribing.md. The owner asked for this on 18 October 2026; her musical is built from songs that exist only as recordings.
+
+- [x] Measured SheetSage2 (`yue-transcribe`): the most accurate (0.94–0.98 note F1), but its weights are CC BY-NC 4.0 with no permission for creators to sell, so it's an optional engine and the open one is the default
+- [x] The open engine (`copyist/transcribe.py`): Demucs stems (`stems.split_vocals`), beats on band and voice with a steady tempo, meter by testing groupings of eighths (beat first, then bar: 3/4, 4/4, 6/8, 12/8), key, chords (chroma above the bass, Viterbi, the bass naming roots on downbeats), pYIN notes tidied (`clean_notes`: bleed, outliers, scoops, slides that wander, splits, syllable attacks kept, the lyric count), rhythm snapped to the plainest pattern per beat, pitches settled by context, syllable-start hints for the lyric fit
+- [x] `copyist transcribe RECORDING --title [--lyrics] [--engine open|sheetsage] [--voice] [--vocals --accompaniment]` and `--keep [--replace] [--build]`; out/<slug>/transcribe/ with source, stems, draft.abc, song file, report with doubts, band playback, transcription.json
+- [x] The page: "Transcribe a recording" (upload, title, lyrics, engine with SheetSage's licence spelled out), the result with the original and the band side by side, doubts, notes, "Keep it". Driven end to end in a browser
+- [x] Tests: `tests/test_transcribe.py` (a tune synthesised in the test: notes including a repeated one, rhythm, chords, key, meter; cleaning rules; rhythm snapping; a SheetSage-style draft with a pickup bar through a fake runner) and the page's upload and actions in `tests/test_web.py`
+- [x] Evaluation: `scripts/transcribe/evaluate.py SONG.yaml DRAFT.abc [--octave-free]`; the numbers are in docs/transcribing.md
+- [ ] **NEXT:** more sung truth: YuE2 takes of the Saints and Silent Night (being rendered in the cloud container at the time of writing; render them on the Mac with `copyist produce` if they're missing), then improve the open engine where they show it's weakest (chords on real mixes, sung ornaments)
+- [ ] On the Mac: the owner transcribes a few of her own songs from the page and listens; note what goes wrong. Never commit them
+- [ ] Repeats vote (SPEC 12.2a step 3): the same section sung again settles doubtful notes
+- [ ] Per-doubt A/B by ear (SPEC 12.2a step 7), writing the choice back into the song file
+- [ ] Bass line, drum groove and band parts (SPEC 12.1); analysis by synthesis (SPEC 12.2 step 4)

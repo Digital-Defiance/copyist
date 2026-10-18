@@ -50,25 +50,44 @@ class Candidate:
         return self.fit.cost / max(1, self.syllables)
 
 
-def song_from_plan(plan_text: str, lyrics: str, title: str, voice: str = DEFAULT_VOICE,
+def voice_for(midis: list[int]) -> str:
+    """The voice preset whose range holds the most of these notes (the narrowest on a tie)."""
+    def fit(name):
+        low, high = (m21pitch.Pitch(p).midi for p in VOICES[name][:2])
+        middle = (low + high) / 2
+        median = sorted(midis)[len(midis) // 2] if midis else middle
+        return (-sum(low <= m <= high for m in midis), abs(median - middle))
+    return min(VOICES, key=fit)
+
+
+def song_from_plan(plan_text: str, lyrics: str, title: str, voice: str | None = DEFAULT_VOICE,
                    style: str | None = None, written_with: dict | None = None,
-                   credits: dict | None = None) -> Candidate:
-    """One planner score and the lyrics it was written for -> a Copyist song file (as data)."""
-    if voice not in VOICES:
-        raise WriteError(f"Unknown voice {voice!r}: choose {', '.join(VOICES)}.")
-    low, high, clef, _ = VOICES[voice]
+                   credits: dict | None = None, as_sung: int | None = None,
+                   hints: list[float] | None = None) -> Candidate:
+    """One planner score and the lyrics it was written for -> a Copyist song file (as data).
+
+    `as_sung` is for transcriptions: keep the octave the score says was sung (after moving it down
+    that many octaves, for an engine that writes YuE2's way) instead of fitting a voice; `voice`
+    None then picks the preset that fits."""
     try:
         plan = abcplan.parse(plan_text)
     except abcplan.PlanError as e:
         raise WriteError(str(e)) from e
     bars, meter = abcplan.pair_bars(abcplan.trim(plan), plan.meter)
-    placement = abcplan.place_in_range(bars, plan.key, m21pitch.Pitch(low).midi, m21pitch.Pitch(high).midi)
+    if as_sung is not None:
+        placement = abcplan.place_as_sung(bars, plan.key, as_sung)
+        voice = voice or voice_for(abcplan.pitches(bars, placement.key))
+    if voice not in VOICES:
+        raise WriteError(f"Unknown voice {voice!r}: choose {', '.join(VOICES)}.")
+    low, high, clef, _ = VOICES[voice]
+    if as_sung is None:
+        placement = abcplan.place_in_range(bars, plan.key, m21pitch.Pitch(low).midi, m21pitch.Pitch(high).midi)
     sections = syllables.parse_lyrics(lyrics)
     sylls = syllables.all_syllables(sections)
     if not sylls:
         raise WriteError("The lyrics have no words to sing.")
     try:
-        fitted = fitting.fit(bars, plan.unit, meter, sylls)
+        fitted = fitting.fit(bars, plan.unit, meter, sylls, hints)
     except ValueError as e:
         raise WriteError(str(e)) from e
     unit = abcplan.best_unit(bars, plan.unit)
@@ -81,8 +100,11 @@ def song_from_plan(plan_text: str, lyrics: str, title: str, voice: str = DEFAULT
     octaves = (placement.semitones - placement.transposed) // 12
     if placement.transposed:
         notes.append(f"Transposed {placement.transposed:+d} semitones (to {placement.key}) to fit the {voice} range.")
-    notes.append(f"Moved {abs(octaves)} octave{'s' if abs(octaves) != 1 else ''} "
-                 f"{'down' if octaves < 0 else 'up'} from the plan." if octaves else "Kept the plan's octave.")
+    if as_sung is not None:
+        notes.append(f"Written in the octave it was sung, for {voice}.")
+    else:
+        notes.append(f"Moved {abs(octaves)} octave{'s' if abs(octaves) != 1 else ''} "
+                     f"{'down' if octaves < 0 else 'up'} from the plan." if octaves else "Kept the plan's octave.")
     if placement.outside:
         notes.append(f"{placement.outside} note(s) still outside the {voice} range ({low}–{high}).")
     holds = sum(b - a for a, b in fitted.spans)

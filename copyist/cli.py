@@ -4,6 +4,7 @@
     copyist check songs/amazing-grace.yaml   # validators only; exit code 1 if anything fails
     copyist produce songs/amazing-grace.yaml # a YuE2 recording from the score
     copyist write lyrics.txt --title Hope     # melodies for new lyrics, to choose by ear
+    copyist transcribe song.mp3 --title Hope  # a lead sheet from a recording
 """
 from __future__ import annotations
 
@@ -339,6 +340,47 @@ def cmd_write(args) -> int:
     return 0
 
 
+def cmd_transcribe(args) -> int:
+    """A lead sheet from a recording (docs/transcribing.md)."""
+    from . import transcribe as tr
+    if not (args.recording or args.title):
+        print("Give the recording (or, with --keep, the song's --title).", file=sys.stderr)
+        return 2
+    title = args.title or Path(args.recording).stem.replace("-", " ").replace("_", " ").title()
+    try:
+        if args.keep:
+            target = tr.keep(Path(args.out), title, Path(args.songs), args.replace)
+            if not args.build:
+                print(f"Kept the transcription as {target}. Build it with: copyist build {target}")
+                return 0
+            print(f"Kept the transcription as {target}. Writing its score...", flush=True)
+            return cmd_build(argparse.Namespace(song=str(target), out=args.out, cache=args.cache, no_audio=False,
+                                                plain=False, seed=1, images=False))
+        if not args.recording:
+            print("Give the recording to transcribe.", file=sys.stderr)
+            return 2
+        lyrics = Path(args.lyrics).read_text(encoding="utf-8") if args.lyrics else None
+        if args.engine == "sheetsage":
+            print(tr.SHEETSAGE_LICENCE, file=sys.stderr)
+        index = tr.transcribe(Path(args.recording), title, Path(args.out), lyrics, args.engine, args.voice,
+                              Path(args.vocals) if args.vocals else None,
+                              Path(args.accompaniment) if args.accompaniment else None,
+                              args.device, Path(args.cache), preview=not args.no_preview)
+    except (ValueError, SongError) as e:
+        print(e, file=sys.stderr)
+        return 2
+    folder = Path(args.out) / index["slug"] / "transcribe"
+    print(f"{index['title']}: {index['key']}, {index['meter']}, {index['tempo']}; "
+          f"{index['fails']} failing checks, {index['warnings']} warnings, {len(index['doubts'])} doubts.")
+    for n in index["notes"]:
+        print(f"  {n}")
+    print(f"Song file: {folder / index['song']}")
+    if index.get("preview"):
+        print(f"Hear it on the band: {folder / index['preview']} (and the original: {folder / index['source']})")
+    print(f"Keep it with: copyist transcribe --title {json.dumps(title)} --keep")
+    return 0
+
+
 def cmd_use_style(args) -> int:
     """Set a song's style (and tempo), then write the score again."""
     from . import styles
@@ -493,6 +535,26 @@ def main(argv: list[str] | None = None) -> int:
     wr.add_argument("--cache", default=".cache")
     wr.add_argument("--device", help="yue2.cpp device (default COPYIST_YUE_DEVICE)")
     wr.set_defaults(func=cmd_write)
+
+    tx = sub.add_parser("transcribe", help="a lead sheet from a recording (docs/transcribing.md)")
+    tx.add_argument("recording", nargs="?", help="the recording (WAV, MP3, FLAC...), one you have the rights to")
+    tx.add_argument("--title", help="the song's title (default: from the file name)")
+    tx.add_argument("--lyrics", help="a text file of the lyrics; without it, Whisper listens for the words")
+    tx.add_argument("--engine", default="open", choices=["open", "sheetsage"],
+                    help="open (default, MIT) or sheetsage (more accurate, non-commercial licence)")
+    tx.add_argument("--voice", choices=["soprano", "alto", "tenor", "baritone"],
+                    help="the voice preset (default: the one that fits what was sung)")
+    tx.add_argument("--vocals", help="the vocal already separated (skips Demucs); needs --accompaniment")
+    tx.add_argument("--accompaniment", help="everything but the vocal, already separated")
+    tx.add_argument("--no-preview", action="store_true", help="skip the band playing the transcription")
+    tx.add_argument("--keep", action="store_true", help="copy the transcription's song file into songs/")
+    tx.add_argument("--replace", action="store_true", help="with --keep: replace a different song of the same name")
+    tx.add_argument("--build", action="store_true", help="with --keep: then write its score, parts and audio")
+    tx.add_argument("--songs", default="songs", help="with --keep: the songs folder (default songs)")
+    tx.add_argument("--out", default="out", help="output folder (default: out)")
+    tx.add_argument("--cache", default=".cache")
+    tx.add_argument("--device", help="Demucs / yue2.cpp device")
+    tx.set_defaults(func=cmd_transcribe)
 
     us = sub.add_parser("use-style", help="set a song's style (and tempo) and write the score again")
     us.add_argument("song", help="path to a song file (.yaml)")

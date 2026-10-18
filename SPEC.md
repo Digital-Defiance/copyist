@@ -277,7 +277,7 @@ See ROADMAP.md for status and the task-level checklist.
 
 ## 12. Transcribing recordings (fit to audio)
 
-Many songs already exist as recordings (for example, songs made with Suno or Mozart AI) and have no sheet music. Milestone MT turns a recording into a song file and charts. It also produces paired recordings and scores, which are training data for M6, but only for audio we have the rights to.
+Many songs already exist as recordings (for example, songs made with Suno or Mozart AI) and have no sheet music. Milestone MT turns a recording into a song file and charts. The first version is built: `copyist transcribe` and the page's "Transcribe a recording" (docs/transcribing.md). It also produces paired recordings and scores, which are training data for M6, but only for audio we have the rights to.
 
 ### 12.1 Goal
 
@@ -326,7 +326,7 @@ Only transcribe recordings the user owns or has rights to. The fitted score of s
 
 ## 13. In a browser
 
-`copyist serve` (docs/web.md) is a local web page for everything above: the songs, their lyrics and checks, the score as pages, every take with a player, making a new take (voice, strength, verses, seed, style), checking a take's melody, the band playing the score (with each part, its instrument and its stem, and a download for the instruments), and the progress of a voice training run. It also plays the song in every style that fits it and switches the song to the one you pick, and "Write a song" turns pasted lyrics into several melodies to choose between by ear (`copyist write`). It runs the same `copyist` commands, one at a time, on the machine with the GPU, listens on 127.0.0.1 only, and loads nothing from the internet. Choices are made by listening and pressing buttons; nothing on the page needs musical skills.
+`copyist serve` (docs/web.md) is a local web page for everything above: the songs, their lyrics and checks, the score as pages, every take with a player, making a new take (voice, strength, verses, seed, style), checking a take's melody, the band playing the score (with each part, its instrument and its stem, and a download for the instruments), and the progress of a voice training run. It also plays the song in every style that fits it and switches the song to the one you pick, and "Write a song" turns pasted lyrics into several melodies to choose between by ear (`copyist write`). "Transcribe a recording" turns a recording into a lead sheet and plays it back beside the original (`copyist transcribe`). It runs the same `copyist` commands, one at a time, on the machine with the GPU, listens on 127.0.0.1 only, and loads nothing from the internet. Choices are made by listening and pressing buttons; nothing on the page needs musical skills.
 
 The plan is for this page to become a free desktop app (Tauri, with the engine and yue2.cpp bundled, models downloaded on first run), so anyone can make songs on their own computer: docs/desktop-app.md.
 

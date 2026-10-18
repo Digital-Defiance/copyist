@@ -11,6 +11,7 @@ let training = [];           // runs from /api/training
 let models = null;           // /api/models: what's downloaded
 let writings = [];           // /api/writing: songs being written
 let allStyles = null;        // /api/styles, loaded when the "Write a song" form first opens
+let transcriptions = { items: [], sheetsage: false };   // /api/transcriptions
 const TABS = [["song", "The song"], ["score", "The score"], ["sound", "The sound"]];
 
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
@@ -69,9 +70,13 @@ function renderSongList() {
 
 function renderWritingList() {
   const box = $("#writing-list");
-  box.innerHTML = writings.length ? `<h2>Being written</h2><ul class="song-list">${writings.map((w) =>
+  const written = writings.length ? `<h2>Being written</h2><ul class="song-list">${writings.map((w) =>
     `<li><a href="#/write/${encodeURIComponent(w.slug)}" data-slug="write:${esc(w.slug)}">${esc(w.title)}</a>
       <span class="meta">${w.usable} of ${w.candidates} usable${w.kept ? ", one kept" : ""}</span></li>`).join("")}</ul>` : "";
+  const heard = transcriptions.items.length ? `<h2>Transcribed</h2><ul class="song-list">${transcriptions.items.map((t) =>
+    `<li><a href="#/transcribe/${encodeURIComponent(t.slug)}" data-slug="transcribe:${esc(t.slug)}">${esc(t.title)}</a>
+      ${t.kept ? '<span class="meta">kept</span>' : ""}</li>`).join("")}</ul>` : "";
+  box.innerHTML = written + (written && heard ? '<div class="drawer-gap"></div>' : "") + heard;
 }
 
 function markCurrent(slug) {
@@ -92,6 +97,8 @@ function header(song, tab) {
 async function route() {
   const w = location.hash.match(/^#\/write(?:\/([^/]+))?$/);
   if (w) return w[1] ? routeWriting(decodeURIComponent(w[1])) : routeWriteForm();
+  const t = location.hash.match(/^#\/transcribe(?:\/([^/]+))?$/);
+  if (t) return t[1] ? routeTranscription(decodeURIComponent(t[1])) : routeTranscribeForm();
   const m = location.hash.match(/^#\/song\/([^/]+)\/(song|score|sound)$/);
   if (!m) {
     if (songs.length) location.replace(`#/song/${encodeURIComponent(songs[0].slug)}/song`);
@@ -500,6 +507,110 @@ async function refreshWriting() {
   if (box) { box.innerHTML = candidatesHtml(d); wireWriting(d); }
 }
 
+// ------------------------------------------------- transcribing a recording
+
+function routeTranscribeForm() {
+  markCurrent(null);
+  current = null;
+  const ss = transcriptions.sheetsage;
+  page.innerHTML = `<div class="staff-title"><h1>Transcribe a recording</h1></div>
+    <p class="facts">Give Copyist a recording of a song, one you made or have the rights to, and it writes the
+      lead sheet: the melody as sung, the chords, and the words under the notes. Then the band plays it back so
+      you can compare it with the original by ear.</p>
+    <section class="make">
+      <div class="fields">
+        <div class="field wide"><label for="t-file">The recording</label>
+          <input id="t-file" type="file" accept="audio/*,.wav,.mp3,.flac,.m4a,.ogg"></div>
+        <div class="field"><label for="t-title">Title</label><input id="t-title" type="text" maxlength="120"></div>
+        <div class="field"><label for="t-engine">Transcriber</label><select id="t-engine" title="SheetSage2 is often more accurate, but its licence forbids commercial use.">
+          <option value="open">Copyist's own: free for any use</option>
+          <option value="sheetsage" ${ss ? "" : "disabled"}>SheetSage2: non-commercial${ss ? "" : " (not installed)"}</option>
+        </select></div>
+        <div class="field wide" id="t-licence" hidden><label class="check"><input type="checkbox" id="t-accept">
+          I understand SheetSage2's licence is non-commercial: I won't use this transcription in anything I sell.</label></div>
+        <div class="field wide"><label for="t-lyrics">Lyrics (optional, but they help a lot)</label>
+          <textarea id="t-lyrics" class="lyrics-box" placeholder="[Verse]&#10;The words as they're sung, one line per line"></textarea>
+          <p class="hint">The words tell Copyist how many notes the singer sings. Without them, it listens for the words itself.</p></div>
+      </div>
+      <div class="actions"><button class="go" id="t-go">Transcribe it</button>
+        <span class="hint" id="t-status">The recording stays on this computer.</span></div>
+      <div class="job" data-job-panel></div>
+    </section>`;
+  const file = $("#t-file"), title = $("#t-title"), engine = $("#t-engine");
+  file.addEventListener("change", () => {
+    if (file.files[0] && !title.value) title.value = file.files[0].name.replace(/\.[^.]+$/, "").replace(/[-_]+/g, " ");
+  });
+  engine.addEventListener("change", () => { $("#t-licence").hidden = engine.value !== "sheetsage"; });
+  $("#t-go").addEventListener("click", async () => {
+    const f = file.files[0];
+    if (!f) { showMessage("Choose the recording first."); return; }
+    $("#t-go").disabled = true;
+    $("#t-status").textContent = "Copying the recording into your library…";
+    try {
+      const r = await fetch(`/api/upload?name=${encodeURIComponent(f.name)}`, {
+        method: "POST", headers: { "X-Copyist": "1", "Content-Type": "application/octet-stream" }, body: f });
+      const up = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(up.error || r.statusText);
+      $("#t-status").textContent = "The recording stays on this computer.";
+      await start({ action: "transcribe", upload: up.upload, title: title.value.trim(), lyrics: $("#t-lyrics").value,
+        engine: engine.value, accept_licence: $("#t-accept").checked });
+      if (watching && watching.song) location.hash = `#/transcribe/${encodeURIComponent(watching.song)}`;
+    } catch (e) {
+      showMessage(e.message);
+    } finally {
+      $("#t-go") && ($("#t-go").disabled = false);
+    }
+  });
+  if (watching) showJob(watching);
+}
+
+async function routeTranscription(slug) {
+  markCurrent("transcribe:" + slug);
+  current = null;
+  let d;
+  try { d = await api(`/api/transcriptions/${encodeURIComponent(slug)}`); } catch (e) {
+    page.innerHTML = `<div class="empty"><p>Couldn't open that: ${esc(e.message)}</p></div>`;
+    return;
+  }
+  if (d.pending) {
+    page.innerHTML = `<div class="staff-title"><h1>${esc(d.title)}</h1></div>
+      <p class="facts">Copyist is listening: separating the voice from the band, then finding the beat, the key,
+        the chords and every sung note. It takes a minute or two.</p><div class="job" data-job-panel></div>`;
+    if (watching) showJob(watching);
+    return;
+  }
+  const player = (label, path) => path
+    ? `<div class="player"><span class="player-label">${label}</span><audio controls preload="none" src="${fileUrl(path)}"></audio></div>` : "";
+  const keep = d.kept ? `<a class="button small" href="#/song/${encodeURIComponent(d.slug)}/song">Open the song</a>`
+    : `<button class="go" data-keep-transcription>${d.song_exists ? "Keep it (replaces the song of the same name)" : "Keep it"}</button>`;
+  const checks = d.fails ? `${d.fails} failing check${d.fails > 1 ? "s" : ""}` : "It passes every check";
+  page.innerHTML = `<div class="staff-title"><h1>${esc(d.title)}</h1></div>
+    <p class="facts">${esc(keyName(d.key))}, ${esc(d.meter)}, ${esc(d.tempo)}. Transcribed from ${esc(d.recording)}
+      by ${d.engine === "sheetsage" ? "SheetSage2 (non-commercial use only)" : "Copyist's own transcriber"}.</p>
+    <section class="section-gap"><h2>Compare by ear</h2>
+      <p class="hint">Play the original, then the band playing what Copyist wrote. Where they differ, the doubts below
+        are the first places to listen.</p>
+      <div class="styles">${player("The recording", d.source_path)}${player("Copyist's band, playing the transcription", d.preview_path)}</div>
+      ${d.preview_path ? "" : `<p class="hint">${d.preview_error ? `No playback: ${esc(d.preview_error)}` : "No playback yet."}</p>`}
+    </section>
+    <section class="section-gap"><h2>Doubts</h2>
+      ${d.doubts && d.doubts.length ? `<ul>${d.doubts.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>`
+        : '<p class="hint">None: wherever the audio was unclear, the music around it decided clearly.</p>'}
+    </section>
+    <section class="section-gap"><h2>What Copyist heard</h2>
+      <p>${esc(checks)}${d.warnings ? `, ${d.warnings} warning${d.warnings > 1 ? "s" : ""}` : ""}.
+        ${d.sections && d.sections.length > 1 ? `Sections: ${esc(sectionsWords(d.sections))}.` : ""}</p>
+      <ul>${(d.notes || []).map((n) => `<li>${esc(n)}</li>`).join("")}</ul>
+      ${d.report_path ? `<p><a href="${fileUrl(d.report_path)}" target="_blank" rel="noopener">The full report</a></p>` : ""}
+    </section>
+    <div class="actions section-gap">${keep}<span class="hint">Keeping it adds it to your songs and writes its lead
+      sheet, score and parts.</span></div>
+    <div class="job" data-job-panel></div>`;
+  const k = $("[data-keep-transcription]");
+  if (k) k.addEventListener("click", () => start({ action: "keep-transcription", slug: d.slug, replace: d.song_exists }));
+  if (watching) showJob(watching);
+}
+
 // -------------------------------------------------------------------- jobs
 
 function wireJobButtons(song) {
@@ -545,7 +656,7 @@ function showJob(job) {
     ? `<p><progress max="${pr[1]}" value="${pr[0]}"></progress> ${(pr[0] / 1e9).toFixed(2)} of ${(pr[1] / 1e9).toFixed(1)} GB</p>` : "";
   panel.innerHTML = `<p class="status ${job.status}">${esc(job.label)}: ${words[job.status] || job.status}</p>${bar}
     <details ${job.status === "failed" ? "open" : ""}><summary>Output</summary><pre>${esc(job.output || "")}</pre></details>`;
-  for (const b of document.querySelectorAll("button[data-job], button[data-use], button[data-keep], [data-write-more], #make, #install, #get-band, #w-go")) b.disabled = job.status === "running";
+  for (const b of document.querySelectorAll("button[data-job], button[data-use], button[data-keep], [data-write-more], [data-keep-transcription], #make, #install, #get-band, #w-go, #t-go")) b.disabled = job.status === "running";
 }
 
 // The "Make a take" choices survive the page redrawing after a job.
@@ -569,11 +680,11 @@ async function poll() {
   saveForm();
   try { models = await api("/api/models"); } catch { /* keep the last answer */ }
   try {
-    [songs, writings] = await Promise.all([api("/api/songs"), api("/api/writing")]);
+    [songs, writings, transcriptions] = await Promise.all([api("/api/songs"), api("/api/writing"), api("/api/transcriptions")]);
     renderSongList();
     renderWritingList();
   } catch { /* keep the last lists */ }
-  if (watching.status === "done" && watching.label.startsWith("Keeping") && watching.song) {
+  if (watching.status === "done" && watching.label.startsWith("Keep") && watching.song) {
     location.hash = `#/song/${encodeURIComponent(watching.song)}/song`;
     return;                       // the hash change draws the kept song
   }
@@ -641,8 +752,8 @@ async function refreshTraining() {
 // ------------------------------------------------------------------- start
 
 async function main() {
-  [songs, voices, training, models, writings] = await Promise.all([api("/api/songs"), api("/api/voices"),
-    api("/api/training"), api("/api/models"), api("/api/writing")]);
+  [songs, voices, training, models, writings, transcriptions] = await Promise.all([api("/api/songs"), api("/api/voices"),
+    api("/api/training"), api("/api/models"), api("/api/writing"), api("/api/transcriptions")]);
   renderSongList();
   renderWritingList();
   renderTraining(training);

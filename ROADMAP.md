@@ -37,13 +37,15 @@ Take the first unchecked item in the current milestone. Tick items when they're 
 ## MT: Transcription from recordings (SPEC section 12)
 
 - [x] Stem separation with Demucs (on the Mac, `-d mps --two-stems vocals`): 141 songs separated into `out/separated/htdemucs/<song>/vocals.wav` on 2026-10-16; `copyist follow --separate` caches the vocal beside each take
-- [ ] Beat, tempo map, key and chord detection
-- [ ] Vocal melody: pitch contour → notes on the beat grid; lyrics aligned with Whisper word timings and the person's own lyric text
-- [ ] Bass line and drum groove extraction
-- [ ] Draft song file + arrangement parts from the measurements
+- [x] Beat, meter (3/4, 4/4, 6/8, 12/8), key and chord detection (`copyist/transcribe.py`, docs/transcribing.md)
+- [x] Vocal melody: pitch contour → notes on the beat grid, tidied and settled by musical context; lyrics fitted with the recording's own syllable starts; Whisper hears the words when none are given
+- [x] Draft song file from the measurements (`copyist transcribe`), the page's "Transcribe a recording", and SheetSage2 as an optional, non-commercial engine
+- [ ] Bass line and drum groove extraction; arrangement parts
 - [ ] Analysis-by-synthesis fitting loop: render, compare per stem, keep edits that improve closeness + simplicity
 - [ ] A/B listening page: original vs fitted render, mark bars that sound wrong
-- [ ] Accuracy report per stem against a few hand-checked songs
+- [x] Accuracy measured against Copyist's own songs (`scripts/transcribe/evaluate.py`; numbers in docs/transcribing.md)
+- [ ] Repeats vote, per-doubt A/B by ear (SPEC 12.2a)
+- [ ] The owner transcribes her own songs on the Mac and listens
 
 ## M2: Song planning and following directions
 

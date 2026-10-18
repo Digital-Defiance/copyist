@@ -2,6 +2,14 @@
 
 Newest first. One entry per decision: what, why, and what we gave up.
 
+## 2026-10-18 (transcription)
+
+- **Copyist's own transcriber is the default; SheetSage2 is optional.** SheetSage2 (through yue2.cpp) is the most accurate we measured, but its weights are CC BY-NC 4.0 with no permission for creators to sell their songs, unlike YuE2's. Copyist's own engine is open code (MIT, librosa, Demucs) and free for any use. The page names SheetSage2's licence and asks the person to accept it. Gave up: the best accuracy by default, for now.
+- **A transcription becomes a song through melody writing's path:** the engine writes planner-dialect ABC, and `write.song_from_plan` makes the song file, keeping the octave as sung. One way in, tested twice over.
+- **Meter is found on a grid of eighths, beat first, then bar,** so 6/8 and 12/8 are heard as such, and a tracker that locked onto off-beats or quarter pairs doesn't matter.
+- **The lyric fit listens:** a transcription tells the fit where syllables really start (a breath, a consonant) and where the voice only moved (a melisma).
+- **The truth set is Copyist's own public-domain songs** (band renders and YuE2 takes), never the owner's songs, which stay on her Mac.
+
 ## 2026-10-18 (melody writing built; transcription rules)
 
 - **Song files write every accidental.** YuE2's plans carry an accidental through the bar; music21, which reads Copyist's songs, doesn't (measured: `^F f F` reads F#4 F5 F4). Written songs repeat the accidental on every altered note, so they read the same under both rules. Gave up: the shortest possible ABC.

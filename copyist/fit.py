@@ -17,6 +17,7 @@ from .abcplan import Bar, Tok
 from .syllables import Syllable
 
 MAX_HOLD = 5                    # extra notes one syllable may hold
+HINT_WEIGHT = 1.0               # what the recording says outweighs a weak beat
 SPLIT_LIMIT = 0.10              # split at most this share of the notes
 
 
@@ -29,6 +30,7 @@ class Slot:
     strength: float             # metric weight of the onset
     rest_after: bool            # a rest follows before the next onset
     breath_before: bool         # a rest, or a note at least a beat long, comes before it
+    syllable_hint: float | None = None   # from a recording: how surely a new syllable starts here (0..1)
 
 
 @dataclass
@@ -70,8 +72,11 @@ def slots(bars: list[Bar], unit: Fraction, meter: str) -> list[Slot]:
     pos = Fraction(0)
     tied = False
     rest_pending = True
+    num, den = (int(x) for x in meter.split("/"))
+    full = Fraction(num, den) / unit
     for b, bar in enumerate(bars):
-        in_bar = Fraction(0)
+        # A short first bar is a pickup: its notes sit at the end of a bar.
+        in_bar = (full - bar.length) * q_per_unit if b == 0 and bar.length < full else Fraction(0)
         for k, t in enumerate(bar.toks):
             if t.kind == "chord":
                 continue
@@ -134,6 +139,11 @@ def cost_of(syl: Syllable, span: list[Slot], beat_q: Fraction) -> float:
         c += 2.0 if not syl.word_end else 0.8
     if syl.line_start and not first.breath_before:
         c += 0.5
+    # A transcription knows where the singer started syllables (a consonant, a breath) and where the
+    # voice only moved to another pitch (a melisma).
+    if first.syllable_hint is not None:
+        c += HINT_WEIGHT * (1 - first.syllable_hint)
+    c += HINT_WEIGHT * sum(s.syllable_hint for s in span[1:] if s.syllable_hint is not None)
     return c
 
 
@@ -218,8 +228,10 @@ def lyric_text(sylls: list[Syllable], spans: list[tuple[int, int]]) -> str:
     return "\n".join(" ".join(words) for words in lines if words)
 
 
-def fit(bars: list[Bar], unit: Fraction, meter: str, sylls: list[Syllable]) -> Fit:
-    """Fit the syllables to the bars, splitting notes first if there are too few. Changes `bars` when it splits."""
+def fit(bars: list[Bar], unit: Fraction, meter: str, sylls: list[Syllable],
+        hints: list[float] | None = None) -> Fit:
+    """Fit the syllables to the bars, splitting notes first if there are too few. Changes `bars` when it
+    splits. `hints`, one per note from a transcription, say how surely a syllable starts on each."""
     notes = slots(bars, unit, meter)
     splits = 0
     if len(sylls) > len(notes):
@@ -231,5 +243,8 @@ def fit(bars: list[Bar], unit: Fraction, meter: str, sylls: list[Syllable]) -> F
         notes = slots(bars, unit, meter)
         if len(sylls) > len(notes):
             raise ValueError(f"Couldn't make room for {len(sylls)} syllables in {len(notes)} notes.")
+    if hints and len(hints) == len(notes):
+        for slot, h in zip(notes, hints):
+            slot.syllable_hint = h
     spans, cost = align(sylls, notes, meter)
     return Fit(spans, cost + 2.0 * splits, splits, lyric_text(sylls, spans))
