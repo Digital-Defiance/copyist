@@ -38,11 +38,13 @@ PIANO_VOCAL_BALANCE_DB = {"melody": 0.0, "piano": -8.0, "other": -6.0, "bass": -
 PIANO_VOCAL_REVERB = {"melody": 0.12, "piano": 0.10, "other": 0.10, "bass": 0.03, "drums": 0.06}
 POLYPHONY = 256        # the piano with its pedal down needs plenty
 
+# Leads whose midrange harmonics fight piano shells at the normal -4 dB balance.
+SOFT_ACCOMP_MELODY = frozenset({"piano", "organ", "musicbox", "sax", "flute", "clarinet", "fiddle"})
+
 
 def mix_levels(plan: dict[str, str]) -> tuple[dict[str, float], dict[str, float]]:
     """Balance and room sends for this instrument plan."""
-    # Solo-ish leads (piano, organ, music box): keep accompaniment further back.
-    if plan.get("melody") in ("piano", "organ", "musicbox"):
+    if plan.get("melody") in SOFT_ACCOMP_MELODY:
         return dict(PIANO_VOCAL_BALANCE_DB), dict(PIANO_VOCAL_REVERB)
     return dict(BALANCE_DB), dict(REVERB)
 

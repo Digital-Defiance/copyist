@@ -131,7 +131,7 @@ The SoundFont band plus a SoulX vocal will never sound like Suno: they're checki
 - [x] Electric guitar (Karoryfer Emilyguitar clean, CC0); pop, rock, power-ballad and blues-shuffle play it. Decision: DECISIONS.md 2026-10-18 (electric guitar)
 - [x] Fiddle (VSCO solo violin arco vib, CC0); country, country-waltz and Celtic jig melodies. Decision: DECISIONS.md 2026-10-18 (fiddle)
 - [x] Flute (VSCO susvib, CC0); Broadway ballad/uptempo and march melodies. Decision: DECISIONS.md 2026-10-18 (flute)
-- [x] Alto sax (Karoryfer Weresax, CC0); swing, jazz waltz, blues-shuffle and bossa melodies. Decision: DECISIONS.md 2026-10-18 (alto sax)
+- [x] Alto sax (Karoryfer Weresax, CC0); swing, jazz waltz, blues-shuffle and bossa melodies. Swing/jazz-waltz drop piano shells under the sax (were discordant). Decision: DECISIONS.md 2026-10-18 (alto sax)
 - [ ] Guitar part as its own staff (strum patterns, chord shapes), beyond reusing the piano patterns
 - [x] Music box style and glockenspiel stand-in (the musical); real music box / celesta still open
 - [x] Prosody and strong-beat checks use Copyist's compound-meter grid (dotted-quarter beats in 6/8 / 12/8), same as the lyric fitter — not music21's beatStrength alone

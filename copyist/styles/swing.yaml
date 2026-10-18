@@ -1,16 +1,17 @@
 format: copyist-style/0
 name: Swing
 family: Jazz and blues
-about: Swung eighths. A walking bass, the ride cymbal's spang-a-lang, the piano's Charleston answering a delayed comp.
+about: Swung eighths. A walking bass and the ride cymbal's spang-a-lang under a sax lead (no piano shells fighting the tune).
 feel: swing
 tempo: [110, 200]
 instruments: {melody: sax, bass: upright-bass}
-production: swing jazz, 1940s, walking upright bass, ride cymbal, piano comping, clarinet, horn section, swinging
+production: swing jazz, 1940s, walking upright bass, ride cymbal, alto sax, horn section, swinging
 meters:
   "4/4":
+    # Two empty bars that cycle: no Charleston under the sax (it sat on the tune).
     rh:
-      - [[0, 0.5, shell], [1.5, 0.5, shell]]
-      - [[1, 0.5, shell], [2.5, 0.5, shell]]
+      - []
+      - []
     lh: []
     bass: walk
     drums:

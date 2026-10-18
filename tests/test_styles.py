@@ -214,6 +214,15 @@ class ArrangeEveryStyleTests(unittest.TestCase):
         words = [e.content for e in band.score.recurse().getElementsByClass("TextExpression")]
         self.assertEqual(words, ["Swing"])
 
+    def test_swing_and_jazz_waltz_leave_the_piano_out_under_a_sax_lead(self):
+        # Charleston shells under a bright alto sat on the tune and sounded discordant.
+        for style_id in ("swing", "jazz-waltz"):
+            song = self.songs["4/4" if style_id == "swing" else "3/4"]
+            band = arrange.arrange_band(dataclasses.replace(song, style=style_id))
+            rh = band.score.parts[1]
+            played = [n for n in rh.recurse().notes if not isinstance(n, harmony.ChordSymbol)]
+            self.assertEqual(played, [], style_id)
+
 
 class SwingTests(unittest.TestCase):
     def test_off_beat_eighths_land_two_thirds_through_the_beat(self):

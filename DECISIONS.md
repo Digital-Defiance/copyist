@@ -5,6 +5,7 @@ Newest first. One entry per decision: what, why, and what we gave up.
 ## 2026-10-18 (alto sax)
 
 - **Swing, jazz waltz, blues-shuffle and bossa melodies use Karoryfer Weresax** (CC0 alto, ~50 MB of rr1 dynamic-mic samples, `winds` pack). Copyist writes a simple SFZ (no humanize LFOs, no round-robin) so previews stay deterministic. Upstream's full Sax.sfz stayed out.
+- **Swing and jazz waltz drop piano shells under the sax.** Charleston comps in the same midrange as the alto made Saints sound discordant even though the sax was in tune; the preview is now sax + walking bass + ride. Blues keeps guitar under the sax. Wind leads also use the quieter accompaniment mix (same as piano-vocal).
 
 ## 2026-10-18 (flute)
 
