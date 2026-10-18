@@ -2,6 +2,10 @@
 
 Newest first. One entry per decision: what, why, and what we gave up.
 
+## 2026-10-18 (GitHub Pages site)
+
+- **The public site lives in `site/` and deploys with GitHub Actions**, not the repo `docs/` folder. `docs/` stays project documentation (markdown for agents and contributors). The Pages site is a static advert: score-first pitch, features, install — same desk brand and OFL fonts as `copyist serve`, served at `https://copyist.digitaldefiance.org/` (`site/CNAME`). Gave up: a CDN-built framework; plain HTML/CSS/JS matches the local page and needs no build step.
+
 ## 2026-10-18 (section rewrite)
 
 - **Section rewrite swaps donors or raises a section; it does not ask the planner for a fragment.** `yue-plan` only writes whole songs, so `again` / `simpler` plan or reuse full candidates with the same key, meter and section length, then splice that section into the base. `higher` moves that section's notes and chords together (and the key when the section is the whole song); raising the tune alone against old chords sounded flat/out of tune. Output lives under `out/<slug>/rewrite/<how>/`.

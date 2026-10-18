@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Copyist — the song, the score, the sound</title>
+<meta name="description" content="Copyist writes songs score-first: a lead sheet, band parts, MIDI and a recording made from the same notes. Open source. Runs on your machine.">
+<link rel="canonical" href="https://copyist.digitaldefiance.org/">
+<meta property="og:title" content="Copyist — the song, the score, the sound">
+<meta property="og:description" content="Score-first songwriting: real sheet music and audio from the same notes. Open source.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://copyist.digitaldefiance.org/">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cellipse cx='12' cy='22' rx='8' ry='5.5' transform='rotate(-20 12 22)' fill='%231f2547'/%3E%3Crect x='18.6' y='3' width='2.6' height='18' fill='%231f2547'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="top">
+  <a class="wordmark" href="#">Copyist</a>
+  <nav aria-label="Page">
+    <a href="#why">Why</a>
+    <a href="#features">Features</a>
+    <a href="#install">Install</a>
+    <a href="https://github.com/Digital-Defiance/copyist">GitHub</a>
+  </nav>
+</header>
+
+<main id="main">
+  <section class="hero" aria-labelledby="hero-brand">
+    <div class="hero-plane" aria-hidden="true">
+      <svg class="hero-score" viewBox="0 0 1200 640" preserveAspectRatio="xMidYMid slice" role="img">
+        <defs>
+          <linearGradient id="wash" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#eef2ef"/>
+            <stop offset="55%" stop-color="#f7f8f5"/>
+            <stop offset="100%" stop-color="#e4ebe6"/>
+          </linearGradient>
+        </defs>
+        <rect width="1200" height="640" fill="url(#wash)"/>
+        <g class="staff-lines" fill="none" stroke="#9fb6a8" stroke-width="1.6">
+          <path d="M0 168 H1200"/><path d="M0 196 H1200"/><path d="M0 224 H1200"/>
+          <path d="M0 252 H1200"/><path d="M0 280 H1200"/>
+          <path d="M0 360 H1200"/><path d="M0 388 H1200"/><path d="M0 416 H1200"/>
+          <path d="M0 444 H1200"/><path d="M0 472 H1200"/>
+        </g>
+        <g class="melody" fill="#1f2547" stroke="#1f2547" stroke-width="2.2" stroke-linecap="round">
+          <!-- Amazing Grace–shaped contour, stylized -->
+          <g class="note" transform="translate(160,252)">
+            <ellipse cx="0" cy="0" rx="11" ry="8" transform="rotate(-20)"/>
+            <path d="M10 -4 V-52"/>
+          </g>
+          <g class="note" transform="translate(250,224)">
+            <ellipse cx="0" cy="0" rx="11" ry="8" transform="rotate(-20)"/>
+            <path d="M10 -4 V-52"/>
+          </g>
+          <g class="note" transform="translate(340,196)">
+            <ellipse cx="0" cy="0" rx="11" ry="8" transform="rotate(-20)"/>
+            <path d="M10 -4 V-52"/>
+          </g>
+          <g class="note" transform="translate(430,224)">
+            <ellipse cx="0" cy="0" rx="11" ry="8" transform="rotate(-20)"/>
+            <path d="M10 -4 V-52"/>
+          </g>
+          <g class="note" transform="translate(540,252)">
+            <ellipse cx="0" cy="0" rx="11" ry="8" transform="rotate(-20)"/>
+            <path d="M10 -4 V-52"/>
+          </g>
+          <g class="note" transform="translate(650,280)">
+            <ellipse cx="0" cy="0" rx="11" ry="8" transform="rotate(-20)"/>
+            <path d="M10 -4 V-46"/>
+          </g>
+          <g class="note" transform="translate(760,252)">
+            <ellipse cx="0" cy="0" rx="11" ry="8" transform="rotate(-20)"/>
+            <path d="M10 -4 V-52"/>
+          </g>
+          <g class="note" transform="translate(870,224)">
+            <ellipse cx="0" cy="0" rx="11" ry="8" transform="rotate(-20)"/>
+            <path d="M10 -4 V-52"/>
+          </g>
+          <g class="note" transform="translate(980,196)">
+            <ellipse cx="0" cy="0" rx="11" ry="8" transform="rotate(-20)"/>
+            <path d="M10 -4 V-52"/>
+          </g>
+        </g>
+        <g class="chords" fill="#2c5ba8" font-family="Georgia, serif" font-size="28" font-style="italic">
+          <text x="150" y="140">G</text>
+          <text x="420" y="140">C</text>
+          <text x="640" y="140">G</text>
+          <text x="860" y="140">D</text>
+        </g>
+        <g class="lyrics" fill="#5a6080" font-family="Georgia, serif" font-size="22">
+          <text x="140" y="320">A -</text>
+          <text x="235" y="320">maz -</text>
+          <text x="325" y="320">ing</text>
+          <text x="420" y="320">grace,</text>
+          <text x="530" y="320">how</text>
+          <text x="640" y="320">sweet</text>
+          <text x="750" y="320">the</text>
+          <text x="860" y="320">sound</text>
+        </g>
+      </svg>
+    </div>
+    <div class="hero-copy">
+      <p class="brand" id="hero-brand">Copyist</p>
+      <h1>The song, the score, the sound.</h1>
+      <p class="lede">Write from the notes. Hear what you wrote. Ship real sheet music that matches the recording — every time.</p>
+      <p class="cta">
+        <a class="button primary" href="#install">Install Copyist</a>
+        <a class="button" href="https://github.com/Digital-Defiance/copyist">View on GitHub</a>
+      </p>
+    </div>
+  </section>
+
+  <section id="why" class="band why">
+    <h2>Why score-first</h2>
+    <p class="section-lede">Audio-first tools invent sound and leave you guessing the notes. Copyist starts with a song file — melody, chords and lyrics — and derives everything else from that score.</p>
+    <ul class="compare">
+      <li>
+        <h3>Audio-first generators</h3>
+        <p>A recording appears. Sheet music has to be guessed back out: wrong octaves, smeared rhythms, no chord names, lyrics that drift.</p>
+      </li>
+      <li>
+        <h3>Copyist</h3>
+        <p>The score is the source of truth. The lead sheet, parts, MIDI and band audio all come from the same notes, so what you hear matches what is written.</p>
+      </li>
+    </ul>
+  </section>
+
+  <section id="features" class="band features">
+    <h2>What you get</h2>
+    <p class="section-lede">From one song file: validated music you can print, play and rearrange — chosen by listening, not by reading notation.</p>
+    <ul class="feature-list">
+      <li>
+        <h3>Lead sheet, score and parts</h3>
+        <p>PDF and MusicXML for the lead sheet, full score and every player’s part — clefs, ranges and layout checked by validators.</p>
+      </li>
+      <li>
+        <h3>A sampled band</h3>
+        <p>Piano, bass, drums, guitars, winds and more play the arrangement through sfizz. Stems and a gentle master for checking by ear.</p>
+      </li>
+      <li>
+        <h3>Twenty-three styles</h3>
+        <p>Waltz, hymn, swing, bossa, Broadway, folk, rock and more. Gallery a song in every style that fits, then keep the one you like.</p>
+      </li>
+      <li>
+        <h3>Write melodies from lyrics</h3>
+        <p><code>copyist write</code> proposes several tunes with chords and fitted words. Listen to each band preview and keep one.</p>
+      </li>
+      <li>
+        <h3>Transcribe a recording you own</h3>
+        <p>Turn a demo into a lead sheet: melody as sung, chords and lyrics under the notes, then every Copyist output follows.</p>
+      </li>
+      <li>
+        <h3>Production takes that follow the score</h3>
+        <p>YuE2 performs band and singer together from the same notes. <code>copyist follow</code> checks the take sang what was written.</p>
+      </li>
+      <li>
+        <h3>A local page and desktop shell</h3>
+        <p><code>copyist serve</code> puts songs, scores and takes in the browser on your machine. A Tauri app wraps the same engine.</p>
+      </li>
+      <li>
+        <h3>Built for people who don’t read music</h3>
+        <p>Choose by listening and plain-language checks. Anyone who does read music can still see and edit every note.</p>
+      </li>
+    </ul>
+  </section>
+
+  <section id="how" class="band how">
+    <h2>How it works</h2>
+    <ol class="steps">
+      <li>
+        <span class="step-n">1</span>
+        <h3>Song file</h3>
+        <p>YAML with an ABC melody, chord symbols and lyrics — public domain or your own.</p>
+      </li>
+      <li>
+        <span class="step-n">2</span>
+        <h3>Canonical score</h3>
+        <p>Validators check bars, lyrics, range, chords and prosody before anything is finished.</p>
+      </li>
+      <li>
+        <span class="step-n">3</span>
+        <h3>Arrange, engrave, render</h3>
+        <p>Style patterns become parts; Verovio engraves PDF; the band (or YuE2) plays the notes.</p>
+      </li>
+    </ol>
+  </section>
+
+  <section id="install" class="band install">
+    <h2>Install and set up</h2>
+    <p class="section-lede">Python 3.10 or later on macOS or Linux. Everything runs locally; models and instruments download when you ask for them.</p>
+
+    <h3>1. Get the code</h3>
+    <pre><code>git clone https://github.com/Digital-Defiance/copyist.git
+cd copyist
+python -m venv .venv
+source .venv/bin/activate   # Windows: .venv\Scripts\activate
+pip install -e .</code></pre>
+
+    <h3>2. Build a song</h3>
+    <pre><code>pip install --no-deps tinysoundfont   # fallback SoundFont (optional)
+copyist build songs/amazing-grace.yaml</code></pre>
+    <p>Outputs land in <code>out/amazing-grace/</code>: lead sheet and band score as PDF, parts, MusicXML, MIDI, a preview WAV and a validation report.</p>
+
+    <h3>3. Sampled instruments (recommended)</h3>
+    <pre><code>scripts/setup-sfizz.sh --instruments   # ~1.1 GB band pack</code></pre>
+    <p>Then rebuild the same song to hear the concert grand, basses, kit and melody winds instead of the SoundFont fallback.</p>
+
+    <h3>4. Open the local page</h3>
+    <pre><code>copyist serve</code></pre>
+    <p>Opens <code>http://127.0.0.1:8765/</code> — songs, score pages, band previews, writing and transcription. Nothing is loaded from the internet while you work.</p>
+
+    <h3>Optional: production singer (YuE2)</h3>
+    <pre><code>scripts/setup-yue.sh                   # runtime + weights (GPU recommended)
+copyist produce songs/amazing-grace.yaml
+copyist follow songs/amazing-grace.yaml out/amazing-grace/production/production.wav</code></pre>
+    <p>YuE2 weights are CC BY-NC 4.0, with permission for individual creators to sell their own songs. The page shows each licence before download.</p>
+
+    <h3>Run the tests</h3>
+    <pre><code>python -m unittest discover -s tests</code></pre>
+
+    <p class="more">More detail: <a href="https://github.com/Digital-Defiance/copyist/blob/main/CONTRIBUTING.md">CONTRIBUTING.md</a>,
+      <a href="https://github.com/Digital-Defiance/copyist/blob/main/docs/sound-set.md">sound set</a>,
+      <a href="https://github.com/Digital-Defiance/copyist/blob/main/docs/production.md">production</a>,
+      <a href="https://github.com/Digital-Defiance/copyist/blob/main/docs/web.md">web front end</a>.</p>
+  </section>
+
+  <section id="licence" class="band licence">
+    <h2>Open source</h2>
+    <p>Copyist is free under the <a href="https://github.com/Digital-Defiance/copyist/blob/main/LICENSE">MIT licence</a>, stewarded by <a href="https://github.com/Digital-Defiance">Digital Defiance</a>. Contributions welcome — styles and instruments especially.</p>
+    <p class="cta">
+      <a class="button primary" href="https://github.com/Digital-Defiance/copyist">Star or fork on GitHub</a>
+      <a class="button" href="https://github.com/Digital-Defiance/copyist/blob/main/CONTRIBUTING.md">How to contribute</a>
+    </p>
+  </section>
+</main>
+
+<footer class="foot">
+  <p><span class="wordmark">Copyist</span> — the song, the score, the sound.</p>
+  <p class="fine">Fonts: Source Serif 4 and Shantell Sans, SIL Open Font License. Site source in <code>site/</code> of the repository.</p>
+</footer>
+
+<script src="script.js" defer></script>
+</body>
+</html>

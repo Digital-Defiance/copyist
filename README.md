@@ -2,6 +2,8 @@
 
 **The song, the score, the sound.**
 
+[Website](https://copyist.digitaldefiance.org/) · [GitHub](https://github.com/Digital-Defiance/copyist)
+
 Copyist writes songs the way a working composer, copyist and band would: it starts from the notes, not from audio. Every song comes out as real, correct music: a lead sheet, a full score, a part for every player, MIDI and MusicXML, and a recording made from those same notes. Because the score is the source of truth, the sheet music always matches what you hear.
 
 Tools like Suno and Mozart AI generate audio first. Their notes don't exist as data, so any sheet music has to be guessed back out of the recording. Copyist works the other way around.

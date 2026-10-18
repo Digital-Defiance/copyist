@@ -32,7 +32,8 @@ dependencies = [
 #     pip install --no-deps tinysoundfont
 
 [project.urls]
-Homepage = "https://github.com/Digital-Defiance/copyist"
+Homepage = "https://copyist.digitaldefiance.org/"
+Repository = "https://github.com/Digital-Defiance/copyist"
 
 [project.optional-dependencies]
 # Singing (copyist sing): pitch checking and mixing. SoulX-Singer itself runs
