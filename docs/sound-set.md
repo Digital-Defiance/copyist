@@ -79,7 +79,7 @@ Every pack below comes from libraries with clear, free licences: CC0, or CC BY w
 | Pack | For | Instruments (found, licence checked) |
 |---|---|---|
 | Orchestra and pit | Broadway, film, hymns | VSCO 2 CE (CC0): violin, viola and cello sections, solo violin and double bass, harp, trumpet, tenor trombone, French horn, tuba, flute, oboe, clarinet, bassoon, piccolo, timpani, glockenspiel, xylophone, marimba |
-| Keys | Pop, soul, gospel, baroque, Broadway | **In the pack now:** [VCSL](https://github.com/sgossner/VCSL) pipe organ manuals (Quiet + Loud, CC0) and [VSCO 2 CE](https://versilian-studios.com/vsco-community/) concert harp (CC0); Copyist's SFZs. Still to add: [jRhodes3d](https://github.com/sfzinstruments/jlearman.jRhodes3d) Rhodes (CC BY-NC samples, free to play; credit Jeff Learman); a tonewheel organ from sfizz generators; VCSL harpsichords, vibraphone, uprights, grands, TX81Z FM piano and clavinet |
+| Keys | Pop, soul, gospel, baroque, Broadway | **In the pack now:** [VCSL](https://github.com/sgossner/VCSL) pipe organ manuals (Quiet + Loud, CC0), [VSCO 2 CE](https://versilian-studios.com/vsco-community/) concert harp (CC0), and a synthetic tonewheel (sfizz sine drawbars, MIT, no download). Still to add: [jRhodes3d](https://github.com/sfzinstruments/jlearman.jRhodes3d) Rhodes (CC BY-NC samples, free to play; credit Jeff Learman); VCSL harpsichords, vibraphone, uprights, grands, TX81Z FM piano and clavinet |
 | Folk and country | Country, Americana, Western swing | [VCSL](https://github.com/sgossner/VCSL) (CC0) harmonicas (Hohner Special 20 in C and F, Super 64 chromatic); VSCO solo violin as a fiddle; [Karoryfer Black and Green Guitars](https://github.com/sfzinstruments/karoryfer.black-and-green-guitars) and [Emilyguitar](https://github.com/sfzinstruments/karoryfer.emilyguitar) (CC0, electric) |
 | Percussion | Everything | VCSL (CC0): shakers, tambourines, congas, bongos, cajón, claves, cowbells, triangles, wood block, sleigh bells, mark tree, tubular bells, gongs, suspended cymbals |
 | Music box and bells | Lullabies, musical theatre (*I Left the Lights On* has a music box and celesta theme) | VCSL glockenspiel, tubular glockenspiel, hand chimes, kalimbas, vibraphone. A real music box and a celesta still to find |
@@ -93,8 +93,7 @@ Every pack below comes from libraries with clear, free licences: CC0, or CC BY w
 4. pedal steel;
 5. accordion;
 6. snare brushes (the AVL kit has sticks only);
-7. a tonewheel organ (could be built from sfizz's generators);
-8. a choir ("oohs" and "aahs");
-9. uilleann pipes and tin whistle.
+7. a choir ("oohs" and "aahs");
+8. uilleann pipes and tin whistle.
 
 Pianobook libraries come with their own terms, and Spitfire LABS can't be redistributed, so neither fits.

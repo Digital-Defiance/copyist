@@ -1,17 +1,13 @@
 format: copyist-style/0
 name: Gospel
 family: Soul and gospel
-about: Slow gospel at the piano. The tune on the keys; soft answering chords and a patient bass. No drums — the kit and clarinet made it sound like a kids' band.
+about: Slow gospel. The piano carries the tune; a tonewheel pad holds under it. No drums.
 tempo: [56, 84]
-instruments: {melody: piano, bass: upright-bass}
-keep_rh: true
+instruments: {melody: piano, piano: tonewheel, bass: upright-bass}
 production: soulful gospel, Hammond organ, piano, choir, handclaps, slow 12/8 feel, church, powerful
 meters:
   "4/4":
-    # Sparse answers under the tune (open melody pitches). Hold, don't chatter.
-    rh:
-      - [[1, 1, shell], [3, 1, shell]]
-      - [[0, 2, chord], [2, 2, chord]]
+    rh: []
     lh:
       - [[0, 4, root]]
       - [[0, 2, root], [2, 2, fifth]]

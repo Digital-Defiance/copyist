@@ -5,8 +5,9 @@ Newest first. One entry per decision: what, why, and what we gave up.
 ## 2026-10-18 (pipe organ and harp)
 
 - **Hymn and gospel previews use the VCSL pipe organ** (manuals only, Quiet + Loud; Copyist writes the SFZ like the clarinet). Hymn: organ on the melody and the held chords, upright bass under. Pack `keys` downloads it (~86 MB). Gave up: pedals and a real Hammond for this cut.
-- **Gospel exact preview is piano-vocal, no drums and no clarinet.** Organ-plus-kit-plus-clarinet read as a kids' band; the owner said so. Sparse answering chords under the tune, upright bass, same quiet mix as other piano-vocal styles. YuE2's production line still asks for Hammond and choir. Pipe organ stays on hymn.
+- **Gospel exact preview: piano tune + synthetic tonewheel pad, no drums.** Pipe organ + kit + clarinet was a kids' band; piano alone was only "I guess better". The tonewheel is sfizz `*sine` drawbars (fixed ~888800000), MIT, no download. Pipe organ stays on hymn; YuE2 still gets Hammond/choir in the style line.
 - **Broadway ballad plays the VSCO concert harp** (~35 MB, same `keys` pack) on the arpeggio part. The pit needs a harp more than another piano.
+- **Synthetic instruments** (`Instrument.synthetic`): SFZ only, installed by writing `copyist/sound/*.sfz` into the instruments folder. Manifest lists no sample files.
 
 ## 2026-10-18 (prosody in compound meters)
 

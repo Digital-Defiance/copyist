@@ -1,0 +1,23 @@
+// Copyist tonewheel organ: sfizz sine oscillators as fixed Hammond-style drawbars.
+// Registration ~888800000 (gospel/blues): strong 16', 5⅓', 8', 4'; quieter upper.
+// No samples to download — sfizz generates the tones.
+<control>
+
+<global>
+ampeg_attack=0.02
+ampeg_decay=0.0
+ampeg_sustain=100
+ampeg_release=0.22
+amp_veltrack=40
+volume=-9
+
+// 16'
+<region> sample=*sine transpose=-12 volume=-3
+// 5⅓'
+<region> sample=*sine transpose=-5 volume=-5
+// 8'
+<region> sample=*sine volume=-2
+// 4'
+<region> sample=*sine transpose=12 volume=-6
+// 2⅔' (quiet colour)
+<region> sample=*sine transpose=19 volume=-12

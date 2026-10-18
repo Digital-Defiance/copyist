@@ -41,6 +41,9 @@ class ManifestTests(unittest.TestCase):
         for inst_id, files in m.items():
             paths = {f[0] for f in files}
             inst = instruments.CATALOG[inst_id]
+            if inst.synthetic:
+                self.assertEqual(files, [])
+                continue
             if not inst.generated:
                 self.assertIn(inst.sfz, paths)
             for path, size, blob in files:
@@ -91,6 +94,7 @@ class ManifestTests(unittest.TestCase):
         self.assertEqual(instruments.instrument_for("melody", "hymn"), "organ")
         self.assertEqual(instruments.instrument_for("piano", "hymn"), "organ")
         self.assertEqual(instruments.instrument_for("melody", "gospel"), "piano")
+        self.assertEqual(instruments.instrument_for("piano", "gospel"), "tonewheel")
         self.assertEqual(instruments.instrument_for("piano", "broadway-ballad"), "harp")
         self.assertEqual(instruments.instrument_for("piano"), "piano")
         self.assertEqual(instruments.instrument_for("bass", "waltz"), "upright-bass")

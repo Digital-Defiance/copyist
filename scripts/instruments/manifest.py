@@ -78,6 +78,10 @@ def played(clone: Path, rev: str, sfz: str, known: dict) -> set[str]:
 def main(clones: Path) -> None:
     result = {"format": 1, "instruments": {}}
     for inst in CATALOG.values():
+        if inst.synthetic:
+            result["instruments"][inst.id] = {"repo": inst.repo, "revision": inst.revision, "files": []}
+            print(f"{inst.id}: synthetic (no sample files)", file=sys.stderr)
+            continue
         clone = clones / inst.repo.split("/")[1]
         known = tree(clone, inst.revision)
         wanted = set() if inst.generated else played(clone, inst.revision, inst.sfz, known)
@@ -86,7 +90,8 @@ def main(clones: Path) -> None:
             default = re.search(r"default_path=(\S+)", text)
             prefix = default.group(1) if default else ""
             names = [line.split("sample=", 1)[1].strip()
-                     for line in text.splitlines() if "sample=" in line]
+                     for line in text.splitlines() if "sample=" in line
+                     and not line.split("sample=", 1)[1].strip().startswith("*")]
             wanted |= {prefix + n for n in names}
         for extra in EXTRA.get(inst.id, []):
             wanted |= {p for p in known if p == extra or (extra.endswith("/") and p.startswith(extra))}

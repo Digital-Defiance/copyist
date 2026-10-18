@@ -7,9 +7,9 @@ so what lands on disk is byte for byte what the library's authors published.
 A file is only moved into place once it checks out, so an interrupted download
 picks up where it stopped.
 
-The clarinet and pipe organ are exceptions to "as published": VSCO and VCSL ship
-those as WAV files only, so Copyist writes their SFZs (copyist/sound/*.sfz, made
-by scripts/instruments/) next to the samples.
+The clarinet, pipe organ and harp are exceptions to "as published": VSCO and VCSL
+ship those as WAV files only, so Copyist writes their SFZs (copyist/sound/*.sfz)
+next to the samples. The tonewheel organ is fully synthetic (sfizz *sine oscillators).
 """
 from __future__ import annotations
 
@@ -31,6 +31,11 @@ SOUND = Path(__file__).parent / "sound"
 COMPLETE = ".copyist-complete"
 
 
+def git_blob_id(data: bytes) -> str:
+    """The id git gives a file's contents: SHA-1 of "blob <size>\\0" and the bytes."""
+    return hashlib.sha1(b"blob %d\0" % len(data) + data).hexdigest()
+
+
 @dataclass(frozen=True)
 class Instrument:
     id: str
@@ -42,6 +47,7 @@ class Instrument:
     credit: str        # the credit line its licence asks for ("" when none is needed)
     home: str
     generated: bool = False   # Copyist writes the SFZ (from copyist/sound/)
+    synthetic: bool = False   # no sample download; SFZ uses sfizz oscillators (*sine, …)
 
 
 CATALOG = {i.id: i for i in (
@@ -67,6 +73,9 @@ CATALOG = {i.id: i for i in (
     Instrument("harp", "VSCO 2 Community Edition concert harp", "sgossner/VSCO-2-CE",
                "440300901dfe9275fd84e0b7763af1f8443ae62e", "harp.sfz", "CC0", "",
                "https://versilian-studios.com/vsco-community/", generated=True),
+    Instrument("tonewheel", "Tonewheel organ (sfizz sine drawbars)", "copyist/synthetic",
+               git_blob_id((SOUND / "tonewheel.sfz").read_bytes()), "tonewheel.sfz", "MIT", "",
+               "https://sfz.tools/sfizz/", generated=True, synthetic=True),
 )}
 
 # What a person downloads, in packs, so nobody fetches an orchestra they won't use.
@@ -74,8 +83,8 @@ PACKS = {
     "band": {"label": "The band", "why": "plays the score preview and the parts: a grand piano, two basses, "
                                           "a drum kit, and a clarinet for the melody",
              "instruments": ["piano", "electric-bass", "upright-bass", "drums", "clarinet"]},
-    "keys": {"label": "Keys", "why": "pipe organ and concert harp for hymns, gospel and Broadway",
-             "instruments": ["organ", "harp"]},
+    "keys": {"label": "Keys", "why": "pipe organ, concert harp, and a synthetic tonewheel for gospel",
+             "instruments": ["organ", "harp", "tonewheel"]},
 }
 
 # Which instrument plays each part of the arrangement (roles from perform.roles), unless the
@@ -101,6 +110,8 @@ def manifest() -> dict:
 
 
 def size_of(instrument_id: str) -> int:
+    if CATALOG[instrument_id].synthetic:
+        return 0
     return sum(f[1] for f in manifest()[instrument_id])
 
 
@@ -176,11 +187,6 @@ def url(inst: Instrument, path: str) -> str:
     return f"https://raw.githubusercontent.com/{inst.repo}/{inst.revision}/{quote(path)}"
 
 
-def git_blob_id(data: bytes) -> str:
-    """The id git gives a file's contents: SHA-1 of "blob <size>\\0" and the bytes."""
-    return hashlib.sha1(b"blob %d\0" % len(data) + data).hexdigest()
-
-
 Progress = Callable[[int, int], None]
 
 
@@ -228,6 +234,12 @@ def download(instrument_id: str, progress: Progress | None = None, opener=urlope
     recheck = marker.is_file()            # complete, but for an older revision
     if recheck:
         marker.unlink()
+    if inst.synthetic:
+        place_generated(inst, folder)
+        (folder / COMPLETE).write_text(inst.revision + "\n", encoding="utf-8")
+        if progress:
+            progress(1, 1)
+        return folder
     files = manifest()[instrument_id]
     total = sum(f[1] for f in files)
     done = sum(f[1] for f in files if (folder / f[0]).is_file() and (folder / f[0]).stat().st_size == f[1])
