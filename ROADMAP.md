@@ -140,7 +140,8 @@ Copyist arranges in as many styles as can be written as correct scores: everyone
 - [x] Softened straight, pop, rock, country, folk previews (2026-10-18)
 - [x] Phrase cycles on every style (2026-10-18)
 - [x] Form build across the song + stereo place in the mix (2026-10-18)
-- [ ] Exact previews that don't sound like a 1990s arranger keyboard (more style melody voices, richer stereo/room). YuE2 takes stay on demand; see SPEC §15
+- [x] Richer stereo room (wet keeps pan; ~1.3 s hall) — 2026-10-18
+- [ ] Exact previews: more style melody voices beyond piano/clarinet (needs libraries). YuE2 takes stay on demand; see SPEC §15
 - [x] Test songs in 4/4 and 6/8: *When the Saints Go Marching In*, *Silent Night* (public domain)
 - [ ] More parts in the arranger: organ, guitar (strummed and picked, chord shapes), strings, brass and reeds, a lead line, choir; the ensemble chosen by the style
 - [ ] Wave 1, finished with real parts: music box (for *I Left the Lights On*), gospel and hymn with organ, country with acoustic guitar and fiddle, folk with fingerpicked guitar, pop and rock with guitars
@@ -148,7 +149,7 @@ Copyist arranges in as many styles as can be written as correct scores: everyone
 - [ ] Wave 3: big band, orchestral and cinematic, string quartet, SATB choir, electronic (house, synthwave, lo-fi, ambient)
 - [ ] A melody voice per style for previews (flute, sax, violin, synth lead)
 - [ ] Harmony, melody habits and form conventions in each profile (for melody proposals, M3)
-- [ ] The prosody check reads compound meters (6/8) by dotted-quarter beats
+- [x] The prosody check reads compound meters (6/8) by dotted-quarter beats
 
 ## MW: Melody writing (docs/melody-writing.md)
 

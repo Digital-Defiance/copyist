@@ -136,8 +136,8 @@ Each check reports `pass`, `warn` or `fail`, with bar and beat. A song is **fini
 | `bars` | Every bar, as written between bar lines in the song file, adds up to the meter (pickup and final bar may be partial, and should add up to one bar together). Checked on the source text because music21 silently re-bars overfull bars | fail |
 | `lyrics-fit` | Each verse has exactly one syllable per available note (after ties, rests, `_` and `*`) | fail |
 | `range` | Melody stays within the voice's range | fail outside by more than a whole step, else warn |
-| `chord-tones` | Melody notes on strong beats are chord tones, or are listed as non-chord tones (suspensions and appoggiaturas are allowed but listed) | warn |
-| `prosody` | In multi-syllable words, the stressed syllable doesn't land on a weaker beat than an unstressed syllable of the same word (CMU Pronouncing Dictionary) | warn |
+| `chord-tones` | Melody notes on strong beats are chord tones, or are listed as non-chord tones (suspensions and appoggiaturas are allowed but listed). Strong beats use Copyist's grid: downbeat and the other main beats of the bar (beat 2 in 6/8; beats 2–4 in 4/4), not every quarter in a compound bar | warn |
+| `prosody` | In multi-syllable words, the stressed syllable doesn't land on a weaker beat than an unstressed syllable of the same word (CMU Pronouncing Dictionary). Beat strength uses the same grid (`fit.beat_strength`): a dotted quarter is the beat in 6/8 and 12/8 | warn |
 | `key` | Chord symbols parse and melody accidentals outside the key are listed | warn |
 
 Planned: `breath` (singers get a breath at least every N bars), `tessitura` (where the melody sits, not just its extremes), `voice-leading` (arrangements: parallel fifths and octaves between outer voices, unresolved leading tones), `playability` (per-instrument ranges, idiomatic writing), `page-turns` (parts).

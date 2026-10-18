@@ -18,7 +18,7 @@ The sound set is for everyone who uses Copyist, not one kind of music. Music box
    - bass 6 dB under;
    - drums 9 dB under.
    Balancing by loudness rather than by peak means a quiet clarinet sample and a loud piano sample still sit where they should.
-4. **One room.** The parts share one short, natural reverb: a synthetic impulse response of about 1.1 s that darkens as it decays, with no low end so the bass stays clear. The melody and piano get more of it than the bass, so the band sounds like it played together.
+4. **One room.** The parts share one short hall: a synthetic impulse of about 1.3 s that darkens as it decays, with no low end so the bass stays clear. Each part keeps its stereo place in the wet (not a mono wash). The melody and piano get more of it than the bass.
 5. **A gentle master.** The mix is set to -16 LUFS, then a look-ahead limiter keeps peaks under -1 dBFS. If that would take more than 4 dB of limiting, the mix stays quieter instead. Amazing Grace needed none.
 6. **What you get:**
    - the mix, as 16-bit with dither;

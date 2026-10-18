@@ -171,6 +171,15 @@ class MixdownTests(unittest.TestCase):
         self.assertGreater(piano_l, piano_r)
         self.assertGreater(drums_r, drums_l)
 
+    def test_room_keeps_a_panned_part_on_its_side(self):
+        # Wet used to collapse to mono; broadband left-panned dry must stay left (sines
+        # can hit a null on one IR channel and lie).
+        rng = np.random.default_rng(0)
+        noise = (rng.standard_normal((self.sr, 2)) * 0.05).astype(np.float32)
+        left = mixdown.pan(noise, -1.0)
+        wet = mixdown.convolve(left, mixdown.room_impulse(self.sr))
+        self.assertGreater(float(np.abs(wet[:, 0]).mean()), float(np.abs(wet[:, 1]).mean()) * 1.8)
+
     def test_wav_round_trip_in_24_bits(self):
         path = Path(tempfile.mkdtemp()) / "x.wav"
         x = self.tone(-6, seconds=0.1)

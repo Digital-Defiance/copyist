@@ -23,7 +23,7 @@ The work moved fast and may change hands at any moment. Here is where things sta
 **Next, in this order:**
 1. **Melody writing:** TASKS.md section 3g — owner tries `copyist write` on the Mac and listens; fix what she finds.
 2. **Transcribing recordings:** TASKS.md section 7 — more sung test recordings, then the owner's songs.
-3. **Less-cheesy exact previews (rest of 3f):** builds across verses, phrase cycles on other styles, more melody voices; then organ, guitar, music box.
+3. **Less-cheesy exact previews (rest of 3f):** more melody voices beyond piano/clarinet (needs sample libraries); then organ, guitar, music box. (Phrase cycles, form build, stereo mix, stereo room, and compound-meter prosody are done.)
 4. **The open singer (plan B):** TASKS.md section 3h, spec in [docs/open-singer.md](docs/open-singer.md). Start with phase B0 (feasibility).
 
 **The owner's machine:**

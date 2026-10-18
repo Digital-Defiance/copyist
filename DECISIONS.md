@@ -2,6 +2,11 @@
 
 Newest first. One entry per decision: what, why, and what we gave up.
 
+## 2026-10-18 (prosody in compound meters)
+
+- **Prosody and chord-tone "strong beats" use `fit.beat_strength`, not music21's `beatStrength` alone.** In 6/8 and 12/8 the beat is a dotted quarter; a plain quarter is only an eighth-subdivision. The lyric fitter already scored that way; `copyist check` now matches it. Gave up: nothing useful — music21's weights were close on clean 6/8 but not the project's source of truth.
+- **The band room keeps stereo place in the wet** (each side through its IR, light crossfeed). Collapsing the dry to mono before the hall made pan pointless once reverb was up. Hall ~1.3 s. Still a synthetic IR, not a measured one.
+
 ## 2026-10-18 (less-cheesy exact preview, first cut)
 
 - **Style files can cycle a phrase of bars** (`rh` / `lh` / `bass` / `drums` as a list of bars). One-bar forever was the arranger-keyboard feel; a 2–4 bar cycle is enough to break om-pah-pah without per-style code.

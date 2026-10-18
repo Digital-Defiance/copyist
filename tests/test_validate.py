@@ -1,9 +1,19 @@
 import unittest
 from pathlib import Path
 
-from copyist.song import load_song
-from copyist.validate import FAIL, PASS, WARN, is_finished, report_markdown, validate
 from helpers import severities, song_from
+
+from copyist.song import load_song
+from copyist.validate import (
+    FAIL,
+    PASS,
+    WARN,
+    is_finished,
+    is_strong,
+    onset_strength,
+    report_markdown,
+    validate,
+)
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -65,6 +75,36 @@ class ProsodyTests(unittest.TestCase):
     def test_stress_on_strong_beat_passes(self):
         findings = validate(song_from(melody='C | "C"D2 E F | G4 |', lyrics=["a-maz-ing grace now"]))
         self.assertEqual(severities(findings, "prosody"), {PASS})
+
+    def test_compound_meter_uses_dotted_quarter_beats(self):
+        # Six eighths: only offsets 0 and 1.5 are beats. A quarter at 1.0 is not.
+        from music21 import note as m21note
+        song = song_from(
+            meter="6/8", unit="1/8", tempo="3/8=60",
+            melody='"C"C C C c3 |', lyrics=["one two three four"],
+        )
+        notes = [n for n in song.melody.recurse().notes if isinstance(n, m21note.Note)]
+        self.assertEqual([float(n.offset) for n in notes], [0.0, 0.5, 1.0, 1.5])
+        self.assertEqual([onset_strength(n, "6/8") for n in notes], [1.0, 0.125, 0.125, 0.5])
+        self.assertTrue(is_strong(notes[0], "6/8"))
+        self.assertTrue(is_strong(notes[3], "6/8"))
+        self.assertFalse(is_strong(notes[2], "6/8"))
+
+    def test_stress_on_second_dotted_quarter_passes(self):
+        # Pickup "a", then "MAZ" on beat 1 and "ing" on beat 2 of 6/8.
+        findings = validate(song_from(
+            meter="6/8", unit="1/8", tempo="3/8=60",
+            melody='C | "C"c3 c3 |', lyrics=["a-maz-ing"],
+        ))
+        self.assertEqual(severities(findings, "prosody"), {PASS})
+
+    def test_stress_weaker_than_second_beat_warns_in_6_8(self):
+        # "a" on the downbeat, "MAZ" on the weak eighth before beat 2.
+        findings = validate(song_from(
+            meter="6/8", unit="1/8", tempo="3/8=60",
+            melody='"C"C2 C c3 |', lyrics=["a-maz-ing"],
+        ))
+        self.assertIn(WARN, severities(findings, "prosody"))
 
 
 class KeyTests(unittest.TestCase):

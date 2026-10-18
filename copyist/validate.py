@@ -44,11 +44,17 @@ def fmt_beat(beat: float) -> str:
     return f"{whole} {rem}/{f.denominator}" if whole else f"{rem}/{f.denominator}"
 
 
-def is_strong(n: note.GeneralNote, beat_count: int) -> bool:
-    """Downbeats always; also the middle of the bar in duple and quadruple meters."""
-    if beat_count in (2, 4):
-        return n.beatStrength >= 0.5 and float(n.beat).is_integer()
-    return n.beatStrength >= 1.0
+def onset_strength(n: note.GeneralNote, meter: str) -> float:
+    """Metric weight of a note's onset in its bar (dotted-quarter beats in 6/8 and 12/8)."""
+    from .fit import beat_strength
+    m = n.getContextByClass(stream.Measure)
+    pos = Fraction(str(n.getOffsetInHierarchy(m) if m is not None else n.offset)).limit_denominator(64)
+    return beat_strength(pos, meter)
+
+
+def is_strong(n: note.GeneralNote, meter: str) -> bool:
+    """Downbeats and the other main beats of the bar (e.g. beat 2 in 6/8, beats 2–4 in 4/4)."""
+    return onset_strength(n, meter) >= 0.5
 
 
 # ---------------------------------------------------------------- bars
@@ -149,14 +155,12 @@ def check_chord_tones(song: Song) -> list[Finding]:
     timeline = chord_timeline(part)
     if not timeline:
         return [Finding("chord-tones", WARN, "The song has no chord symbols.")]
-    ts = part.recurse().getElementsByClass("TimeSignature").first()
-    beat_count = ts.beatCount if ts else 4
     out = []
     checked = 0
     for n in part.recurse().notes:
         if not isinstance(n, note.Note) or (n.tie is not None and n.tie.type in ("stop", "continue")):
             continue
-        if not is_strong(n, beat_count):
+        if not is_strong(n, song.meter):
             continue
         at = float(n.getOffsetInHierarchy(part))
         current = [cs for off, cs in timeline if off <= at + 1e-9]
@@ -186,6 +190,11 @@ def word_stresses(word: str) -> list[str] | None:
 
 
 def check_prosody(song: Song) -> list[Finding]:
+    """Stressed syllables shouldn't sit weaker than an unstressed syllable of the same word.
+
+    Strength uses Copyist's beat grid (fit.beat_strength): a dotted quarter is the beat in
+    6/8 and 12/8, not a quarter note — music21's beatStrength alone used to misread that.
+    """
     out = []
     checked = 0
     for fit in song.lyric_fits:
@@ -203,8 +212,9 @@ def check_prosody(song: Song) -> list[Finding]:
             primary = [s for s, d in zip(sylls, stresses) if d == "1"]
             unstressed = [s for s, d in zip(sylls, stresses) if d == "0"]
             for st in primary:
+                st_w = onset_strength(st.note, song.meter)
                 for un in unstressed:
-                    if un.note.beatStrength > st.note.beatStrength:
+                    if onset_strength(un.note, song.meter) > st_w:
                         out.append(Finding("prosody", WARN,
                                            f"Verse {fit.number}: in “{display_word(sylls)}” the stressed syllable "
                                            f"“{st.text}” falls on a weaker beat than “{un.text}”.",

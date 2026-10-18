@@ -5,9 +5,9 @@ numpy only, so it runs wherever Copyist does.
 - Balance by loudness, not by peak: each part is measured the way broadcast
   meters do (ITU-R BS.1770: K-weighted, gated) and set relative to the melody,
   so a quiet clarinet and a loud piano sit where they should.
-- One shared room: a short, natural reverb (a synthetic impulse response,
-  about 1.1 s, darker as it decays), with more of it on the melody and piano
-  than on the bass, so the parts sound like they were played together.
+- One shared room: a short hall (synthetic impulse, ~1.3 s, darker as it decays),
+  with more of it on the melody and piano than on the bass. Each panned part keeps
+  its place in the wet (stereo in → stereo out), so the room isn't a mono wash.
 - A simple stereo place for each part (melody and bass in the middle, piano a
   little left, drums a little right), so the mix isn't a mono pile.
 - The master: the whole mix to -16 LUFS, then a look-ahead limiter that keeps
@@ -123,25 +123,30 @@ def loudness(x: np.ndarray, sr: int) -> float:
 
 # ------------------------------------------------------------------ the room
 
-def room_impulse(sr: int, seed: int = 7, rt60: float = 1.1, length: float = 1.6) -> np.ndarray:
-    """A stereo impulse response for a small hall: early reflections, then a tail that darkens."""
+def room_impulse(sr: int, seed: int = 7, rt60: float = 1.3, length: float = 1.9) -> np.ndarray:
+    """A stereo impulse for a small hall: early reflections, then a tail that darkens."""
     rng = np.random.default_rng(seed)
     n = int(length * sr)
     t = np.arange(n) / sr
     ir = np.zeros((n, 2))
+    pre = 0.018
     for ch in range(2):
         noise = rng.standard_normal(n)
         spec = np.fft.rfft(noise)
         freqs = np.fft.rfftfreq(n, 1 / sr)
         bands = []
-        for lo, hi, decay in ((0, 300, rt60 * 1.2), (300, 3000, rt60), (3000, sr / 2 + 1, rt60 * 0.5)):
+        for lo, hi, decay in ((0, 300, rt60 * 1.25), (300, 3000, rt60), (3000, sr / 2 + 1, rt60 * 0.45)):
             part = np.where((freqs >= lo) & (freqs < hi), spec, 0)
             bands.append(np.fft.irfft(part, n=n) * np.exp(-6.91 * t / decay))
         tail = sum(bands)
-        tail[: int(0.012 * sr)] = 0                                   # pre-delay
-        tail *= np.minimum(1, np.maximum(0, t - 0.012) / 0.03)        # swell in
-        for delay, gain in zip(rng.uniform(0.004, 0.03, 6), rng.uniform(0.2, 0.5, 6)):
-            tail[int(delay * sr)] += gain * rng.choice([-1, 1])
+        tail[: int(pre * sr)] = 0
+        tail *= np.minimum(1, np.maximum(0, t - pre) / 0.035)
+        # Early taps: slightly different delays per side so the room isn't mono.
+        delays = rng.uniform(0.005, 0.045, 8) + (0.0015 if ch else 0.0)
+        for delay, gain in zip(delays, rng.uniform(0.18, 0.55, 8)):
+            i = int(delay * sr)
+            if i < n:
+                tail[i] += gain * rng.choice([-1.0, 1.0])
         ir[:, ch] = tail
     # Keep the low end out of the room so it doesn't muddy the bass.
     spec = np.fft.rfft(ir, axis=0)
@@ -152,17 +157,21 @@ def room_impulse(sr: int, seed: int = 7, rt60: float = 1.1, length: float = 1.6)
 
 
 def convolve(x: np.ndarray, ir: np.ndarray, block: int = 1 << 16) -> np.ndarray:
-    """The room's response to x (summed to mono going in, stereo coming out), by overlap-add."""
-    mono = x.mean(axis=1)
+    """Room response, stereo in and out: each side through its IR, plus a little crossfeed."""
+    if x.ndim == 1:
+        x = np.repeat(x[:, None], 2, axis=1)
     m = len(ir)
     size = 1 << int(np.ceil(np.log2(block + m - 1)))
     h = np.fft.rfft(ir, n=size, axis=0)
-    out = np.zeros((len(mono) + m - 1, 2), dtype=np.float32)
-    for start in range(0, len(mono), block):
-        seg = mono[start:start + block]
-        y = np.fft.irfft(np.fft.rfft(seg, n=size)[:, None] * h, n=size, axis=0)
+    # Same-side + opposite-side (about −14 dB) so a hard pan still hears both walls.
+    mix = np.array([[1.0, 0.2], [0.2, 1.0]], dtype=np.float64)
+    out = np.zeros((len(x) + m - 1, 2), dtype=np.float32)
+    for start in range(0, len(x), block):
+        seg = x[start:start + block]
+        Y = np.fft.rfft(seg, n=size, axis=0) @ mix
+        y = np.fft.irfft(Y * h, n=size, axis=0)
         end = min(start + size, len(out))
-        out[start:end] += y[: end - start]
+        out[start:end] += y[: end - start].astype(np.float32)
     return out
 
 
