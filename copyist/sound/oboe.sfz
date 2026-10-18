@@ -1,0 +1,47 @@
+// Copyist oboe: VSCO 2 Community Edition oboe, vibrato (CC0, Versilian Studios).
+// Written by scripts/instruments/oboe.py; see that file for how each number was measured.
+<control>
+default_path=Woodwinds/Oboe/Vib/
+
+<global>
+ampeg_attack=0.02
+ampeg_release=0.22
+amp_veltrack=45
+loop_crossfade=0.1
+
+<group> lokey=0 hikey=60 pitch_keycenter=58 volume=3.5
+<region> lovel=1 hivel=79 offset=0 tune=0 loop_mode=loop_sustain loop_start=15435 loop_end=452025 sample=Oboe_Vib_A#2_v1_Main.wav
+<region> lovel=80 hivel=127 offset=0 tune=-10 loop_mode=loop_sustain loop_start=13230 loop_end=352800 sample=Oboe_Vib_A#2_v3_Main.wav
+
+<group> lokey=61 hikey=63 pitch_keycenter=62 volume=1.7
+<region> lovel=1 hivel=79 offset=0 tune=0 loop_mode=loop_sustain loop_start=13230 loop_end=383670 sample=Oboe_Vib_D3_v1_Main.wav
+<region> lovel=80 hivel=127 offset=0 tune=0 loop_mode=loop_sustain loop_start=13230 loop_end=273420 sample=Oboe_Vib_D3_v3_Main.wav
+
+<group> lokey=64 hikey=67 pitch_keycenter=65 volume=-0.7
+<region> lovel=1 hivel=79 offset=0 tune=0 loop_mode=loop_sustain loop_start=13230 loop_end=251370 sample=Oboe_Vib_F3_v1_Main.wav
+<region> lovel=80 hivel=127 offset=0 tune=0 loop_mode=loop_sustain loop_start=24255 loop_end=266805 sample=Oboe_Vib_F3_v3_Main.wav
+
+<group> lokey=68 hikey=72 pitch_keycenter=70 volume=-1.3
+<region> lovel=1 hivel=79 offset=0 tune=0 loop_mode=loop_sustain loop_start=15435 loop_end=262395 sample=Oboe_Vib_A#3_v1_Main.wav
+<region> lovel=80 hivel=127 offset=794 tune=0 loop_mode=loop_sustain loop_start=17640 loop_end=277830 sample=Oboe_Vib_A#3_v3_Main.wav
+
+<group> lokey=73 hikey=75 pitch_keycenter=74 volume=1.4
+<region> lovel=1 hivel=79 offset=0 tune=0 loop_mode=loop_sustain loop_start=13230 loop_end=262395 sample=Oboe_Vib_D4_v1_Main.wav
+<region> lovel=80 hivel=127 offset=353 tune=0 loop_mode=loop_sustain loop_start=13230 loop_end=280035 sample=Oboe_Vib_D4_v3_Main.wav
+
+<group> lokey=76 hikey=79 pitch_keycenter=77 volume=-3.6
+<region> lovel=1 hivel=79 offset=1235 tune=0 loop_mode=loop_sustain loop_start=13230 loop_end=335160 sample=Oboe_Vib_F4_v1_Main.wav
+<region> lovel=80 hivel=127 offset=0 tune=0 loop_mode=loop_sustain loop_start=13230 loop_end=275625 sample=Oboe_Vib_F4_v3_Main.wav
+
+<group> lokey=80 hikey=84 pitch_keycenter=82 volume=4.1
+<region> lovel=1 hivel=79 offset=0 tune=0 loop_mode=loop_sustain loop_start=13230 loop_end=260190 sample=Oboe_Vib_A#4_v1_Main.wav
+<region> lovel=80 hivel=127 offset=0 tune=0 loop_mode=loop_sustain loop_start=13230 loop_end=264600 sample=Oboe_Vib_A#4_v3_Main.wav
+
+<group> lokey=85 hikey=87 pitch_keycenter=86 volume=-0.0
+<region> lovel=1 hivel=79 offset=0 tune=0 loop_mode=loop_sustain loop_start=17640 loop_end=264600 sample=Oboe_Vib_D5_v1_Main.wav
+<region> lovel=80 hivel=127 offset=0 tune=10 loop_mode=loop_sustain loop_start=41895 loop_end=286650 sample=Oboe_Vib_D5_v3_Main.wav
+
+<group> lokey=88 hikey=127 pitch_keycenter=89 volume=-0.5
+<region> lovel=1 hivel=79 offset=0 tune=0 loop_mode=loop_sustain loop_start=13230 loop_end=282240 sample=Oboe_Vib_F5_v1_Main.wav
+<region> lovel=80 hivel=127 offset=353 tune=0 loop_mode=loop_sustain loop_start=13230 loop_end=255780 sample=Oboe_Vib_F5_v3_Main.wav
+

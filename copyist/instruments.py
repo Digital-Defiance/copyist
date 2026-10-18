@@ -7,9 +7,9 @@ so what lands on disk is byte for byte what the library's authors published.
 A file is only moved into place once it checks out, so an interrupted download
 picks up where it stopped.
 
-The clarinet, flute, sax, pipe organ, harp, music box, steel guitar and fiddle
-are exceptions to "as published": VSCO/VCSL/Discord/Karoryfer ship WAV-only or
-awkward paths, so Copyist writes their SFZs (copyist/sound/*.sfz) next to the
+The clarinet, flute, oboe, sax, pipe organ, harp, music box, steel guitar and
+fiddle are exceptions to "as published": VSCO/VCSL/Discord/Karoryfer ship WAV-only
+or awkward paths, so Copyist writes their SFZs (copyist/sound/*.sfz) next to the
 samples. The tonewheel organ is fully synthetic (sfizz *sine oscillators).
 """
 from __future__ import annotations
@@ -95,6 +95,9 @@ CATALOG = {i.id: i for i in (
     Instrument("flute", "VSCO 2 Community Edition flute (sustained vibrato)", "sgossner/VSCO-2-CE",
                "440300901dfe9275fd84e0b7763af1f8443ae62e", "flute.sfz", "CC0", "",
                "https://versilian-studios.com/vsco-community/", generated=True),
+    Instrument("oboe", "VSCO 2 Community Edition oboe (vibrato)", "sgossner/VSCO-2-CE",
+               "440300901dfe9275fd84e0b7763af1f8443ae62e", "oboe.sfz", "CC0", "",
+               "https://versilian-studios.com/vsco-community/", generated=True),
     Instrument("sax", "Karoryfer Weresax alto saxophone", "sfzinstruments/karoryfer.weresax",
                "a4d756b21d2a573aca0d840cce7e71ba5effd4c6", "sax.sfz", "CC0", "",
                "https://github.com/sfzinstruments/karoryfer.weresax", generated=True),
@@ -116,9 +119,9 @@ PACKS = {
     "electric": {"label": "Electric guitar", "why": "clean electric for pop, rock, blues and power-ballad chord "
                                                      "patterns",
                  "instruments": ["electric-guitar"]},
-    "winds": {"label": "Winds", "why": "flute for Broadway and march; alto sax for swing, jazz waltz, blues "
-                                        "and bossa nova (clarinet stays in the band pack)",
-              "instruments": ["flute", "sax"]},
+    "winds": {"label": "Winds", "why": "flute and oboe for Broadway and march; alto sax for swing, jazz waltz, "
+                                        "blues and bossa nova (clarinet stays in the band pack)",
+              "instruments": ["flute", "oboe", "sax"]},
 }
 
 # Generated SFZs that need a space-free samples/ link into a nested folder in the clone.

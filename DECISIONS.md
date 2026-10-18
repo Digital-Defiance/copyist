@@ -2,6 +2,10 @@
 
 Newest first. One entry per decision: what, why, and what we gave up.
 
+## 2026-10-18 (oboe)
+
+- **Broadway ballad melody uses the VSCO oboe** (vibrato, CC0, ~24 MB, `winds` pack) over the harp. Flute stays on Broadway uptempo and march. Sparse whole-tone sampling (A♯/D/F) with stretch; take v1/v3 only (deterministic).
+
 ## 2026-10-18 (alto sax)
 
 - **Swing, jazz waltz, blues-shuffle and bossa melodies use Karoryfer Weresax** (CC0 alto, ~50 MB of rr1 dynamic-mic samples, `winds` pack). Copyist writes a simple SFZ (no humanize LFOs, no round-robin) so previews stay deterministic. Upstream's full Sax.sfz stayed out.
