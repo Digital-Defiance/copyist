@@ -121,7 +121,7 @@ The SoundFont band plus a SoulX vocal will never sound like Suno: they're checki
 - [x] Phrase-cycled the remaining styles (gospel, reggae, disco, swing, blues, bossa, power-ballad, broadway-uptempo, march, celtic-jig, jazz-waltz, country-waltz, 6/8 ballad). Decision: DECISIONS.md 2026-10-18 (less-cheesy exact preview)
 - [x] Form build in the performance (band soft → full → settle) and stereo placement in the mix (melody/bass centre, piano left, drums right). Decision: DECISIONS.md 2026-10-18 (less-cheesy exact preview)
 - [x] Richer room: slightly longer hall, stereo wet that keeps each part's place (not a mono wash). Decision: DECISIONS.md 2026-10-18 (prosody / room)
-- [ ] Better exact previews (rest): more melody voices beyond piano/clarinet/organ/fiddle/flute/music-box (sax, oboe, …). Default for `write` and the style gallery stays this layer; YuE2 takes stay on demand (`--takes`). Optional SoulX sung guide later. Decision: DECISIONS.md 2026-10-18 (previews and score editing); SPEC §15
+- [ ] Better exact previews (rest): more melody voices beyond piano/clarinet/organ/fiddle/flute/sax/music-box (oboe, …); dedicated guitar staff. Default for `write` and the style gallery stays this layer; YuE2 takes stay on demand (`--takes`). Optional SoulX sung guide later. Decision: DECISIONS.md 2026-10-18 (previews and score editing); SPEC §15
 - [x] Pipe organ from VCSL (manuals, Quiet + Loud; Copyist's SFZ), `keys` pack, hymn (organ melody + held chords) and gospel (held organ pads). Decision: DECISIONS.md 2026-10-18 (pipe organ and harp)
 - [x] Concert harp from VSCO 2 CE; Broadway ballad arpeggios on harp. Decision: DECISIONS.md 2026-10-18 (pipe organ and harp)
 - [x] Gospel un-stumbled, then un-kids'-banded, then tonewheel pad under piano (no drums)
@@ -131,6 +131,7 @@ The SoundFont band plus a SoulX vocal will never sound like Suno: they're checki
 - [x] Electric guitar (Karoryfer Emilyguitar clean, CC0); pop, rock, power-ballad and blues-shuffle play it. Decision: DECISIONS.md 2026-10-18 (electric guitar)
 - [x] Fiddle (VSCO solo violin arco vib, CC0); country, country-waltz and Celtic jig melodies. Decision: DECISIONS.md 2026-10-18 (fiddle)
 - [x] Flute (VSCO susvib, CC0); Broadway ballad/uptempo and march melodies. Decision: DECISIONS.md 2026-10-18 (flute)
+- [x] Alto sax (Karoryfer Weresax, CC0); swing, jazz waltz, blues-shuffle and bossa melodies. Decision: DECISIONS.md 2026-10-18 (alto sax)
 - [ ] Guitar part as its own staff (strum patterns, chord shapes), beyond reusing the piano patterns
 - [x] Music box style and glockenspiel stand-in (the musical); real music box / celesta still open
 - [x] Prosody and strong-beat checks use Copyist's compound-meter grid (dotted-quarter beats in 6/8 / 12/8), same as the lyric fitter — not music21's beatStrength alone

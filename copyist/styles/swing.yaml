@@ -4,7 +4,7 @@ family: Jazz and blues
 about: Swung eighths. A walking bass, the ride cymbal's spang-a-lang, the piano's Charleston answering a delayed comp.
 feel: swing
 tempo: [110, 200]
-instruments: {bass: upright-bass}
+instruments: {melody: sax, bass: upright-bass}
 production: swing jazz, 1940s, walking upright bass, ride cymbal, piano comping, clarinet, horn section, swinging
 meters:
   "4/4":

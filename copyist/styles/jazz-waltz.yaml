@@ -4,7 +4,7 @@ family: Jazz and blues
 about: Swing in three. Walking bass, ride cymbal, piano shells that flip the off-beats every other bar.
 feel: swing
 tempo: [120, 200]
-instruments: {bass: upright-bass}
+instruments: {melody: sax, bass: upright-bass}
 production: jazz waltz, 3/4 swing, walking upright bass, ride cymbal, piano trio, clarinet, elegant
 meters:
   "3/4":

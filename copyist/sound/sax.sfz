@@ -1,0 +1,139 @@
+// Copyist alto sax: Karoryfer Weresax (CC0), dynamic mic, rr1 only.
+// Written by scripts/instruments/sax.py; no humanize LFOs (deterministic).
+<control>
+default_path=Samples/alto/
+
+<global>
+ampeg_attack=0.02
+ampeg_release=0.25
+amp_veltrack=55
+loop_crossfade=0.08
+
+<group> lokey=0 hikey=37 pitch_keycenter=37 volume=-0.0
+<region> lovel=1 hivel=79 offset=89 tune=0 loop_mode=loop_sustain loop_start=11025 loop_end=363825 sample=db2_p_rr1_dnm.wav
+<region> lovel=80 hivel=127 offset=0 tune=0 loop_mode=loop_sustain loop_start=11025 loop_end=264600 sample=db2_f_rr1_dnm.wav
+
+<group> lokey=38 hikey=38 pitch_keycenter=38 volume=-0.7
+<region> lovel=1 hivel=79 offset=89 tune=0 loop_mode=loop_sustain loop_start=15435 loop_end=222705 sample=d2_p_rr1_dnm.wav
+<region> lovel=80 hivel=127 offset=530 tune=0 loop_mode=loop_sustain loop_start=11025 loop_end=211680 sample=d2_f_rr1_dnm.wav
+
+<group> lokey=39 hikey=39 pitch_keycenter=39 volume=-0.5
+<region> lovel=1 hivel=79 offset=89 tune=0 loop_mode=loop_sustain loop_start=11025 loop_end=280035 sample=eb2_p_rr1_dnm.wav
+<region> lovel=80 hivel=127 offset=530 tune=0 loop_mode=loop_sustain loop_start=11025 loop_end=246960 sample=eb2_f_rr1_dnm.wav
+
+<group> lokey=40 hikey=40 pitch_keycenter=40 volume=-0.4
+<region> lovel=1 hivel=79 offset=530 tune=0 loop_mode=loop_sustain loop_start=11025 loop_end=302085 sample=e2_p_rr1_dnm.wav
+<region> lovel=80 hivel=127 offset=89 tune=0 loop_mode=loop_sustain loop_start=11025 loop_end=213885 sample=e2_f_rr1_dnm.wav
+
+<group> lokey=41 hikey=41 pitch_keycenter=41 volume=-0.3
+<region> lovel=1 hivel=79 offset=89 tune=0 loop_mode=loop_sustain loop_start=11025 loop_end=299880 sample=f2_p_rr1_dnm.wav
+<region> lovel=80 hivel=127 offset=89 tune=0 loop_mode=loop_sustain loop_start=11025 loop_end=216090 sample=f2_f_rr1_dnm.wav
+
+<group> lokey=42 hikey=42 pitch_keycenter=42 volume=-0.5
+<region> lovel=1 hivel=79 offset=89 tune=0 loop_mode=loop_sustain loop_start=11025 loop_end=264600 sample=gb2_p_rr1_dnm.wav
+<region> lovel=80 hivel=127 offset=0 tune=0 loop_mode=loop_sustain loop_start=11025 loop_end=227115 sample=gb2_f_rr1_dnm.wav
+
+<group> lokey=43 hikey=43 pitch_keycenter=43 volume=-0.6
+<region> lovel=1 hivel=79 offset=530 tune=0 loop_mode=loop_sustain loop_start=11025 loop_end=242550 sample=g2_p_rr1_dnm.wav
+<region> lovel=80 hivel=127 offset=89 tune=0 loop_mode=loop_sustain loop_start=11025 loop_end=189630 sample=g2_f_rr1_dnm.wav
+
+<group> lokey=44 hikey=44 pitch_keycenter=44 volume=-1.0
+<region> lovel=1 hivel=79 offset=971 tune=0 loop_mode=loop_sustain loop_start=11025 loop_end=271215 sample=ab2_p_rr1_dnm.wav
+<region> lovel=80 hivel=127 offset=89 tune=0 loop_mode=loop_sustain loop_start=11025 loop_end=286650 sample=ab2_f_rr1_dnm.wav
+
+<group> lokey=45 hikey=45 pitch_keycenter=45 volume=-0.8
+<region> lovel=1 hivel=79 offset=89 tune=0 loop_mode=loop_sustain loop_start=11025 loop_end=235935 sample=a2_p_rr1_dnm.wav
+<region> lovel=80 hivel=127 offset=89 tune=0 loop_mode=loop_sustain loop_start=11025 loop_end=249165 sample=a2_f_rr1_dnm.wav
+
+<group> lokey=46 hikey=46 pitch_keycenter=46 volume=0.2
+<region> lovel=1 hivel=79 offset=0 tune=0 loop_mode=loop_sustain loop_start=11025 loop_end=253575 sample=bb2_p_rr1_dnm.wav
+<region> lovel=80 hivel=127 offset=0 tune=0 loop_mode=loop_sustain loop_start=11025 loop_end=231525 sample=bb2_f_rr1_dnm.wav
+
+<group> lokey=47 hikey=47 pitch_keycenter=47 volume=0.7
+<region> lovel=1 hivel=79 offset=89 tune=0 loop_mode=loop_sustain loop_start=11025 loop_end=253575 sample=b2_p_rr1_dnm.wav
+<region> lovel=80 hivel=127 offset=89 tune=0 loop_mode=loop_sustain loop_start=11025 loop_end=308700 sample=b2_f_rr1_dnm.wav
+
+<group> lokey=48 hikey=48 pitch_keycenter=48 volume=0.8
+<region> lovel=1 hivel=79 offset=89 tune=0 loop_mode=loop_sustain loop_start=11025 loop_end=233730 sample=c3_p_rr1_dnm.wav
+<region> lovel=80 hivel=127 offset=89 tune=0 loop_mode=loop_sustain loop_start=11025 loop_end=266805 sample=c3_f_rr1_dnm.wav
+
+<group> lokey=49 hikey=49 pitch_keycenter=49 volume=1.0
+<region> lovel=1 hivel=79 offset=530 tune=0 loop_mode=loop_sustain loop_start=11025 loop_end=187425 sample=db3_p_rr1_dnm.wav
+<region> lovel=80 hivel=127 offset=89 tune=0 loop_mode=loop_sustain loop_start=11025 loop_end=286650 sample=db3_f_rr1_dnm.wav
+
+<group> lokey=50 hikey=50 pitch_keycenter=50 volume=1.5
+<region> lovel=1 hivel=79 offset=89 tune=0 loop_mode=loop_sustain loop_start=11025 loop_end=264600 sample=d3_p_rr1_dnm.wav
+<region> lovel=80 hivel=127 offset=89 tune=0 loop_mode=loop_sustain loop_start=11025 loop_end=293265 sample=d3_f_rr1_dnm.wav
+
+<group> lokey=51 hikey=51 pitch_keycenter=51 volume=1.2
+<region> lovel=1 hivel=79 offset=530 tune=0 loop_mode=loop_sustain loop_start=11025 loop_end=262395 sample=eb3_p_rr1_dnm.wav
+<region> lovel=80 hivel=127 offset=89 tune=0 loop_mode=loop_sustain loop_start=11025 loop_end=244755 sample=eb3_f_rr1_dnm.wav
+
+<group> lokey=52 hikey=52 pitch_keycenter=52 volume=1.5
+<region> lovel=1 hivel=79 offset=89 tune=0 loop_mode=loop_sustain loop_start=11025 loop_end=200655 sample=e3_p_rr1_dnm.wav
+<region> lovel=80 hivel=127 offset=89 tune=0 loop_mode=loop_sustain loop_start=11025 loop_end=293265 sample=e3_f_rr1_dnm.wav
+
+<group> lokey=53 hikey=53 pitch_keycenter=53 volume=-1.2
+<region> lovel=1 hivel=79 offset=0 tune=0 loop_mode=loop_sustain loop_start=11025 loop_end=238140 sample=f3_p_rr1_dnm.wav
+<region> lovel=80 hivel=127 offset=0 tune=0 loop_mode=loop_sustain loop_start=11025 loop_end=277830 sample=f3_f_rr1_dnm.wav
+
+<group> lokey=54 hikey=54 pitch_keycenter=54 volume=-2.0
+<region> lovel=1 hivel=79 offset=0 tune=0 loop_mode=loop_sustain loop_start=11025 loop_end=213885 sample=gb3_p_rr1_dnm.wav
+<region> lovel=80 hivel=127 offset=89 tune=0 loop_mode=loop_sustain loop_start=11025 loop_end=255780 sample=gb3_f_rr1_dnm.wav
+
+<group> lokey=55 hikey=55 pitch_keycenter=55 volume=-1.7
+<region> lovel=1 hivel=79 offset=89 tune=0 loop_mode=loop_sustain loop_start=11025 loop_end=231525 sample=g3_p_rr1_dnm.wav
+<region> lovel=80 hivel=127 offset=89 tune=0 loop_mode=loop_sustain loop_start=11025 loop_end=260190 sample=g3_f_rr1_dnm.wav
+
+<group> lokey=56 hikey=56 pitch_keycenter=56 volume=-0.5
+<region> lovel=1 hivel=79 offset=0 tune=0 loop_mode=loop_sustain loop_start=11025 loop_end=257985 sample=ab3_p_rr1_dnm.wav
+<region> lovel=80 hivel=127 offset=89 tune=0 loop_mode=loop_sustain loop_start=11025 loop_end=299880 sample=ab3_f_rr1_dnm.wav
+
+<group> lokey=57 hikey=57 pitch_keycenter=57 volume=-1.4
+<region> lovel=1 hivel=79 offset=0 tune=0 loop_mode=loop_sustain loop_start=11025 loop_end=205065 sample=a3_p_rr1_dnm.wav
+<region> lovel=80 hivel=127 offset=89 tune=0 loop_mode=loop_sustain loop_start=11025 loop_end=266805 sample=a3_f_rr1_dnm.wav
+
+<group> lokey=58 hikey=58 pitch_keycenter=58 volume=-0.5
+<region> lovel=1 hivel=79 offset=0 tune=0 loop_mode=loop_sustain loop_start=11025 loop_end=235935 sample=bb3_p_rr1_dnm.wav
+<region> lovel=80 hivel=127 offset=0 tune=0 loop_mode=loop_sustain loop_start=11025 loop_end=227115 sample=bb3_f_rr1_dnm.wav
+
+<group> lokey=59 hikey=59 pitch_keycenter=59 volume=0.4
+<region> lovel=1 hivel=79 offset=0 tune=0 loop_mode=loop_sustain loop_start=11025 loop_end=255780 sample=b3_p_rr1_dnm.wav
+<region> lovel=80 hivel=127 offset=0 tune=0 loop_mode=loop_sustain loop_start=11025 loop_end=273420 sample=b3_f_rr1_dnm.wav
+
+<group> lokey=60 hikey=60 pitch_keycenter=60 volume=0.0
+<region> lovel=1 hivel=79 offset=0 tune=0 loop_mode=loop_sustain loop_start=11025 loop_end=291060 sample=c4_p_rr1_dnm.wav
+<region> lovel=80 hivel=127 offset=89 tune=0 loop_mode=loop_sustain loop_start=11025 loop_end=255780 sample=c4_f_rr1_dnm.wav
+
+<group> lokey=61 hikey=61 pitch_keycenter=61 volume=0.6
+<region> lovel=1 hivel=79 offset=89 tune=0 loop_mode=loop_sustain loop_start=11025 loop_end=209475 sample=db4_p_rr1_dnm.wav
+<region> lovel=80 hivel=127 offset=0 tune=0 loop_mode=loop_sustain loop_start=11025 loop_end=269010 sample=db4_f_rr1_dnm.wav
+
+<group> lokey=62 hikey=62 pitch_keycenter=62 volume=0.4
+<region> lovel=1 hivel=79 offset=0 tune=0 loop_mode=loop_sustain loop_start=11025 loop_end=227115 sample=d4_p_rr1_dnm.wav
+<region> lovel=80 hivel=127 offset=0 tune=0 loop_mode=loop_sustain loop_start=11025 loop_end=288855 sample=d4_f_rr1_dnm.wav
+
+<group> lokey=63 hikey=63 pitch_keycenter=63 volume=0.6
+<region> lovel=1 hivel=79 offset=0 tune=0 loop_mode=loop_sustain loop_start=11025 loop_end=224910 sample=eb4_p_rr1_dnm.wav
+<region> lovel=80 hivel=127 offset=89 tune=0 loop_mode=loop_sustain loop_start=11025 loop_end=227115 sample=eb4_f_rr1_dnm.wav
+
+<group> lokey=64 hikey=64 pitch_keycenter=64 volume=0.7
+<region> lovel=1 hivel=79 offset=0 tune=0 loop_mode=loop_sustain loop_start=11025 loop_end=235935 sample=e4_p_rr1_dnm.wav
+<region> lovel=80 hivel=127 offset=0 tune=0 loop_mode=loop_sustain loop_start=11025 loop_end=244755 sample=e4_f_rr1_dnm.wav
+
+<group> lokey=65 hikey=65 pitch_keycenter=65 volume=0.4
+<region> lovel=1 hivel=79 offset=89 tune=0 loop_mode=loop_sustain loop_start=11025 loop_end=249165 sample=f4_p_rr1_dnm.wav
+<region> lovel=80 hivel=127 offset=89 tune=0 loop_mode=loop_sustain loop_start=11025 loop_end=255780 sample=f4_f_rr1_dnm.wav
+
+<group> lokey=66 hikey=66 pitch_keycenter=66 volume=1.0
+<region> lovel=1 hivel=79 offset=89 tune=0 loop_mode=loop_sustain loop_start=11025 loop_end=224910 sample=gb4_p_rr1_dnm.wav
+<region> lovel=80 hivel=127 offset=89 tune=0 loop_mode=loop_sustain loop_start=11025 loop_end=260190 sample=gb4_f_rr1_dnm.wav
+
+<group> lokey=67 hikey=67 pitch_keycenter=67 volume=-0.1
+<region> lovel=1 hivel=79 offset=89 tune=0 loop_mode=loop_sustain loop_start=11025 loop_end=257985 sample=g4_p_rr1_dnm.wav
+<region> lovel=80 hivel=127 offset=89 tune=0 loop_mode=loop_sustain loop_start=11025 loop_end=282240 sample=g4_f_rr1_dnm.wav
+
+<group> lokey=68 hikey=127 pitch_keycenter=68 volume=1.0
+<region> lovel=1 hivel=79 offset=89 tune=0 loop_mode=loop_sustain loop_start=11025 loop_end=191835 sample=ab4_p_rr1_dnm.wav
+<region> lovel=80 hivel=127 offset=89 tune=0 loop_mode=loop_sustain loop_start=11025 loop_end=249165 sample=ab4_f_rr1_dnm.wav
+

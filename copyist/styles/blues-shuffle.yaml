@@ -4,7 +4,7 @@ family: Jazz and blues
 about: A shuffle. Boogie bass under piano punches that answer across two bars; the hi-hat shuffles.
 feel: shuffle
 tempo: [84, 132]
-instruments: {piano: electric-guitar, bass: electric-bass}
+instruments: {melody: sax, piano: electric-guitar, bass: electric-bass}
 production: electric blues shuffle, Chicago blues, overdriven guitar, harmonica, Hammond organ, boogie bass, gritty
 meters:
   "4/4":

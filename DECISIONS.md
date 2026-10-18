@@ -2,6 +2,10 @@
 
 Newest first. One entry per decision: what, why, and what we gave up.
 
+## 2026-10-18 (alto sax)
+
+- **Swing, jazz waltz, blues-shuffle and bossa melodies use Karoryfer Weresax** (CC0 alto, ~50 MB of rr1 dynamic-mic samples, `winds` pack). Copyist writes a simple SFZ (no humanize LFOs, no round-robin) so previews stay deterministic. Upstream's full Sax.sfz stayed out.
+
 ## 2026-10-18 (flute)
 
 - **Broadway ballad, Broadway uptempo and march melodies use the VSCO flute** (susvib, CC0, ~25 MB, `winds` pack). Take 1 only (no round-robin) so previews stay deterministic. Clarinet remains the default melody elsewhere; harp still covers Broadway ballad accompaniment.

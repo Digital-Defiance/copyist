@@ -3,7 +3,7 @@ name: Bossa nova
 family: Latin and Caribbean
 about: Cool and gentle. Bass and piano trade a two-bar bossa figure; side-stick and soft hi-hat.
 tempo: [112, 144]
-instruments: {bass: upright-bass}
+instruments: {melody: sax, bass: upright-bass}
 production: bossa nova, nylon-string guitar, soft brushed drums, upright bass, gentle, Brazilian, cool and relaxed
 meters:
   "4/4":

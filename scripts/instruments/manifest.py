@@ -37,6 +37,7 @@ EXTRA = {
     "electric-guitar": ["LICENSE", "readme.txt"],
     "fiddle": ["LICENSE", "README.md", "Strings/Solo Violin/Arco Vib/"],
     "flute": ["LICENSE", "README.md", "Woodwinds/Flute/susvib/"],
+    "sax": ["LICENSE", "readme.txt"],   # samples come from the SFZ (rr1 dynamic only, ~48 MB)
 }
 
 

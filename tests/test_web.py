@@ -174,7 +174,7 @@ class WebTests(unittest.TestCase):
         electric = next(g for g in listing["instruments"] if g["id"] == "instruments-electric")
         self.assertEqual([i["id"] for i in electric["models"]], ["electric-guitar"])
         winds = next(g for g in listing["instruments"] if g["id"] == "instruments-winds")
-        self.assertEqual([i["id"] for i in winds["models"]], ["flute"])
+        self.assertEqual([i["id"] for i in winds["models"]], ["flute", "sax"])
         self.assertIn("sfizz", listing)
 
     def test_the_band_recording_says_what_played_it(self):
