@@ -2,6 +2,10 @@
 
 Newest first. One entry per decision: what, why, and what we gave up.
 
+## 2026-10-18 (nylon guitar)
+
+- **Folk and country use FreePats' Spanish classical guitar** (CC0 nylon, ~5 MB, `folk` pack). No free steel-string turned up in a shape we could pin cleanly yet; nylon covers fingerpicking and boom-chick. The guitar plays the existing piano-staff patterns (no separate guitar role yet). Steel-string, strums-as-shapes, and a dedicated guitar part stay open.
+
 ## 2026-10-18 (music box)
 
 - **Music-box exact preview uses the VCSL glockenspiel** as a stand-in (~17 MB, `bells` pack). No free real music-box library turned up; glock is what docs/sound-set.md already named. New `music-box` style: tinkling melody over soft piano arps, no bass/drums. A true music box and celesta stay on the find list for *I Left the Lights On*.

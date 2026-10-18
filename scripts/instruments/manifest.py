@@ -32,6 +32,7 @@ EXTRA = {
               "Aerophones/Edge-blown Aerophones/Pipe Organ/Loud/"],
     "harp": ["LICENSE", "README.md", "Strings/Harp/"],
     "musicbox": ["LICENSE", "README.md", "Idiophones/Struck Idiophones/Glockenspiel/"],
+    "nylon-guitar": ["LICENSE", "README.md", "samples/"],
 }
 
 

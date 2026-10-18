@@ -1,9 +1,9 @@
 format: copyist-style/0
 name: Folk
 family: Country and folk
-about: Fingerpicked piano under the tune. The left hand alternates like a guitarist's thumb; the right hand picks between the beats. No drums.
+about: Fingerpicked nylon guitar under the tune. The left hand alternates like a thumb; the right hand picks between the beats. No drums.
 tempo: [80, 120]
-instruments: {melody: piano, bass: upright-bass}
+instruments: {melody: piano, piano: nylon-guitar, bass: upright-bass}
 keep_rh: true
 production: acoustic folk, fingerpicked acoustic guitar, upright bass, harmonica, warm and intimate, storytelling
 meters:

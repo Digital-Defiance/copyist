@@ -79,6 +79,9 @@ CATALOG = {i.id: i for i in (
     Instrument("musicbox", "VCSL glockenspiel (music-box stand-in)", "sgossner/VCSL",
                "c1ea7bcc3c7309650ab0da9d15c9cd1fbc4a4c7e", "musicbox.sfz", "CC0", "",
                "https://github.com/sgossner/VCSL", generated=True),
+    Instrument("nylon-guitar", "FreePats Spanish classical guitar (nylon)", "freepats/spanish-classical-guitar",
+               "6f4eb1b092acc88f5448cea1a0001bd07b971af8", "SpanishClassicalGuitar-20190618.sfz", "CC0", "",
+               "https://freepats.zenvoid.org/Guitar/acoustic-guitar.html"),
 )}
 
 # What a person downloads, in packs, so nobody fetches an orchestra they won't use.
@@ -91,6 +94,8 @@ PACKS = {
     "bells": {"label": "Music box and bells", "why": "a tinkling music-box stand-in (VCSL glockenspiel) for lullabies "
                                                       "and the musical",
               "instruments": ["musicbox"]},
+    "folk": {"label": "Folk and country", "why": "nylon acoustic guitar for folk fingerpicking and country boom-chick",
+             "instruments": ["nylon-guitar"]},
 }
 
 # Which instrument plays each part of the arrangement (roles from perform.roles), unless the

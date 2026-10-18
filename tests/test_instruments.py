@@ -107,6 +107,8 @@ class ManifestTests(unittest.TestCase):
         self.assertEqual(instruments.instrument_for("piano", "gospel"), "tonewheel")
         self.assertEqual(instruments.instrument_for("piano", "broadway-ballad"), "harp")
         self.assertEqual(instruments.instrument_for("melody", "music-box"), "musicbox")
+        self.assertEqual(instruments.instrument_for("piano", "folk"), "nylon-guitar")
+        self.assertEqual(instruments.instrument_for("piano", "country"), "nylon-guitar")
         self.assertEqual(instruments.instrument_for("piano"), "piano")
         self.assertEqual(instruments.instrument_for("bass", "waltz"), "upright-bass")
         self.assertEqual(instruments.instrument_for("bass", "straight"), "electric-bass")
