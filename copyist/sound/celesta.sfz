@@ -1,0 +1,36 @@
+// Copyist celesta: Neil Bickford's A Sampled Celesta (CC0), mono whole-tone subset.
+// Samples via Digital-Defiance/copyist-celesta; see scripts/instruments/celesta.py.
+<control>
+default_path=samples/
+
+<global>
+ampeg_attack=0.001
+ampeg_release=1.2
+amp_veltrack=70
+volume=2
+
+<region> lokey=54 hikey=61 pitch_keycenter=60 sample=060_C4.wav
+<region> lokey=62 hikey=63 pitch_keycenter=62 sample=062_D4.wav
+<region> lokey=64 hikey=65 pitch_keycenter=64 sample=064_E4.wav
+<region> lokey=66 hikey=67 pitch_keycenter=66 sample=066_Fs4.wav
+<region> lokey=68 hikey=69 pitch_keycenter=68 sample=068_Gs4.wav
+<region> lokey=70 hikey=71 pitch_keycenter=70 sample=070_As4.wav
+<region> lokey=72 hikey=73 pitch_keycenter=72 sample=072_C5.wav
+<region> lokey=74 hikey=75 pitch_keycenter=74 sample=074_D5.wav
+<region> lokey=76 hikey=77 pitch_keycenter=76 sample=076_E5.wav
+<region> lokey=78 hikey=79 pitch_keycenter=78 sample=078_Fs5.wav
+<region> lokey=80 hikey=81 pitch_keycenter=80 sample=080_Gs5.wav
+<region> lokey=82 hikey=83 pitch_keycenter=82 sample=082_As5.wav
+<region> lokey=84 hikey=85 pitch_keycenter=84 sample=084_C6.wav
+<region> lokey=86 hikey=87 pitch_keycenter=86 sample=086_D6.wav
+<region> lokey=88 hikey=89 pitch_keycenter=88 sample=088_E6.wav
+<region> lokey=90 hikey=91 pitch_keycenter=90 sample=090_Fs6.wav
+<region> lokey=92 hikey=93 pitch_keycenter=92 sample=092_Gs6.wav
+<region> lokey=94 hikey=95 pitch_keycenter=94 sample=094_As6.wav
+<region> lokey=96 hikey=97 pitch_keycenter=96 sample=096_C7.wav
+<region> lokey=98 hikey=99 pitch_keycenter=98 sample=098_D7.wav
+<region> lokey=100 hikey=101 pitch_keycenter=100 sample=100_E7.wav
+<region> lokey=102 hikey=103 pitch_keycenter=102 sample=102_Fs7.wav
+<region> lokey=104 hikey=105 pitch_keycenter=104 sample=104_Gs7.wav
+<region> lokey=106 hikey=107 pitch_keycenter=106 sample=106_As7.wav
+<region> lokey=108 hikey=127 pitch_keycenter=108 sample=108_C8.wav

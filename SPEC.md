@@ -357,4 +357,4 @@ The exact band must stop sounding like a 1990s arranger keyboard (TASKS 3f). Sty
 - Which local LLM or API drafts song plans (M2), and how prompts are versioned.
 - Hosting for other people: accounts, a GPU queue, and which renderer licence allows it (YuE2's weights don't, for a company).
 - Several singers in one LoRA (the musical has a cast): one trigger word per character, or one LoRA per voice.
-- Free libraries with clear licences for the instruments still missing: music box and celesta first, then acoustic guitars, banjo, mandolin, ukulele, pedal steel, accordion, snare brushes and a choir (docs/sound-set.md).
+- Free libraries with clear licences for the instruments still missing: a crank/comb music box (celesta is in), then banjo, mandolin, ukulele, pedal steel, accordion, snare brushes and a choir (docs/sound-set.md).

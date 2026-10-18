@@ -2,6 +2,10 @@
 
 Newest first. One entry per decision: what, why, and what we gave up.
 
+## 2026-10-18 (celesta)
+
+- **Music-box style uses Neil Bickford's A Sampled Celesta** (CC0 Mustel, via a 5 MB mono whole-tone subset in `Digital-Defiance/copyist-celesta`). The earlier VCSL glockenspiel stays in the `bells` pack as `musicbox` (comb music-box stand-in) until a real crank/comb set can be hosted — folkman's CC0 Freesound pack needs a login to download, so it isn't in the auto-downloader yet. Celesta covers C4–C8 at written pitch (no `PLAY_SHIFT`).
+
 ## 2026-10-18 (guitar staff)
 
 - **Guitar is its own staff and style part**, not the piano hands played on guitar samples. Styles declare `instruments.guitar` and a `guitar:` figure (`chord` / `strum`, arps, thumb tones). Folk (nylon fingerpicking), country and country-waltz (steel boom-chick), pop/rock/power-ballad/blues (electric) use it; the piano staff is omitted when empty. Shapes sit above a separate bass part so the mix stays clear. Song `instruments:` may list `guitar` (default includes it; empty styles skip the part).

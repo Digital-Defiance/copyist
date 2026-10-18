@@ -168,7 +168,7 @@ class WebTests(unittest.TestCase):
         keys = next(g for g in listing["instruments"] if g["id"] == "instruments-keys")
         self.assertEqual([i["id"] for i in keys["models"]], ["organ", "harp", "tonewheel"])
         bells = next(g for g in listing["instruments"] if g["id"] == "instruments-bells")
-        self.assertEqual([i["id"] for i in bells["models"]], ["musicbox"])
+        self.assertEqual([i["id"] for i in bells["models"]], ["celesta", "musicbox"])
         folk = next(g for g in listing["instruments"] if g["id"] == "instruments-folk")
         self.assertEqual([i["id"] for i in folk["models"]], ["nylon-guitar", "steel-guitar", "fiddle"])
         electric = next(g for g in listing["instruments"] if g["id"] == "instruments-electric")

@@ -77,9 +77,12 @@ CATALOG = {i.id: i for i in (
     Instrument("tonewheel", "Tonewheel organ (sfizz sine drawbars)", "copyist/synthetic",
                git_blob_id((SOUND / "tonewheel.sfz").read_bytes()), "tonewheel.sfz", "MIT", "",
                "https://sfz.tools/sfizz/", generated=True, synthetic=True),
-    Instrument("musicbox", "VCSL glockenspiel (music-box stand-in)", "sgossner/VCSL",
+    Instrument("musicbox", "VCSL glockenspiel (music-box comb stand-in)", "sgossner/VCSL",
                "c1ea7bcc3c7309650ab0da9d15c9cd1fbc4a4c7e", "musicbox.sfz", "CC0", "",
                "https://github.com/sgossner/VCSL", generated=True),
+    Instrument("celesta", "Neil Bickford A Sampled Celesta (Mustel)", "Digital-Defiance/copyist-celesta",
+               "b156e4645c686e75b4e742081f220b77414f33bd", "celesta.sfz", "CC0", "",
+               "https://gitlab.com/Nbickford/a-sampled-celesta", generated=True),
     Instrument("nylon-guitar", "FreePats Spanish classical guitar (nylon)", "freepats/spanish-classical-guitar",
                "6f4eb1b092acc88f5448cea1a0001bd07b971af8", "SpanishClassicalGuitar-20190618.sfz", "CC0", "",
                "https://freepats.zenvoid.org/Guitar/acoustic-guitar.html"),
@@ -110,9 +113,9 @@ PACKS = {
              "instruments": ["piano", "electric-bass", "upright-bass", "drums", "clarinet"]},
     "keys": {"label": "Keys", "why": "pipe organ, concert harp, and a synthetic tonewheel for gospel",
              "instruments": ["organ", "harp", "tonewheel"]},
-    "bells": {"label": "Music box and bells", "why": "a tinkling music-box stand-in (VCSL glockenspiel) for lullabies "
-                                                      "and the musical",
-              "instruments": ["musicbox"]},
+    "bells": {"label": "Music box and bells", "why": "a real celesta (Neil Bickford, CC0) for the music-box style, "
+                                                      "plus a glock stand-in until a comb music-box set is hosted",
+              "instruments": ["celesta", "musicbox"]},
     "folk": {"label": "Folk and country", "why": "nylon and steel guitars, and a fiddle (solo violin) for country "
                                                   "and Celtic melodies",
              "instruments": ["nylon-guitar", "steel-guitar", "fiddle"]},

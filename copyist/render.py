@@ -41,7 +41,8 @@ PIANO_VOCAL_REVERB = {"melody": 0.12, "piano": 0.10, "guitar": 0.10, "other": 0.
 POLYPHONY = 256        # the piano with its pedal down needs plenty
 
 # Leads whose midrange harmonics fight piano shells at the normal -4 dB balance.
-SOFT_ACCOMP_MELODY = frozenset({"piano", "organ", "musicbox", "sax", "flute", "oboe", "clarinet", "fiddle"})
+SOFT_ACCOMP_MELODY = frozenset({"piano", "organ", "musicbox", "celesta", "sax", "flute", "oboe",
+                                "clarinet", "fiddle"})
 
 
 def mix_levels(plan: dict[str, str]) -> tuple[dict[str, float], dict[str, float]]:

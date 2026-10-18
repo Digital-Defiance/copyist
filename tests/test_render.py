@@ -186,6 +186,7 @@ class MixdownTests(unittest.TestCase):
 
     def test_musicbox_plays_an_octave_up(self):
         self.assertEqual(instruments.play_shift("musicbox"), 12)
+        self.assertEqual(instruments.play_shift("celesta"), 0)
         self.assertEqual(instruments.play_shift("piano"), 0)
 
     def test_room_keeps_a_panned_part_on_its_side(self):

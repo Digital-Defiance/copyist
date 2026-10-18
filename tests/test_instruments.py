@@ -88,6 +88,16 @@ class ManifestTests(unittest.TestCase):
         for n in names:
             self.assertIn(folder + n, listed)
 
+    def test_the_celesta_sfz_only_names_samples_that_are_downloaded(self):
+        text = (instruments.SOUND / "celesta.sfz").read_text()
+        folder = re.search(r"default_path=(.+)", text).group(1).strip()
+        listed = {f[0] for f in instruments.manifest()["celesta"]}
+        names = [line.split("sample=", 1)[1].strip()
+                 for line in text.splitlines() if "sample=" in line]
+        self.assertEqual(len(names), 25)
+        for n in names:
+            self.assertIn(folder + n, listed)
+
     def test_the_steel_guitar_sfz_names_samples_in_its_linked_folder(self):
         text = (instruments.SOUND / "steel-guitar.sfz").read_text()
         listed = {f[0] for f in instruments.manifest()["steel-guitar"]}
@@ -156,7 +166,7 @@ class ManifestTests(unittest.TestCase):
         self.assertEqual(instruments.instrument_for("melody", "gospel"), "piano")
         self.assertEqual(instruments.instrument_for("piano", "gospel"), "tonewheel")
         self.assertEqual(instruments.instrument_for("piano", "broadway-ballad"), "harp")
-        self.assertEqual(instruments.instrument_for("melody", "music-box"), "musicbox")
+        self.assertEqual(instruments.instrument_for("melody", "music-box"), "celesta")
         self.assertEqual(instruments.instrument_for("guitar", "folk"), "nylon-guitar")
         self.assertEqual(instruments.instrument_for("melody", "country"), "fiddle")
         self.assertEqual(instruments.instrument_for("guitar", "country"), "steel-guitar")
