@@ -56,6 +56,15 @@ class ManifestTests(unittest.TestCase):
         for n in names:
             self.assertIn(folder + n, listed)
 
+    def test_the_organ_sfz_only_names_samples_that_are_downloaded(self):
+        text = (instruments.SOUND / "organ.sfz").read_text()
+        listed = {f[0] for f in instruments.manifest()["organ"]}
+        names = [line.split("sample=", 1)[1].strip()
+                 for line in text.splitlines() if "sample=" in line]
+        self.assertGreaterEqual(len(names), 30)
+        for n in names:
+            self.assertIn(n, listed)
+
     def test_instruments_that_ask_for_credit_have_a_credit_line(self):
         for inst in instruments.CATALOG.values():
             if "BY" in inst.licence:
@@ -69,6 +78,9 @@ class ManifestTests(unittest.TestCase):
     def test_which_instrument_plays_which_part(self):
         self.assertEqual(instruments.instrument_for("melody"), "clarinet")
         self.assertEqual(instruments.instrument_for("melody", "waltz"), "piano")
+        self.assertEqual(instruments.instrument_for("melody", "hymn"), "organ")
+        self.assertEqual(instruments.instrument_for("piano", "hymn"), "organ")
+        self.assertEqual(instruments.instrument_for("piano", "gospel"), "organ")
         self.assertEqual(instruments.instrument_for("piano"), "piano")
         self.assertEqual(instruments.instrument_for("bass", "waltz"), "upright-bass")
         self.assertEqual(instruments.instrument_for("bass", "straight"), "electric-bass")

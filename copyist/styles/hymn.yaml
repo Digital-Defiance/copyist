@@ -1,9 +1,9 @@
 format: copyist-style/0
 name: Hymn
 family: Hymns and classical
-about: Plain and reverent. The piano carries the tune; the left hand and bass hold beneath. No drums.
+about: Plain and reverent. The pipe organ carries the tune and the held chords; the bass holds beneath. No drums.
 tempo: [60, 100]
-instruments: {melody: piano, bass: upright-bass}
+instruments: {melody: organ, piano: organ, bass: upright-bass}
 production: traditional hymn, pipe organ, congregation choir, reverent, sacred, church
 meters:
   "3/4":

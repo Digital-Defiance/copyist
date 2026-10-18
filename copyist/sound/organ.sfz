@@ -1,0 +1,98 @@
+// Copyist pipe organ: VCSL manuals, Quiet + Loud (CC0, Versilian Studios / Simon Dalzell).
+// Written by scripts/instruments/organ.py; see that file for how each number was measured.
+<control>
+
+<global>
+ampeg_attack=0.02
+ampeg_release=0.35
+amp_veltrack=55
+loop_crossfade=0.08
+
+<group> lokey=0 hikey=28 pitch_keycenter=27
+<region> lovel=85 hivel=127 offset=1323 tune=-10 loop_mode=loop_sustain loop_start=15435 loop_end=443205 sample=Aerophones/Edge-blown Aerophones/Pipe Organ/Loud/Rode_Man3Open_D#1.wav
+
+<group> lokey=29 hikey=31 pitch_keycenter=30
+<region> lovel=85 hivel=127 offset=1764 tune=0 loop_mode=loop_sustain loop_start=15435 loop_end=449820 sample=Aerophones/Edge-blown Aerophones/Pipe Organ/Loud/Rode_Man3Open_F#1.wav
+
+<group> lokey=32 hikey=34 pitch_keycenter=33
+<region> lovel=85 hivel=127 offset=1764 tune=0 loop_mode=loop_sustain loop_start=15435 loop_end=445410 sample=Aerophones/Edge-blown Aerophones/Pipe Organ/Loud/Rode_Man3Open_A1.wav
+
+<group> lokey=35 hikey=37 pitch_keycenter=36
+<region> lovel=85 hivel=127 offset=1764 tune=0 loop_mode=loop_sustain loop_start=15435 loop_end=441000 sample=Aerophones/Edge-blown Aerophones/Pipe Organ/Loud/Rode_Man3Open_C2.wav
+<region> lovel=1 hivel=84 offset=0 tune=0 loop_mode=loop_sustain loop_start=13230 loop_end=467460 sample=Aerophones/Edge-blown Aerophones/Pipe Organ/Quiet/NT5_Man3Quiet_C1_rr1.wav
+
+<group> lokey=38 hikey=40 pitch_keycenter=39
+<region> lovel=85 hivel=127 offset=1764 tune=0 loop_mode=loop_sustain loop_start=15435 loop_end=441000 sample=Aerophones/Edge-blown Aerophones/Pipe Organ/Loud/Rode_Man3Open_D#2.wav
+
+<group> lokey=41 hikey=43 pitch_keycenter=42
+<region> lovel=85 hivel=127 offset=1764 tune=0 loop_mode=loop_sustain loop_start=15435 loop_end=445410 sample=Aerophones/Edge-blown Aerophones/Pipe Organ/Loud/Rode_Man3Open_F#2.wav
+<region> lovel=1 hivel=84 offset=441 tune=-10 loop_mode=loop_sustain loop_start=37485 loop_end=476280 sample=Aerophones/Edge-blown Aerophones/Pipe Organ/Quiet/NT5_Man3Quiet_F#1_rr1.wav
+
+<group> lokey=44 hikey=46 pitch_keycenter=45
+<region> lovel=85 hivel=127 offset=1323 tune=0 loop_mode=loop_sustain loop_start=13230 loop_end=441000 sample=Aerophones/Edge-blown Aerophones/Pipe Organ/Loud/Rode_Man3Open_A2.wav
+<region> lovel=1 hivel=84 offset=4851 tune=-10 loop_mode=loop_sustain loop_start=17640 loop_end=449820 sample=Aerophones/Edge-blown Aerophones/Pipe Organ/Quiet/NT5_Man3Quiet_A1_rr1.wav
+
+<group> lokey=47 hikey=49 pitch_keycenter=48
+<region> lovel=85 hivel=127 offset=2205 tune=0 loop_mode=loop_sustain loop_start=15435 loop_end=441000 sample=Aerophones/Edge-blown Aerophones/Pipe Organ/Loud/Rode_Man3Open_C3.wav
+<region> lovel=1 hivel=84 offset=2205 tune=0 loop_mode=loop_sustain loop_start=17640 loop_end=449820 sample=Aerophones/Edge-blown Aerophones/Pipe Organ/Quiet/NT5_Man3Quiet_C2_rr1.wav
+
+<group> lokey=50 hikey=52 pitch_keycenter=51
+<region> lovel=85 hivel=127 offset=1323 tune=0 loop_mode=loop_sustain loop_start=13230 loop_end=438795 sample=Aerophones/Edge-blown Aerophones/Pipe Organ/Loud/Rode_Man3Open_D#3.wav
+<region> lovel=1 hivel=84 offset=3087 tune=-10 loop_mode=loop_sustain loop_start=15435 loop_end=496125 sample=Aerophones/Edge-blown Aerophones/Pipe Organ/Quiet/NT5_Man3Quiet_D#2_rr1.wav
+
+<group> lokey=53 hikey=55 pitch_keycenter=54
+<region> lovel=85 hivel=127 offset=1323 tune=0 loop_mode=loop_sustain loop_start=13230 loop_end=447615 sample=Aerophones/Edge-blown Aerophones/Pipe Organ/Loud/Rode_Man3Open_F#3.wav
+<region> lovel=1 hivel=84 offset=2205 tune=-10 loop_mode=loop_sustain loop_start=17640 loop_end=445410 sample=Aerophones/Edge-blown Aerophones/Pipe Organ/Quiet/NT5_Man3Quiet_F#2_rr1.wav
+
+<group> lokey=56 hikey=58 pitch_keycenter=57
+<region> lovel=85 hivel=127 offset=1323 tune=0 loop_mode=loop_sustain loop_start=13230 loop_end=449820 sample=Aerophones/Edge-blown Aerophones/Pipe Organ/Loud/Rode_Man3Open_A3.wav
+<region> lovel=1 hivel=84 offset=1323 tune=0 loop_mode=loop_sustain loop_start=13230 loop_end=449820 sample=Aerophones/Edge-blown Aerophones/Pipe Organ/Quiet/NT5_Man3Quiet_A2_rr1.wav
+
+<group> lokey=59 hikey=61 pitch_keycenter=60
+<region> lovel=85 hivel=127 offset=1764 tune=0 loop_mode=loop_sustain loop_start=17640 loop_end=447615 sample=Aerophones/Edge-blown Aerophones/Pipe Organ/Loud/Rode_Man3Open_C4.wav
+<region> lovel=1 hivel=84 offset=1764 tune=0 loop_mode=loop_sustain loop_start=22050 loop_end=456435 sample=Aerophones/Edge-blown Aerophones/Pipe Organ/Quiet/NT5_Man3Quiet_C3_rr1.wav
+
+<group> lokey=62 hikey=64 pitch_keycenter=63
+<region> lovel=85 hivel=127 offset=1764 tune=0 loop_mode=loop_sustain loop_start=15435 loop_end=443205 sample=Aerophones/Edge-blown Aerophones/Pipe Organ/Loud/Rode_Man3Open_D#4.wav
+<region> lovel=1 hivel=84 offset=3087 tune=0 loop_mode=loop_sustain loop_start=15435 loop_end=445410 sample=Aerophones/Edge-blown Aerophones/Pipe Organ/Quiet/NT5_Man3Quiet_D#3_rr1.wav
+
+<group> lokey=65 hikey=67 pitch_keycenter=66
+<region> lovel=85 hivel=127 offset=1323 tune=0 loop_mode=loop_sustain loop_start=13230 loop_end=436590 sample=Aerophones/Edge-blown Aerophones/Pipe Organ/Loud/Rode_Man3Open_F#4.wav
+<region> lovel=1 hivel=84 offset=2205 tune=0 loop_mode=loop_sustain loop_start=15435 loop_end=436590 sample=Aerophones/Edge-blown Aerophones/Pipe Organ/Quiet/NT5_Man3Quiet_F#3_rr1.wav
+
+<group> lokey=68 hikey=70 pitch_keycenter=69
+<region> lovel=85 hivel=127 offset=1764 tune=0 loop_mode=loop_sustain loop_start=15435 loop_end=449820 sample=Aerophones/Edge-blown Aerophones/Pipe Organ/Loud/Rode_Man3Open_A4.wav
+<region> lovel=1 hivel=84 offset=1764 tune=0 loop_mode=loop_sustain loop_start=15435 loop_end=449820 sample=Aerophones/Edge-blown Aerophones/Pipe Organ/Quiet/NT5_Man3Quiet_A3_rr1.wav
+
+<group> lokey=71 hikey=73 pitch_keycenter=72
+<region> lovel=85 hivel=127 offset=1323 tune=0 loop_mode=loop_sustain loop_start=13230 loop_end=443205 sample=Aerophones/Edge-blown Aerophones/Pipe Organ/Loud/Rode_Man3Open_C5.wav
+<region> lovel=1 hivel=84 offset=1323 tune=0 loop_mode=loop_sustain loop_start=22050 loop_end=458640 sample=Aerophones/Edge-blown Aerophones/Pipe Organ/Quiet/NT5_Man3Quiet_C4_rr1.wav
+
+<group> lokey=74 hikey=76 pitch_keycenter=75
+<region> lovel=85 hivel=127 offset=1764 tune=0 loop_mode=loop_sustain loop_start=15435 loop_end=438795 sample=Aerophones/Edge-blown Aerophones/Pipe Organ/Loud/Rode_Man3Open_D#5.wav
+<region> lovel=1 hivel=84 offset=1764 tune=0 loop_mode=loop_sustain loop_start=17640 loop_end=480690 sample=Aerophones/Edge-blown Aerophones/Pipe Organ/Quiet/NT5_Man3Quiet_D#4_rr1.wav
+
+<group> lokey=77 hikey=79 pitch_keycenter=78
+<region> lovel=85 hivel=127 offset=1764 tune=0 loop_mode=loop_sustain loop_start=15435 loop_end=443205 sample=Aerophones/Edge-blown Aerophones/Pipe Organ/Loud/Rode_Man3Open_F#5.wav
+<region> lovel=1 hivel=84 offset=0 tune=0 loop_mode=loop_sustain loop_start=15435 loop_end=454230 sample=Aerophones/Edge-blown Aerophones/Pipe Organ/Quiet/NT5_Man3Quiet_F#4_rr1.wav
+
+<group> lokey=80 hikey=82 pitch_keycenter=81
+<region> lovel=85 hivel=127 offset=882 tune=0 loop_mode=loop_sustain loop_start=13230 loop_end=449820 sample=Aerophones/Edge-blown Aerophones/Pipe Organ/Loud/Rode_Man3Open_A5.wav
+<region> lovel=1 hivel=84 offset=1323 tune=0 loop_mode=loop_sustain loop_start=15435 loop_end=447615 sample=Aerophones/Edge-blown Aerophones/Pipe Organ/Quiet/NT5_Man3Quiet_A4_rr1.wav
+
+<group> lokey=83 hikey=85 pitch_keycenter=84
+<region> lovel=85 hivel=127 offset=1323 tune=0 loop_mode=loop_sustain loop_start=13230 loop_end=441000 sample=Aerophones/Edge-blown Aerophones/Pipe Organ/Loud/Rode_Man3Open_C6.wav
+<region> lovel=1 hivel=84 offset=1764 tune=0 loop_mode=loop_sustain loop_start=15435 loop_end=436590 sample=Aerophones/Edge-blown Aerophones/Pipe Organ/Quiet/NT5_Man3Quiet_C5_rr1.wav
+
+<group> lokey=86 hikey=88 pitch_keycenter=87
+<region> lovel=1 hivel=84 offset=1323 tune=10 loop_mode=loop_sustain loop_start=19845 loop_end=436590 sample=Aerophones/Edge-blown Aerophones/Pipe Organ/Quiet/NT5_Man3Quiet_D#5_rr1.wav
+
+<group> lokey=89 hikey=91 pitch_keycenter=90
+<region> lovel=1 hivel=84 offset=1323 tune=0 loop_mode=loop_sustain loop_start=13230 loop_end=447615 sample=Aerophones/Edge-blown Aerophones/Pipe Organ/Quiet/NT5_Man3Quiet_F#5_rr1.wav
+
+<group> lokey=92 hikey=94 pitch_keycenter=93
+<region> lovel=1 hivel=84 offset=1764 tune=0 loop_mode=loop_sustain loop_start=15435 loop_end=493920 sample=Aerophones/Edge-blown Aerophones/Pipe Organ/Quiet/NT5_Man3Quiet_A5_rr1.wav
+
+<group> lokey=95 hikey=127 pitch_keycenter=96
+<region> lovel=1 hivel=84 offset=1323 tune=0 loop_mode=loop_sustain loop_start=13230 loop_end=449820 sample=Aerophones/Edge-blown Aerophones/Pipe Organ/Quiet/NT5_Man3Quiet_C6_rr1.wav
+

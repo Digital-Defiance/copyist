@@ -27,6 +27,9 @@ EXTRA = {
     "upright-bass": ["LICENSE", "readme.txt"],
     "drums": ["LICENSE", "README.md", "AVL-Drumkits CC-BY-SA License.pdf"],
     "clarinet": ["LICENSE", "README.md", "Woodwinds/Clarinet/susLong/"],
+    "organ": ["LICENSE", "README.md",
+              "Aerophones/Edge-blown Aerophones/Pipe Organ/Quiet/",
+              "Aerophones/Edge-blown Aerophones/Pipe Organ/Loud/"],
 }
 
 
@@ -78,9 +81,12 @@ def main(clones: Path) -> None:
         known = tree(clone, inst.revision)
         wanted = set() if inst.generated else played(clone, inst.revision, inst.sfz, known)
         if inst.generated:
-            sample_dir = re.search(r"default_path=(\S+)", (SOUND / inst.sfz).read_text()).group(1)
-            names = re.findall(r"sample=(\S+)", (SOUND / inst.sfz).read_text())
-            wanted |= {sample_dir + n for n in names}
+            text = (SOUND / inst.sfz).read_text()
+            default = re.search(r"default_path=(\S+)", text)
+            prefix = default.group(1) if default else ""
+            names = [line.split("sample=", 1)[1].strip()
+                     for line in text.splitlines() if "sample=" in line]
+            wanted |= {prefix + n for n in names}
         for extra in EXTRA.get(inst.id, []):
             wanted |= {p for p in known if p == extra or (extra.endswith("/") and p.startswith(extra))}
         absent = sorted(p for p in wanted if p not in known)

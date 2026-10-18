@@ -1,9 +1,9 @@
 format: copyist-style/0
 name: Gospel
 family: Soul and gospel
-about: A slow gospel groove in triplets (the 12/8 feel). The piano answers across two bars; kick and snare lean on the backbeat.
+about: A slow gospel groove in triplets (the 12/8 feel). The organ answers across two bars; kick and snare lean on the backbeat.
 tempo: [56, 84]
-instruments: {bass: electric-bass}
+instruments: {piano: organ, bass: electric-bass}
 production: soulful gospel, Hammond organ, piano, choir, handclaps, slow 12/8 feel, church, powerful
 meters:
   "4/4":

@@ -143,8 +143,9 @@ Copyist arranges in as many styles as can be written as correct scores: everyone
 - [x] Richer stereo room (wet keeps pan; ~1.3 s hall) — 2026-10-18
 - [ ] Exact previews: more style melody voices beyond piano/clarinet (needs libraries). YuE2 takes stay on demand; see SPEC §15
 - [x] Test songs in 4/4 and 6/8: *When the Saints Go Marching In*, *Silent Night* (public domain)
-- [ ] More parts in the arranger: organ, guitar (strummed and picked, chord shapes), strings, brass and reeds, a lead line, choir; the ensemble chosen by the style
-- [ ] Wave 1, finished with real parts: music box (for *I Left the Lights On*), gospel and hymn with organ, country with acoustic guitar and fiddle, folk with fingerpicked guitar, pop and rock with guitars
+- [x] Pipe organ part (VCSL manuals); hymn and gospel styles use it (2026-10-18). Tonewheel still to come
+- [ ] More parts in the arranger: guitar (strummed and picked, chord shapes), strings, brass and reeds, a lead line, choir; the ensemble chosen by the style
+- [ ] Wave 1, finished with real parts: music box (for *I Left the Lights On*), country with acoustic guitar and fiddle, folk with fingerpicked guitar, pop and rock with guitars; tonewheel for gospel
 - [ ] Wave 2: salsa, cumbia, bolero, tango, Western swing, bluegrass, Motown, funk, Celtic reel and air, polka, calypso, 12/8 doo-wop
 - [ ] Wave 3: big band, orchestral and cinematic, string quartet, SATB choir, electronic (house, synthwave, lo-fi, ambient)
 - [ ] A melody voice per style for previews (flute, sax, violin, synth lead)

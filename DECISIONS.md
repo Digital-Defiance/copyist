@@ -2,6 +2,10 @@
 
 Newest first. One entry per decision: what, why, and what we gave up.
 
+## 2026-10-18 (pipe organ)
+
+- **Hymn and gospel previews use the VCSL pipe organ** (manuals only, Quiet + Loud; Copyist writes the SFZ like the clarinet). Hymn: organ on the melody and the held chords, upright bass under. Gospel: organ on the piano comps (stand-in until a tonewheel exists). Pack `keys` downloads it (~86 MB). Gave up: pedals and a real Hammond for this cut.
+
 ## 2026-10-18 (prosody in compound meters)
 
 - **Prosody and chord-tone "strong beats" use `fit.beat_strength`, not music21's `beatStrength` alone.** In 6/8 and 12/8 the beat is a dotted quarter; a plain quarter is only an eighth-subdivision. The lyric fitter already scored that way; `copyist check` now matches it. Gave up: nothing useful — music21's weights were close on clean 6/8 but not the project's source of truth.

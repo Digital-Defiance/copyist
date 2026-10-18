@@ -159,12 +159,14 @@ class WebTests(unittest.TestCase):
 
     def test_instruments_are_listed_in_packs(self):
         health = json.loads(self.request("GET", "/api/health")[1])
-        self.assertEqual(set(health["instruments"]), {"band"})
+        self.assertEqual(set(health["instruments"]), {"band", "keys"})
         listing = json.loads(self.request("GET", "/api/models")[1])
         band = next(g for g in listing["instruments"] if g["id"] == "instruments-band")
         self.assertEqual([i["id"] for i in band["models"]],
                          ["piano", "electric-bass", "upright-bass", "drums", "clarinet"])
         self.assertGreater(band["size"], 500_000_000)
+        keys = next(g for g in listing["instruments"] if g["id"] == "instruments-keys")
+        self.assertEqual([i["id"] for i in keys["models"]], ["organ"])
         self.assertIn("sfizz", listing)
 
     def test_the_band_recording_says_what_played_it(self):
