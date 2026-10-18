@@ -2,9 +2,13 @@
 
 Newest first. One entry per decision: what, why, and what we gave up.
 
+## 2026-10-18 (rule-based writer)
+
+- **`copyist write --engine rules` is Copyist's own MIT melody writer**, and `--engine auto` falls back to it when `yue-plan` isn't installed. YuE2's planner stays the default when present (`plan`). Gave up: waiting on an open neural planner before anyone without YuE2 can write a song.
+
 ## 2026-10-18 (GitHub Pages site)
 
-- **The public site lives in `site/` and deploys with GitHub Actions**, not the repo `docs/` folder. `docs/` stays project documentation (markdown for agents and contributors). The Pages site is a static advert: score-first pitch, features, install — same desk brand and OFL fonts as `copyist serve`, served at `https://copyist.digitaldefiance.org/` (`site/CNAME`). Gave up: a CDN-built framework; plain HTML/CSS/JS matches the local page and needs no build step.
+- **The public site lives in `site/` and deploys with GitHub Actions**, not the repo `docs/` folder. `docs/` stays project documentation (markdown for agents and contributors). The Pages site is a static advert: score-first pitch, features, install — desk colours and staff motif from `copyist serve`, served at `https://copyist.digitaldefiance.org/` (`site/CNAME`). **Type on the public site is Instrument Serif + Instrument Sans + Source Serif 4**, not the local app’s Shantell Sans (too handwritten for a marketing page). Gave up: a CDN-built framework; plain HTML/CSS/JS, no build step.
 
 ## 2026-10-18 (section rewrite)
 

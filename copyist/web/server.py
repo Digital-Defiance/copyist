@@ -635,6 +635,11 @@ def write_args(project: Project, body: dict) -> tuple[str, str | None, list[str]
                                  "candidates": []})
     args = ["write", project.rel(folder / "lyrics.txt"), "--title", title, "--voice", voice,
             "--candidates", str(count), "--seed", str(seed)]
+    engine = body.get("engine") or "auto"
+    if engine not in ("auto", "plan", "rules"):
+        raise ValueError("No such writer.")
+    if engine != "auto":
+        args += ["--engine", engine]
     if style:
         args += ["--style", style]
     if words:

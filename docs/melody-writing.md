@@ -65,12 +65,13 @@ How to read it:
 
 ```
 copyist write LYRICS.txt --title "Hope" [--style folk | --words "free style words"] [--voice alto]
-              [--candidates 4] [--seed 1] [--takes] [--out out] [--device MTL0]
+              [--candidates 4] [--seed 1] [--engine auto|plan|rules] [--takes] [--out out] [--device MTL0]
 ```
 
 **Inputs:**
 - **The lyrics file:** plain text, sections tagged `[Verse]`, `[Chorus]`, `[Pre-Chorus]`, `[Bridge]`, `[Intro]` or `[Outro]` (case-insensitive, numbers allowed: `[Verse 2]`), one sung line per line. Untagged text counts as a verse. Reuse `lora.yue_lyrics` to turn this into YuE2's tags.
 - **`--style`:** a Copyist style id (`copyist styles`). Its `production` words go into the planner's style line. `--words` adds or replaces words.
+- **`--engine`:** `plan` uses YuE2's `yue-plan`; `rules` uses Copyist's own MIT writer (stress → rhythm, chords → contour, no GPU); `auto` (default) uses the planner when it's installed, otherwise rules.
 - **`--voice`:** a range preset:
 
   | Preset | Range | Clef |
@@ -222,9 +223,14 @@ Use hand-written plans in the YuE2 dialect, not model output, kept in `tests/dat
 - **Alignment:** exact counts; one extra note (a melisma at a line end); one missing note (a split); a line end that must land on a rest.
 - **End to end with a fake `yue-plan`** (a script that writes a fixed plan, as tests/test_yue.py fakes `yue-synth`): `copyist write` makes N candidates, every song file loads, `lyrics-fit` passes, and `candidates.json` is ranked.
 - **Keep:** the chosen file is copied, and nothing else in `songs/` changes.
-- **Rewrite:** `tests/test_rewrite.py` — section bounds, raising notes without moving chords, swapping a chorus from a donor, simpler preferring smaller leaps, `--keep`.
+- **Rewrite:** `tests/test_rewrite.py` — section bounds, raising notes with chords, swapping a chorus from a donor, simpler preferring smaller leaps, `--keep`.
+- **Rules:** `tests/test_ruleswrite.py` — draft fits and loads; seeds differ; `copyist write --engine rules`.
+
+## Rule-based writer (`--engine rules`)
+
+Copyist's own MIT writer (`copyist/ruleswrite.py`): no YuE2. Stress picks longer notes on strong beats; a seeded chord progression and contour template choose pitches (chord tones on strong beats, scale neighbours on weak); the first line's intervals come back as a motif with small changes; line ends cadence toward the tonic. Seeds change key, progression and contour so "Write 4 more" still gives variety. With `--engine auto`, this is the fallback when `yue-plan` isn't installed.
 
 ## Later
 
-- **A rule-based writer, entirely Copyist's own (MIT),** as a fallback without YuE2: rhythm from the syllables' stress, pitches from the chords with contour templates, motifs repeated and varied, cadences at line ends.
-- **The open singer** (docs/open-singer.md) will take Copyist's scores the same way, so melody writing doesn't depend on YuE2's planner forever. The rule-based writer and a planner trained on open data are how to get there.
+- **Richer rules:** better phrase shapes, minor keys, borrowed chords, and style-specific habits.
+- **The open singer** (docs/open-singer.md) will take Copyist's scores the same way, so melody writing doesn't depend on YuE2's planner forever.

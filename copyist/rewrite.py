@@ -14,8 +14,8 @@ from pathlib import Path
 import yaml
 from music21 import pitch as m21pitch
 
-from . import abcplan, fit as fitting, syllables, write
-from .song import FORMAT, SongError
+from . import abcplan, write
+from .song import SongError
 from .write import DEFAULT_VOICE, VOICES, Candidate, WriteError
 
 HOW = ("again", "higher", "simpler")
@@ -114,33 +114,9 @@ def candidate_from_bars(bars: list[abcplan.Bar], *, unit: Fraction, meter: str, 
                         written_with: dict, credits: dict | None = None,
                         notes: list[str] | None = None) -> Candidate:
     """Bars + lyrics → a song-file Candidate (re-fits the words)."""
-    if voice not in VOICES:
-        raise WriteError(f"Unknown voice {voice!r}: choose {', '.join(VOICES)}.")
-    low, high, clef, _ = VOICES[voice]
-    sylls = syllables.all_syllables(syllables.parse_lyrics(lyrics))
-    if not sylls:
-        raise WriteError("The lyrics have no words to sing.")
-    bars = copy.deepcopy(bars)
-    try:
-        fitted = fitting.fit(bars, unit, meter, sylls)
-    except ValueError as e:
-        raise WriteError(str(e)) from e
-    melody = abcplan.write(bars, unit, unit)
-    data: dict = {"format": FORMAT, "title": title}
-    if credits:
-        data["credits"] = credits
-    data.update({
-        "key": key, "meter": meter, "unit": f"{unit.numerator}/{unit.denominator}", "tempo": tempo,
-        "voice": {"name": "Voice", "range": [low, high], "clef": clef},
-    })
-    if style:
-        data["style"] = style
-    data["sections"] = abcplan.sections_of(bars)
-    data["written_with"] = written_with
-    data["melody"] = melody
-    data["lyrics"] = [fitted.lyrics]
-    return Candidate(data, abcplan.Placement(key, 0, 0, 0, len(abcplan.pitches(bars, key))),
-                     fitted, len(sylls), notes or [])
+    return write.song_from_bars(bars, unit=unit, meter=meter, key=key, tempo=tempo, lyrics=lyrics,
+                                title=title, voice=voice, style=style, written_with=written_with,
+                                credits=credits, notes=notes)
 
 
 def load_data(path: Path) -> dict:

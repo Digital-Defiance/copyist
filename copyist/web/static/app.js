@@ -433,6 +433,11 @@ async function routeWriteForm() {
           `<option value="${id}" ${id === "alto" ? "selected" : ""}>${esc(label)}</option>`).join("")}</select></div>
         <div class="field"><label for="w-count">How many to write</label><select id="w-count">${[2, 3, 4, 6, 8].map((n) =>
           `<option ${n === 4 ? "selected" : ""}>${n}</option>`).join("")}</select></div>
+        <div class="field"><label for="w-engine">Writer</label><select id="w-engine">
+          <option value="auto" selected>Auto (YuE2 when installed)</option>
+          <option value="plan">YuE2 planner</option>
+          <option value="rules">Copyist's own (no GPU)</option>
+        </select></div>
         <div class="field wide"><label for="w-lyrics">Lyrics</label>
           <textarea id="w-lyrics" class="lyrics-box" placeholder="[Verse]&#10;Hope is the thing with feathers&#10;That perches in the soul&#10;&#10;[Chorus]&#10;..."></textarea>
           <p class="hint">One sung line per line. Mark sections with [Verse], [Chorus], [Bridge]; untagged lines count as a verse.</p></div>
@@ -441,8 +446,8 @@ async function routeWriteForm() {
           <p class="hint">They steer the melody writer along with the style.</p></div>
       </div>
       <div class="actions"><button class="go" id="w-go">Write the songs</button>
-        <span class="hint">YuE2 writes each melody on this computer. Each one comes with the band playing it, so you can
-          choose by ear.</span></div>
+        <span class="hint">Each melody comes with the band playing it, so you can choose by ear. Copyist's own writer
+          needs no download.</span></div>
       <div class="job" data-job-panel></div>
     </section>` : installPanel();
   page.innerHTML = `<div class="staff-title"><h1>Write a song</h1></div>
@@ -457,7 +462,7 @@ async function routeWriteForm() {
     $("#w-go").addEventListener("click", async () => {
       const body = { action: "write", title: $("#w-title").value.trim(), lyrics: $("#w-lyrics").value,
         style: $("#w-style").value || null, voice: $("#w-voice").value, words: $("#w-words").value.trim() || null,
-        candidates: Number($("#w-count").value) };
+        candidates: Number($("#w-count").value), engine: $("#w-engine").value };
       await start(body);
       if (watching && watching.song) location.hash = `#/write/${encodeURIComponent(watching.song)}`;
     });

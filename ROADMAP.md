@@ -166,7 +166,7 @@ Lyrics and a style in; several finished songs out to choose between by ear, each
 - [x] The page's "Write a song"
 - [x] The owner writes a song with it on the Mac and keeps one (Tyger candidate 4 → `songs/the-tyger.yaml`)
 - [x] Section-level rewriting ("again", "higher", "simpler") via `copyist rewrite` and the page's "Try another melody"
-- [ ] A rule-based writer of Copyist's own (MIT), for use without YuE2
+- [x] A rule-based writer of Copyist's own (MIT), for use without YuE2 (`--engine rules`)
 
 ## SE: Score editing (SPEC §14)
 

@@ -8,7 +8,7 @@ Instructions for AI coding agents (Claude, Cursor, anything else) and people pic
 
 The work moved fast and may change hands at any moment. Here is where things stand.
 
-**Done and working** (tests pass: `python -m unittest discover -s tests`, 225 tests):
+**Done and working** (tests pass: `python -m unittest discover -s tests`, 239 tests):
 - Song files become a lead sheet, band score and parts, MIDI, and a validation report.
 - 23 styles as data files, with a style gallery; styles can cycle a phrase of bars.
 - Expressive performance.
@@ -18,10 +18,11 @@ The work moved fast and may change hands at any moment. Here is where things sta
 - The local web page (`copyist serve`).
 - The Tauri desktop shell.
 - MIT licence and GitHub Actions.
-- `copyist write`, `copyist rewrite` (again / higher / simpler) and `copyist transcribe`. Mac write timed: ~8 s a candidate on MTL0.
+- `copyist write` (YuE2 plan or `--engine rules`), `copyist rewrite` (again / higher / simpler) and `copyist transcribe`. Mac write timed: ~8 s a candidate on MTL0.
+- Public site in `site/` → https://copyist.digitaldefiance.org/
 
 **Next, in this order:**
-1. **Melody writing leftovers:** rule-based writer (TASKS 3g "Later"); optional lyric refit on the page.
+1. **Melody writing leftovers:** optional lyric refit on the page (TASKS 3g).
 2. **Transcribing recordings:** TASKS.md section 7 — more sung test recordings, then the owner's songs.
 3. **Less-cheesy exact previews (rest of 3f):** crank/comb music box when a CC0 set can be hosted (celesta is in).
 4. **The open singer (plan B):** TASKS.md section 3h, spec in [docs/open-singer.md](docs/open-singer.md). Start with phase B0 (feasibility).

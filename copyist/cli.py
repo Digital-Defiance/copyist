@@ -326,7 +326,7 @@ def cmd_write(args) -> int:
                 print(f"[{done + 1}/{total}] {name}", flush=True)
         index = write.write_songs(lyrics, title, Path(args.out), args.style, args.words, args.voice, args.candidates,
                                   args.seed, args.takes, args.device, Path(args.cache), credits or None,
-                                  previews=not args.no_preview, progress=progress)
+                                  previews=not args.no_preview, engine=args.engine, progress=progress)
     except write.WriteError as e:
         print(e, file=sys.stderr)
         return 2
@@ -578,6 +578,8 @@ def main(argv: list[str] | None = None) -> int:
                     help="the singer's range (default alto)")
     wr.add_argument("--candidates", type=int, default=4, help="how many songs to write (default 4)")
     wr.add_argument("--seed", type=int, default=1, help="the first planner seed; candidates use seed, seed+1, ...")
+    wr.add_argument("--engine", default="auto", choices=["auto", "plan", "rules"],
+                    help="plan (YuE2), rules (Copyist's own, MIT), or auto (plan if yue-plan is installed)")
     wr.add_argument("--takes", action="store_true", help="also make a finished YuE2 take of each candidate")
     wr.add_argument("--no-preview", action="store_true", help="skip the band previews")
     wr.add_argument("--words-by", help="credit for the words")

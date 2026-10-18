@@ -131,6 +131,42 @@ def song_from_plan(plan_text: str, lyrics: str, title: str, voice: str | None = 
     return Candidate(data, placement, fitted, len(sylls), notes)
 
 
+def song_from_bars(bars: list, *, unit: Fraction, meter: str, key: str, tempo,
+                   lyrics: str, title: str, voice: str = DEFAULT_VOICE, style: str | None = None,
+                   written_with: dict | None = None, credits: dict | None = None,
+                   notes: list[str] | None = None) -> Candidate:
+    """Bars + lyrics → a song-file Candidate (fits the words). Used by the rule-based writer and rewrite."""
+    import copy
+    if voice not in VOICES:
+        raise WriteError(f"Unknown voice {voice!r}: choose {', '.join(VOICES)}.")
+    low, high, clef, _ = VOICES[voice]
+    sylls = syllables.all_syllables(syllables.parse_lyrics(lyrics))
+    if not sylls:
+        raise WriteError("The lyrics have no words to sing.")
+    bars = copy.deepcopy(bars)
+    try:
+        fitted = fitting.fit(bars, unit, meter, sylls)
+    except ValueError as e:
+        raise WriteError(str(e)) from e
+    melody = abcplan.write(bars, unit, unit)
+    data: dict = {"format": FORMAT, "title": title}
+    if credits:
+        data["credits"] = credits
+    data.update({
+        "key": key, "meter": meter, "unit": f"{unit.numerator}/{unit.denominator}", "tempo": tempo,
+        "voice": {"name": "Voice", "range": [low, high], "clef": clef},
+    })
+    if style:
+        data["style"] = style
+    data["sections"] = abcplan.sections_of(bars)
+    if written_with:
+        data["written_with"] = written_with
+    data["melody"] = melody
+    data["lyrics"] = [fitted.lyrics]
+    return Candidate(data, abcplan.Placement(key, 0, 0, 0, len(abcplan.pitches(bars, key))),
+                     fitted, len(sylls), notes or [])
+
+
 def song_yaml(data: dict) -> str:
     """The song file as people expect to read it: melody and lyrics as blocks, in the usual order."""
     def scalar(v) -> str:
@@ -326,17 +362,37 @@ def band_preview(song, wav: Path, cache: Path, seed: int = 1) -> str:
         return render.render_band(midi, wav, song.style, cache).engine
 
 
+ENGINES = ("auto", "plan", "rules")
+
+
+def _use_rules(engine: str) -> bool:
+    """Whether this write uses the rule-based composer (not yue-plan)."""
+    from . import paths
+    if engine == "rules":
+        return True
+    if engine == "plan":
+        return False
+    # auto: rules when the planner binary isn't here
+    return paths.find_program("yue-plan", "COPYIST_YUE_PLAN") is None
+
+
 def write_songs(lyrics: str, title: str, out_root: Path = Path("out"), style: str | None = None,
                 words: str | None = None, voice: str = DEFAULT_VOICE, candidates: int = 4, seed: int = 1,
                 takes: bool = False, device: str | None = None, cache: Path = Path(".cache"),
-                credits: dict | None = None, previews: bool = True,
+                credits: dict | None = None, previews: bool = True, engine: str = "auto",
                 progress: Callable[[int, int, str], None] | None = None) -> dict:
     """Plan `candidates` songs for the lyrics (seeds seed, seed+1, ...), turn each into a song file,
-    check, preview and rank them. Everything lands in out/<slug>/write/; returns the index."""
+    check, preview and rank them. Everything lands in out/<slug>/write/; returns the index.
+
+    `engine`: `plan` (YuE2), `rules` (Copyist's own MIT writer), or `auto` (plan when yue-plan is
+    installed, otherwise rules).
+    """
     from . import styles, validate
     from .song import load_song
     if voice not in VOICES:
         raise WriteError(f"Unknown voice {voice!r}: choose {', '.join(VOICES)}.")
+    if engine not in ENGINES:
+        raise WriteError(f"Unknown engine {engine!r}: choose {', '.join(ENGINES)}.")
     line = style_line(style, words, voice)
     name = slug(title)
     folder = out_root / name / "write"
@@ -347,8 +403,9 @@ def write_songs(lyrics: str, title: str, out_root: Path = Path("out"), style: st
     if index.get("lyrics_id") not in (None, words_id):
         index["candidates"] = []                      # new words: earlier melodies were written for others
         index.pop("kept", None)
+    use_rules = _use_rules(engine)
     index.update({"title": title, "slug": name, "style": style, "words": words, "voice": voice,
-                  "style_line": line, "lyrics_id": words_id})
+                  "style_line": line, "lyrics_id": words_id, "engine": "rules" if use_rules else "plan"})
     entries = {e["seed"]: e for e in index.get("candidates", [])}
     for k in range(candidates):
         s = seed + k
@@ -357,15 +414,31 @@ def write_songs(lyrics: str, title: str, out_root: Path = Path("out"), style: st
         cdir = folder / f"candidate-{s}"
         entry = {"seed": s, "folder": cdir.name, "ok": False}
         try:
-            plan_path = run_planner(planner_request(lyrics, line, s), cdir, device=device)
-            plan_text = plan_path.read_text(encoding="utf-8")
-            meter = abcplan.written_meter(abcplan.parse(plan_text).meter)
-            chosen = style if style and (st := styles.get(style)) and meter in st.meters else styles.default_for(meter)
-            written_with = {"planner": "yue-plan", "model": "YuE2-3B", "seed": s, "style": line}
-            cand = song_from_plan(plan_text, lyrics, title, voice, chosen, written_with, credits)
-            if style and chosen != style:
-                cand.notes.append(f"The planner wrote {meter}, which the {style} style doesn't play; "
-                                  f"the preview uses {chosen or 'the default band'}.")
+            if use_rules:
+                from . import ruleswrite
+                draft = ruleswrite.compose(lyrics, style, voice, s)
+                cdir.mkdir(parents=True, exist_ok=True)
+                (cdir / PLAN_FILE).write_text(ruleswrite.plan_abc(draft), encoding="utf-8")
+                chosen = style if style and (st := styles.get(style)) and draft.meter in st.meters \
+                    else styles.default_for(draft.meter)
+                written_with = {"planner": "rules", "seed": s, "style": line}
+                cand = song_from_bars(draft.bars, unit=draft.unit, meter=draft.meter, key=draft.key,
+                                      tempo=draft.tempo, lyrics=lyrics, title=title, voice=voice,
+                                      style=chosen, written_with=written_with, credits=credits,
+                                      notes=draft.notes)
+                if style and chosen != style:
+                    cand.notes.append(f"The rules wrote {draft.meter}, which the {style} style doesn't play; "
+                                      f"the preview uses {chosen or 'the default band'}.")
+            else:
+                plan_path = run_planner(planner_request(lyrics, line, s), cdir, device=device)
+                plan_text = plan_path.read_text(encoding="utf-8")
+                meter = abcplan.written_meter(abcplan.parse(plan_text).meter)
+                chosen = style if style and (st := styles.get(style)) and meter in st.meters else styles.default_for(meter)
+                written_with = {"planner": "yue-plan", "model": "YuE2-3B", "seed": s, "style": line}
+                cand = song_from_plan(plan_text, lyrics, title, voice, chosen, written_with, credits)
+                if style and chosen != style:
+                    cand.notes.append(f"The planner wrote {meter}, which the {style} style doesn't play; "
+                                      f"the preview uses {chosen or 'the default band'}.")
             song_path = cdir / f"{name}.yaml"
             song_path.write_text(song_yaml(cand.data), encoding="utf-8")
             song = load_song(song_path)
@@ -374,7 +447,7 @@ def write_songs(lyrics: str, title: str, out_root: Path = Path("out"), style: st
                           "meter": song.meter, "tempo": song.tempo, "style": song.style,
                           "sections": song.sections, "scores": scores(song, findings, cand, style),
                           "notes": cand.notes})
-            report = [f"# {title}: candidate {s}", "", f"Planner style: {line}", ""] + \
+            report = [f"# {title}: candidate {s}", "", f"Writer: {index['engine']}", f"Style line: {line}", ""] + \
                 [f"- {n}" for n in cand.notes] + ["", validate.report_markdown(song, findings)]
             (cdir / REPORT_FILE).write_text("\n".join(report), encoding="utf-8")
             if not previews and (cdir / PREVIEW_FILE).is_file():

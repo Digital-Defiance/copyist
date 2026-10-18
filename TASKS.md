@@ -157,7 +157,7 @@ The owner's goal is "really good melodies and solid themes", for people who can'
 - [x] Owner listened (18 Oct 2026): "sounds fine"; Tyger candidate 4 ("maybe the liveliest") kept as `songs/the-tyger.yaml`. Hope still in `out/hope/write/` if she wants one
 - [x] Section rewriting: `copyist rewrite SONG --section --how again|higher|simpler` (swap from write donors, or raise notes and chords together; tests in `tests/test_rewrite.py`)
 - [x] Owner kept Tyger higher candidate 3 (+4 → D) after the chord-together fix; page "Try another melody" (again / higher / simpler) on the Song tab
-- [ ] A rule-based writer of Copyist's own (spec, "Later")
+- [x] Rule-based writer: `copyist write --engine rules` (and `auto` fallback without yue-plan); stress, chords, contour, motifs (`copyist/ruleswrite.py`, `tests/test_ruleswrite.py`)
 - [ ] Let the page edit a kept song's lyrics and refit them (the fit code is ready)
 
 ## 3i. Score editing (SPEC §14)
