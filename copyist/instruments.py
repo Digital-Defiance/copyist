@@ -76,6 +76,9 @@ CATALOG = {i.id: i for i in (
     Instrument("tonewheel", "Tonewheel organ (sfizz sine drawbars)", "copyist/synthetic",
                git_blob_id((SOUND / "tonewheel.sfz").read_bytes()), "tonewheel.sfz", "MIT", "",
                "https://sfz.tools/sfizz/", generated=True, synthetic=True),
+    Instrument("musicbox", "VCSL glockenspiel (music-box stand-in)", "sgossner/VCSL",
+               "c1ea7bcc3c7309650ab0da9d15c9cd1fbc4a4c7e", "musicbox.sfz", "CC0", "",
+               "https://github.com/sgossner/VCSL", generated=True),
 )}
 
 # What a person downloads, in packs, so nobody fetches an orchestra they won't use.
@@ -85,6 +88,9 @@ PACKS = {
              "instruments": ["piano", "electric-bass", "upright-bass", "drums", "clarinet"]},
     "keys": {"label": "Keys", "why": "pipe organ, concert harp, and a synthetic tonewheel for gospel",
              "instruments": ["organ", "harp", "tonewheel"]},
+    "bells": {"label": "Music box and bells", "why": "a tinkling music-box stand-in (VCSL glockenspiel) for lullabies "
+                                                      "and the musical",
+              "instruments": ["musicbox"]},
 }
 
 # Which instrument plays each part of the arrangement (roles from perform.roles), unless the

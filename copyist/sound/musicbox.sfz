@@ -1,0 +1,44 @@
+// Copyist music-box stand-in: VCSL glockenspiel (CC0, Versilian Studios).
+// Written by scripts/instruments/musicbox.py. A real music-box library is still to find.
+<control>
+default_path=Idiophones/Struck Idiophones/Glockenspiel/
+
+<global>
+ampeg_attack=0.001
+ampeg_release=2.2
+amp_veltrack=65
+
+<group> lokey=0 hikey=70 pitch_keycenter=68
+<region> lovel=100 hivel=127 offset=0 tune=0 sample=glock_loud_G4_01.wav
+<region> lovel=55 hivel=99 offset=176 tune=30 sample=glock_medium_G4_01.wav
+<region> lovel=1 hivel=54 offset=0 tune=30 sample=glock_soft_G4_01.wav
+
+<group> lokey=71 hikey=75 pitch_keycenter=72
+<region> lovel=100 hivel=127 offset=0 tune=0 sample=glock_loud_C5_01.wav
+<region> lovel=55 hivel=99 offset=176 tune=-10 sample=glock_medium_C5_01.wav
+<region> lovel=1 hivel=54 offset=0 tune=-10 sample=glock_soft_C5_02.wav
+
+<group> lokey=76 hikey=81 pitch_keycenter=79
+<region> lovel=100 hivel=127 offset=0 tune=10 sample=glock_loud_G5_01.wav
+<region> lovel=55 hivel=99 offset=176 tune=30 sample=glock_medium_G5_01.wav
+<region> lovel=1 hivel=54 offset=308 tune=10 sample=glock_soft_G5_01.wav
+
+<group> lokey=82 hikey=87 pitch_keycenter=84
+<region> lovel=100 hivel=127 offset=0 tune=20 sample=glock_loud_C6_01.wav
+<region> lovel=55 hivel=99 offset=176 tune=600 sample=glock_medium_C6_01.wav
+<region> lovel=1 hivel=54 offset=0 tune=-10 sample=glock_soft_C6_01.wav
+
+<group> lokey=88 hikey=91 pitch_keycenter=91
+<region> lovel=55 hivel=99 offset=176 tune=-20 sample=glock_medium_G6_01.wav
+<region> lovel=1 hivel=54 offset=308 tune=-20 sample=glock_soft_G6_01.wav
+
+<group> lokey=92 hikey=94 pitch_keycenter=92
+<region> lovel=1 hivel=127 offset=0 tune=-20 sample=glock_loud_G#6_01.wav
+
+<group> lokey=95 hikey=96 pitch_keycenter=96
+<region> lovel=55 hivel=99 offset=176 tune=-30 sample=glock_medium_C7_01.wav
+<region> lovel=1 hivel=54 offset=308 tune=-30 sample=glock_soft_C7_03.wav
+
+<group> lokey=97 hikey=127 pitch_keycenter=97
+<region> lovel=1 hivel=127 offset=0 tune=30 sample=glock_loud_C7_01.wav
+

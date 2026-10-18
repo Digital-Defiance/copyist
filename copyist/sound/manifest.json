@@ -7167,6 +7167,112 @@
 "repo":"copyist/synthetic",
 "revision":"f4fd2bbbb08b208f7c660db667d23637e78ea5d6",
 "files":[]
+},
+"musicbox":{
+"repo":"sgossner/VCSL",
+"revision":"c1ea7bcc3c7309650ab0da9d15c9cd1fbc4a4c7e",
+"files":[
+[
+"Idiophones/Struck Idiophones/Glockenspiel/glock_loud_C5_01.wav",
+1323482,
+"25185183d6a23973dcb245843b86c33108098381"
+],
+[
+"Idiophones/Struck Idiophones/Glockenspiel/glock_loud_C6_01.wav",
+1323482,
+"f15847a111ce01f6d1bf285c835c941a22c9a38b"
+],
+[
+"Idiophones/Struck Idiophones/Glockenspiel/glock_loud_C7_01.wav",
+464710,
+"7e4bc7ee61184e7d3171eeca26d1f95c2f8de3c2"
+],
+[
+"Idiophones/Struck Idiophones/Glockenspiel/glock_loud_G#6_01.wav",
+931630,
+"c0da4e02db0fb6a394223dc3b6cb2d25d402499c"
+],
+[
+"Idiophones/Struck Idiophones/Glockenspiel/glock_loud_G4_01.wav",
+1323482,
+"741d607d19f0b9ca9c449391d332946bd89d4fa5"
+],
+[
+"Idiophones/Struck Idiophones/Glockenspiel/glock_loud_G5_01.wav",
+1323482,
+"5a74c7a1c297fc67ddd6f1ba3e829f59478ce05a"
+],
+[
+"Idiophones/Struck Idiophones/Glockenspiel/glock_medium_C5_01.wav",
+1271310,
+"db079c70946137f543820b6a6ac023d0afaac47c"
+],
+[
+"Idiophones/Struck Idiophones/Glockenspiel/glock_medium_C6_01.wav",
+1271310,
+"c02ff721d10eb3551372806653368f45ea5dc367"
+],
+[
+"Idiophones/Struck Idiophones/Glockenspiel/glock_medium_C7_01.wav",
+492418,
+"a0f4aff9ef7d73e49a16f4054ead1369a78572b0"
+],
+[
+"Idiophones/Struck Idiophones/Glockenspiel/glock_medium_G4_01.wav",
+1271310,
+"a7d9ca6c68e4c56327d83f0653ee3e16e4810265"
+],
+[
+"Idiophones/Struck Idiophones/Glockenspiel/glock_medium_G5_01.wav",
+1226714,
+"dbaf80bc3975016095de3a611a202b581931311c"
+],
+[
+"Idiophones/Struck Idiophones/Glockenspiel/glock_medium_G6_01.wav",
+843122,
+"e95738492bdc207b11ad32891a9a1ea090b6719e"
+],
+[
+"Idiophones/Struck Idiophones/Glockenspiel/glock_soft_C5_02.wav",
+709206,
+"b68621c4f4fc482284bc8e848ea2d2654366d49e"
+],
+[
+"Idiophones/Struck Idiophones/Glockenspiel/glock_soft_C6_01.wav",
+706962,
+"d3c777e9470ee9d4b1821817585967500fc34362"
+],
+[
+"Idiophones/Struck Idiophones/Glockenspiel/glock_soft_C7_03.wav",
+706962,
+"058b6acda9c40c9df19d8a911e79c0c4a60c3111"
+],
+[
+"Idiophones/Struck Idiophones/Glockenspiel/glock_soft_G4_01.wav",
+706962,
+"0fb4b3e2baea5685fa4bb29aba340781c0ab0077"
+],
+[
+"Idiophones/Struck Idiophones/Glockenspiel/glock_soft_G5_01.wav",
+706962,
+"2de4932c129eaacdb2ec9e6e9795cdf00e112cf7"
+],
+[
+"Idiophones/Struck Idiophones/Glockenspiel/glock_soft_G6_01.wav",
+585962,
+"36c308a3c51796da6754a53373787e818830de5b"
+],
+[
+"LICENSE",
+7048,
+"0e259d42c996742e9e3cba14c677129b2c1b6311"
+],
+[
+"README.md",
+4365,
+"655eaa2be2a415dfa526bf6e7729aa40590ac0e8"
+]
+]
 }
 }
 }

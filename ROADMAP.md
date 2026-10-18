@@ -145,7 +145,8 @@ Copyist arranges in as many styles as can be written as correct scores: everyone
 - [x] Test songs in 4/4 and 6/8: *When the Saints Go Marching In*, *Silent Night* (public domain)
 - [x] Pipe organ (VCSL, hymn), concert harp (VSCO, Broadway), tonewheel synth for gospel (2026-10-18)
 - [ ] More parts in the arranger: guitar (strummed and picked, chord shapes), strings, brass and reeds, a lead line, choir; the ensemble chosen by the style
-- [ ] Wave 1, finished with real parts: music box (for *I Left the Lights On*), country with acoustic guitar and fiddle, folk with fingerpicked guitar, pop and rock with guitars
+- [x] Music-box stand-in (VCSL glock) + `music-box` style (2026-10-18); real music box/celesta still to find
+- [ ] Wave 1, finished with real parts: country with acoustic guitar and fiddle, folk with fingerpicked guitar, pop and rock with guitars; real music box/celesta when found
 - [ ] Wave 2: salsa, cumbia, bolero, tango, Western swing, bluegrass, Motown, funk, Celtic reel and air, polka, calypso, 12/8 doo-wop
 - [ ] Wave 3: big band, orchestral and cinematic, string quartet, SATB choir, electronic (house, synthwave, lo-fi, ambient)
 - [ ] A melody voice per style for previews (flute, sax, violin, synth lead)

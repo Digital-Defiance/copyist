@@ -2,6 +2,10 @@
 
 Newest first. One entry per decision: what, why, and what we gave up.
 
+## 2026-10-18 (music box)
+
+- **Music-box exact preview uses the VCSL glockenspiel** as a stand-in (~17 MB, `bells` pack). No free real music-box library turned up; glock is what docs/sound-set.md already named. New `music-box` style: tinkling melody over soft piano arps, no bass/drums. A true music box and celesta stay on the find list for *I Left the Lights On*.
+
 ## 2026-10-18 (pipe organ and harp)
 
 - **Hymn and gospel previews use the VCSL pipe organ** (manuals only, Quiet + Loud; Copyist writes the SFZ like the clarinet). Hymn: organ on the melody and the held chords, upright bass under. Pack `keys` downloads it (~86 MB). Gave up: pedals and a real Hammond for this cut.

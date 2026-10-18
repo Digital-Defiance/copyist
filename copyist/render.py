@@ -41,8 +41,8 @@ POLYPHONY = 256        # the piano with its pedal down needs plenty
 
 def mix_levels(plan: dict[str, str]) -> tuple[dict[str, float], dict[str, float]]:
     """Balance and room sends for this instrument plan."""
-    # Piano-vocal or organ-led previews: keep accompaniment further back.
-    if plan.get("melody") in ("piano", "organ"):
+    # Solo-ish leads (piano, organ, music box): keep accompaniment further back.
+    if plan.get("melody") in ("piano", "organ", "musicbox"):
         return dict(PIANO_VOCAL_BALANCE_DB), dict(PIANO_VOCAL_REVERB)
     return dict(BALANCE_DB), dict(REVERB)
 
