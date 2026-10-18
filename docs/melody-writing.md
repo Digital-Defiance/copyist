@@ -11,7 +11,7 @@ YuE2 already composes. Before it renders audio, its first stage writes the song 
 - the lyrics placed under the notes by an alignment that respects stress and phrasing;
 - the validators run on the result.
 
-Each candidate is played (band preview, and optionally a YuE2 take) so the person picks by ear. The picked song file then goes through everything Copyist already does.
+Each candidate is played on the exact band preview so the person picks by ear. A YuE2 take is optional (`--takes`) when you want to hear a production, not the default audition (SPEC §15). The picked song file then goes through everything Copyist already does.
 
 ## What `yue-plan` produces (measured)
 

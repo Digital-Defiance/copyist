@@ -33,8 +33,10 @@ KIT = {
 FILL_EVERY = 8  # bars
 
 
-def groove_for(spec: dict | None, ts: meter.TimeSignature) -> dict:
-    """The style's groove, or a plain one: the hi-hat on every beat, the kick on one."""
+def groove_for(spec: dict | list | None, ts: meter.TimeSignature) -> dict | list:
+    """The style's groove (one bar, or a cycling phrase of bars), or a plain beat-by-beat groove."""
+    if isinstance(spec, list):
+        return [groove_for(g, ts) for g in spec]
     if spec:
         return {k: [(s, d, list(pieces)) for s, d, pieces in spec[k]] for k in ("hands", "feet", "fill")}
     beats = ts.beatCount
@@ -44,6 +46,13 @@ def groove_for(spec: dict | None, ts: meter.TimeSignature) -> dict:
         "feet": [(0, beat, ["kick"])],
         "fill": [((beats - 1) * beat, beat / 2, ["snare"]), ((beats - 0.5) * beat, beat / 2, ["snare"])],
     }
+
+
+def groove_bar(groove: dict | list, n_in_song: int) -> dict:
+    """The groove for full-bar number `n_in_song` (1 = first full bar)."""
+    if isinstance(groove, list):
+        return groove[(max(n_in_song, 1) - 1) % len(groove)]
+    return groove
 
 
 @dataclass
@@ -106,7 +115,7 @@ def voice_from(hits: list[Hit], length: float, stem: str, voice_id: str) -> stre
     return v
 
 
-def build(song, spec: dict | None, bar_window) -> tuple[stream.Part, stream.Part]:
+def build(song, spec: dict | list | None, bar_window) -> tuple[stream.Part, stream.Part]:
     """(notation part, performance part) for the drum kit, playing the style's groove (`spec`)."""
     melody_bars = list(song.melody.getElementsByClass(stream.Measure))
     ts = meter.TimeSignature(song.meter)
@@ -140,7 +149,8 @@ def build(song, spec: dict | None, bar_window) -> tuple[stream.Part, stream.Part
             m.insert(0, note.Rest(quarterLength=length))
             hands, feet = [], []
         else:
-            hands, feet = bar_hits(groove, n_in_song, i == len(melody_bars) - 1, after_fill, length, lo, hi)
+            hands, feet = bar_hits(groove_bar(groove, n_in_song), n_in_song,
+                                   i == len(melody_bars) - 1, after_fill, length, lo, hi)
             m.insert(0, voice_from(hands, length, "up", "1"))
             m.insert(0, voice_from(feet, length, "down", "2"))
         after_fill = (not is_pickup) and n_in_song % FILL_EVERY == 0

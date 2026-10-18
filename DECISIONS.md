@@ -2,6 +2,22 @@
 
 Newest first. One entry per decision: what, why, and what we gave up.
 
+## 2026-10-18 (less-cheesy exact preview, first cut)
+
+- **Style files can cycle a phrase of bars** (`rh` / `lh` / `bass` / `drums` as a list of bars). One-bar forever was the arranger-keyboard feel; a 2–4 bar cycle is enough to break om-pah-pah without per-style code.
+- **The waltz is piano-vocal: melody on the piano, no drums.** The clarinet-plus-kit waltz was the cheese the owner named (rigidity, clarinet, om-pah-pah). Country waltz keeps the kit and the oom-pah on purpose. Piano-vocal mixes put the accompaniment further back and use less room.
+- **When the melody is on the piano, the right hand rests.** Same sample library on two MIDI parts was double-striking every shared chord tone. Left hand and bass stay under the tune.
+- **Piano melody skips voice-style legato.** Overlapping successive notes (~15 ms) sounds right on a clarinet and clicks on Salamander; `melody_legato=False` releases before the next hammer.
+- **Gave up for this cut:** builds across verses, more melody instruments (we only have clarinet besides piano), and rewriting every style. Those stay on TASKS 3f.
+
+## 2026-10-18 (previews and score editing)
+
+- **Previews are a ladder, not "YuE2 or cheese".** Rejected: making YuE2 the default audition for every write candidate (about a minute each, and it judges production sound, not whether the notes are the right tune), and settling for a bare rehearsal-piano as the only band preview. Kept:
+  1. **Fast, exact preview** (seconds): the sampled band playing the written notes. Make this good enough to judge a melody and a style by ear: phrase-level patterns, builds, a melody voice that fits the style (or piano-vocal when that helps), and a real mix. This is the default for `copyist write`, the style gallery, and "does this transcription sound right".
+  2. **Sung guide** (optional): SoulX on the melody over that band or piano, when you need to hear the words on the notes without a full production.
+  3. **Finished take** (YuE2, optional or on demand): when judging production sound, styles as records, or a kept song. `write --takes` and `gallery --takes` stay; they are not the default audition.
+- **Score editing is two modes, both first-class.** By ear for people who can't read music (listen, nudge, try another bar, A/B). By note for people who can or want to: click and drag on the score, change pitch/length/chord, edit lyrics under notes, and round-trip through MusicXML. The score stays the source of truth either way; audio re-renders from the edited score. Gave up: treating note editing as optional or "later for MuseScore only".
+
 ## 2026-10-18 (transcription)
 
 - **Copyist's own transcriber is the default; SheetSage2 is optional.** SheetSage2 (through yue2.cpp) is the most accurate we measured, but its weights are CC BY-NC 4.0 with no permission for creators to sell their songs, unlike YuE2's. Copyist's own engine is open code (MIT, librosa, Demucs) and free for any use. The page names SheetSage2's licence and asks the person to accept it. Gave up: the best accuracy by default, for now.

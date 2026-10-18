@@ -304,8 +304,9 @@ def band_preview(song, wav: Path, cache: Path, seed: int = 1) -> str:
     style = styles.get(song.style)
     with tempfile.TemporaryDirectory(prefix="copyist-write-") as tmp:
         midi = engrave.write_midi(arrange.arrange_band(song).performance(), Path(tmp) / "preview.mid")
+        piano_melody = bool(style and style.instruments.get("melody") == "piano")
         perform.perform(midi, midi, song.meter, float(perform.pickup_of(song)), seed=seed,
-                        swing=style.swing if style else 0.5)
+                        swing=style.swing if style else 0.5, melody_legato=not piano_melody)
         return render.render_band(midi, wav, song.style, cache).engine
 
 

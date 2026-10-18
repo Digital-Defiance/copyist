@@ -82,6 +82,16 @@ class PerformTests(unittest.TestCase):
         self.assertEqual(s.strength(720), "beat")       # the second dotted-quarter beat
         self.assertEqual(s.strength(240), "off")
 
+    def test_piano_melody_does_not_overlap_hammers(self):
+        """Voice-style legato overlaps notes; on a piano sample that clicks."""
+        out = self.tmp / "piano-touch.mid"
+        perform.perform(self.plain, out, self.song.meter, self.pickup, seed=1, melody_legato=False)
+        notes, _ = perform.read(mido.MidiFile(str(out)))
+        roles = perform.roles(mido.MidiFile(str(out)), notes)
+        line = sorted((n for n in notes if roles.get(n.track) == "melody"), key=lambda n: n.start)
+        for a, b in zip(line, line[1:]):
+            self.assertLessEqual(a.end, b.start, (a.pitch, b.pitch, a.end, b.start))
+
 
 if __name__ == "__main__":
     unittest.main()

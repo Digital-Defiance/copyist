@@ -32,8 +32,18 @@ PART_OF_ROLE = {"melody": "melody", "piano_rh": "piano", "piano_lh": "piano", "b
                 "drums": "drums", "other": "other"}
 PART_ORDER = ["melody", "piano", "other", "bass", "drums"]
 BALANCE_DB = {"melody": 0.0, "piano": -4.0, "other": -6.0, "bass": -6.0, "drums": -9.0}   # loudness vs. the melody
-REVERB = {"melody": 0.30, "piano": 0.22, "other": 0.22, "bass": 0.05, "drums": 0.12}      # send to the room
+REVERB = {"melody": 0.18, "piano": 0.14, "other": 0.14, "bass": 0.04, "drums": 0.08}      # send to the room
+# When the melody is also on the piano (piano-vocal preview), the accompaniment sits further back.
+PIANO_VOCAL_BALANCE_DB = {"melody": 0.0, "piano": -8.0, "other": -6.0, "bass": -7.0, "drums": -12.0}
+PIANO_VOCAL_REVERB = {"melody": 0.12, "piano": 0.10, "other": 0.10, "bass": 0.03, "drums": 0.06}
 POLYPHONY = 256        # the piano with its pedal down needs plenty
+
+
+def mix_levels(plan: dict[str, str]) -> tuple[dict[str, float], dict[str, float]]:
+    """Balance and room sends for this instrument plan."""
+    if plan.get("melody") == "piano":
+        return dict(PIANO_VOCAL_BALANCE_DB), dict(PIANO_VOCAL_REVERB)
+    return dict(BALANCE_DB), dict(REVERB)
 
 
 @dataclass
@@ -158,7 +168,8 @@ def render_band(midi_path: Path, wav_path: Path, style: str | None = None, cache
                     audio[part], sr = mixdown.read(raw)
                     if sr != SAMPLE_RATE:
                         raise AudioUnavailable(f"sfizz played the {part} part at {sr} Hz, not {SAMPLE_RATE}")
-                mixed = mixdown.mix(audio, SAMPLE_RATE, BALANCE_DB, REVERB)
+                balance, reverb = mix_levels(plan)
+                mixed = mixdown.mix(audio, SAMPLE_RATE, balance, reverb)
             except AudioUnavailable as e:
                 why_not = str(e)
         if why_not:

@@ -68,6 +68,7 @@ class ManifestTests(unittest.TestCase):
 
     def test_which_instrument_plays_which_part(self):
         self.assertEqual(instruments.instrument_for("melody"), "clarinet")
+        self.assertEqual(instruments.instrument_for("melody", "waltz"), "piano")
         self.assertEqual(instruments.instrument_for("piano"), "piano")
         self.assertEqual(instruments.instrument_for("bass", "waltz"), "upright-bass")
         self.assertEqual(instruments.instrument_for("bass", "straight"), "electric-bass")

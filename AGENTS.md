@@ -4,26 +4,27 @@
 
 Instructions for AI coding agents (Claude, Cursor, anything else) and people picking up this project. Read this first, then SPEC.md, then ROADMAP.md.
 
-## Start here (handoff, 17 October 2026)
+## Start here (handoff, 18 October 2026)
 
 The work moved fast and may change hands at any moment. Here is where things stand.
 
-**Done and working** (tests pass: `python -m unittest discover -s tests`, 136 tests):
+**Done and working** (tests pass: `python -m unittest discover -s tests`, 187 tests):
 - Song files become a lead sheet, band score and parts, MIDI, and a validation report.
-- 23 styles as data files, with a style gallery.
+- 23 styles as data files, with a style gallery; styles can cycle a phrase of bars.
 - Expressive performance.
-- The sampled band through sfizz, with stems and a gentle master.
+- The sampled band through sfizz, with stems and a gentle master. Waltz exact preview is piano-vocal (no clarinet, no drums).
 - YuE2 takes that follow the score, checked by `copyist follow`.
 - Voice LoRA training on the Mac.
 - The local web page (`copyist serve`).
 - The Tauri desktop shell.
 - MIT licence and GitHub Actions.
+- `copyist write` and `copyist transcribe` (built 18 October 2026).
 
 **Next, in this order:**
-1. **Melody writing:** TASKS.md section 3g, spec in [docs/melody-writing.md](docs/melody-writing.md). Lyrics and a style go in; YuE2's planner (`yue-plan`) writes several melodies; Copyist turns each into a correct song file and the person picks by ear. Built and tested (18 October 2026): `copyist write`, its page ("Write a song"), and the pieces under it (`syllables.py`, `abcplan.py`, `fit.py`, `write.py`). **Next:** the owner tries it on the Mac and listens; fix what she finds. TASKS.md section 3g.
-2. **Transcribing recordings:** TASKS.md section 7, spec in [docs/transcribing.md](docs/transcribing.md). Built and tested (18 October 2026): `copyist transcribe`, the page's "Transcribe a recording", the open engine and SheetSage2 as an optional non-commercial engine. **Next:** more sung test recordings, accuracy on real mixes, then the owner tries her own songs.
-3. **The open singer (plan B):** TASKS.md section 3h, spec in [docs/open-singer.md](docs/open-singer.md). Teach HeartMuLa-oss-3B (Apache-2.0) to follow Copyist's score, using MuLaCover's Apache-2.0 conditioning code and our own training. Start with phase B0 (feasibility).
-4. The less-cheesy band preview, the organ and guitar parts, and the music box: TASKS.md section 3f.
+1. **Melody writing:** TASKS.md section 3g — owner tries `copyist write` on the Mac and listens; fix what she finds.
+2. **Transcribing recordings:** TASKS.md section 7 — more sung test recordings, then the owner's songs.
+3. **Less-cheesy exact previews (rest of 3f):** builds across verses, phrase cycles on other styles, more melody voices; then organ, guitar, music box.
+4. **The open singer (plan B):** TASKS.md section 3h, spec in [docs/open-singer.md](docs/open-singer.md). Start with phase B0 (feasibility).
 
 **The owner's machine:**
 - An M4 Max Mac with 64 GB, the repository at `/Volumes/Code/copyist`, a `.venv` there.

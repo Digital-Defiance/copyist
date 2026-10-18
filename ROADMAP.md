@@ -135,7 +135,8 @@ Copyist arranges in as many styles as can be written as correct scores: everyone
 - [x] 23 styles in 3/4, 4/4 and 6/8 across nine families; YuE2's style words come from the style
 - [x] `copyist gallery` (every style for the song's meter, each at a fitting tempo), `copyist use-style`, `copyist styles`; the page's Styles section with a player per style and "Use this style"
 - [x] `copyist gallery --takes`: a finished YuE2 take in every style, with the style's words and tempo (and a trained voice)
-- [ ] A band preview that doesn't sound like a 1990s arranger keyboard: phrase-level variation, builds across verses, comping around the melody, a better melody voice, a real mix
+- [x] Exact-preview first cut: phrase cycles in styles; waltz piano-vocal (no drums); quieter accompaniment mix (2026-10-18)
+- [ ] Exact previews that don't sound like a 1990s arranger keyboard (builds across verses, more style melody voices, real stereo mix, phrase cycles on the other cheesy styles). YuE2 takes stay on demand; see SPEC §15
 - [x] Test songs in 4/4 and 6/8: *When the Saints Go Marching In*, *Silent Night* (public domain)
 - [ ] More parts in the arranger: organ, guitar (strummed and picked, chord shapes), strings, brass and reeds, a lead line, choir; the ensemble chosen by the style
 - [ ] Wave 1, finished with real parts: music box (for *I Left the Lights On*), gospel and hymn with organ, country with acoustic guitar and fiddle, folk with fingerpicked guitar, pop and rock with guitars
@@ -156,6 +157,15 @@ Lyrics and a style in; several finished songs out to choose between by ear, each
 - [ ] The owner writes a song with it on the Mac and keeps one
 - [ ] Section-level rewriting ("again", "higher", "simpler")
 - [ ] A rule-based writer of Copyist's own (MIT), for use without YuE2
+
+## SE: Score editing (SPEC §14)
+
+Edit transcribed and written songs. By ear and by note, both first-class.
+
+- [ ] By ear: nudge, chord list, try another bar, A/B
+- [ ] By note: select on the score, change pitch/duration/chord/lyrics
+- [ ] Persist to the song file; re-validate; re-engrave; refresh the exact preview
+- [ ] MusicXML import of edits
 
 ## OS: The open singer (docs/open-singer.md)
 

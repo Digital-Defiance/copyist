@@ -49,6 +49,14 @@ meters:
       fill: [[2, 0.5, [snare]], [2.5, 0.5, [snare]], [3, 0.5, [tom]], [3.5, 0.5, [snare]]]
 ```
 
+A part can list **several bars** instead of one; they cycle as a phrase (bar 1 plays the first, bar 2 the second, then it repeats). The waltz does this so it isn't the same om-pah-pah every bar:
+
+```yaml
+rh:
+  - [[0, 1, arp1], [1, 1, arp2], [2, 1, arp3]]
+  - [[0, 3, chord]]
+```
+
 **What each part can play:**
 
 | Part | What it can play |
@@ -75,7 +83,7 @@ The arranger reads these files (`copyist/arrange.py`, `copyist/drums.py`). Every
 
 There are two ways to hear a song in every style that fits its meter. Each plays every style at a tempo inside its usual range.
 
-- **`copyist gallery SONG`: the band preview.** Each style is arranged, performed and played on the sampled band. It takes a few seconds a style and runs anywhere. It's exact, but it sounds like what it is: piano, bass and drums, with a clarinet carrying the tune. Styles whose signature instruments aren't in the band yet (fiddle, steel guitar, organ, horns) are only sketched.
+- **`copyist gallery SONG`: the exact band preview.** Each style is arranged, performed and played on the sampled band. It takes a few seconds a style and runs anywhere. It plays the written notes (the right job for judging a melody or a style sketch). Phrase-level patterns and per-style melody voices (the waltz is piano-vocal, no drums) are how that preview gets less like an arranger keyboard (TASKS 3f, SPEC §15); YuE2 takes stay on demand. Styles whose signature instruments aren't in the band yet (fiddle, steel guitar, organ, horns) are only sketched.
 - **`copyist gallery SONG --takes`: finished takes.** YuE2 performs the song in each style, singer and whole band together. The style's own words go into its style line ("swing jazz, walking upright bass, ride cymbal, ... clarinet, horn section"), so each style gets its real instruments.
   - It takes about 45 seconds a style on an M4 Max and needs the singer installed.
   - `--lora` and `--prefix` sing it in a trained voice.

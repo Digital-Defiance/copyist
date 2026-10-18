@@ -1,3 +1,4 @@
+import dataclasses
 import unittest
 from pathlib import Path
 
@@ -25,7 +26,8 @@ def hits_in(measure):
 class DrumTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.song = load_song(ROOT / "songs" / "amazing-grace.yaml")
+        # Country waltz keeps the kit; the default waltz is piano-vocal without drums.
+        cls.song = dataclasses.replace(load_song(ROOT / "songs" / "amazing-grace.yaml"), style="country-waltz")
         cls.band = arrange.arrange_band(cls.song)
         cls.kit = [p for p in cls.band.score.parts if p.partName == "Drums"][0]
         cls.bars = {m.number: m for m in cls.kit.getElementsByClass(stream.Measure)}

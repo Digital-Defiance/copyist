@@ -221,11 +221,13 @@ def build_role(song: Song, role: str, pattern: list, timeline, velocity: int) ->
     full = melody_bars[0].barDuration.quarterLength
     previous_voicing = None
     bars = []
+    first_full = 0 if bar_window(melody_bars[0], full, True)[2] < full else 1
     for i, mb in enumerate(melody_bars):
         lo, hi, length = bar_window(mb, full, first=i == 0)
         start_abs = float(mb.getOffsetInHierarchy(song.melody))
+        n_in_song = i + first_full if first_full == 1 else i   # 1 = first full bar (0 on a pickup)
         events = []
-        for s, d, which in pattern:
+        for s, d, which in styles.bar_of(pattern, n_in_song):
             s0, e0 = max(s, lo), min(s + d, hi)
             if e0 <= s0:
                 continue
@@ -412,6 +414,12 @@ def add_chord_symbols(part: stream.Part, timeline) -> None:
 def arrange_band(song: Song) -> Arrangement:
     """Arrange the song for the instruments the song file asks for (default: all of them)."""
     style, pat, notes = pattern_for(song)
+    # Piano-vocal: the melody is already on the piano. Playing the right-hand pattern
+    # too strikes the same keys twice (one sample library, two MIDI parts).
+    style_obj = styles.get(style)
+    if style_obj and style_obj.instruments.get("melody") == "piano":
+        pat = {**pat, "rh": []}
+        notes.append("Piano-vocal: the right hand rests so the melody isn't struck twice.")
     timeline = chord_timeline(song.melody)
     if not timeline:
         notes.append("No chord symbols, so piano and bass have nothing to play.")

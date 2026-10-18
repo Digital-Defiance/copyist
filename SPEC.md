@@ -330,10 +330,30 @@ Only transcribe recordings the user owns or has rights to. The fitted score of s
 
 The plan is for this page to become a free desktop app (Tauri, with the engine and yue2.cpp bundled, models downloaded on first run), so anyone can make songs on their own computer: docs/desktop-app.md.
 
-## 14. Open questions
+## 14. Score editing (planned)
+
+Two ways to change the notes, both first-class, for transcribed songs and written ones:
+
+1. **By ear.** Hear a bar, move the melody up or down, lengthen or shorten, pick another chord from a list, try another version of the bar, keep or undo. No reading required.
+2. **By note.** Click a note on the engraved score to select it; change pitch, duration and ties; edit chord symbols and lyrics under the notes; paste or import MusicXML (e.g. from MuseScore). For people who read music or want that control.
+
+Either path writes the song file. Validators run again. Previews and takes re-render from the new score. YAML remains editable by hand.
+
+## 15. Previews (planned)
+
+Three layers; each has a job:
+
+| Layer | What you hear | When | Speed |
+|---|---|---|---|
+| Exact band | Sampled instruments playing the written notes | Default for write candidates, style gallery, transcription check | seconds |
+| Sung guide | SoulX melody over that band or piano | Optional, when words-on-notes matter | longer |
+| Finished take | YuE2 production of the score | On demand (`--takes`, Make a take) | ~1 min/song |
+
+The exact band must stop sounding like a 1990s arranger keyboard (TASKS 3f). Style files can cycle a phrase of bars (not one bar forever), pick a melody instrument per style (piano for the waltz), and omit drums when they only add cheese. YuE2 is not the default audition for new melodies.
+
+## 16. Open questions
 
 - Which local LLM or API drafts song plans (M2), and how prompts are versioned.
-- How users edit notes: YAML by hand, MuseScore round-trip via MusicXML, or editing on the web page.
 - Hosting for other people: accounts, a GPU queue, and which renderer licence allows it (YuE2's weights don't, for a company).
 - Several singers in one LoRA (the musical has a cast): one trigger word per character, or one LoRA per voice.
 - Free libraries with clear licences for the instruments still missing: music box and celesta first, then acoustic guitars, banjo, mandolin, ukulele, pedal steel, accordion, snare brushes and a choir (docs/sound-set.md).

@@ -1,16 +1,23 @@
 format: copyist-style/0
 name: Waltz
 family: Hymns and classical
-about: A gentle 3/4. The bass on one, the piano's chords on two and three.
+about: A gentle 3/4. The piano carries the tune over a breathing left hand and bass. No drums.
 tempo: [72, 180]
-instruments: {bass: upright-bass}
-production: gentle 3/4 waltz, acoustic piano, soft strings, warm bass, light brushed drums, intimate and heartfelt
+instruments: {melody: piano, bass: upright-bass}
+production: gentle 3/4 waltz, acoustic piano, soft strings, warm bass, intimate and heartfelt
 meters:
   "3/4":
-    rh: [[1, 1, chord], [2, 1, chord]]
-    lh: [[0, 1, root]]
-    bass: [[0, 2, root], [2, 1, fifth]]
-    drums:
-      hands: [[0, 1, [hihat]], [1, 1, [hihat, sidestick]], [2, 1, [hihat, sidestick]]]
-      feet: [[0, 1, [kick]]]
-      fill: [[2, 0.5, [snare]], [2.5, 0.5, [snare]]]
+    # Right hand is cleared when melody is on the piano (see arrange.py); left hand
+    # and bass carry a four-bar phrase under the tune.
+    rh: []
+    lh:
+      - [[0, 3, root]]
+      - [[0, 2, root], [2, 1, fifth]]
+      - [[0, 3, root]]
+      - [[0, 3, fifth]]
+    bass:
+      - [[0, 3, root]]
+      - [[0, 2, root], [2, 1, fifth]]
+      - [[0, 3, root]]
+      - [[0, 2, fifth], [2, 1, root]]
+    drums: none

@@ -92,7 +92,8 @@ class RenderTests(unittest.TestCase):
     def test_each_part_plays_on_its_instrument_and_is_mixed(self):
         audio = render.render_band(self.midi, self.tmp / "out" / "song.wav", "waltz", stems_dir=self.tmp / "out" / "stems")
         self.assertEqual(audio.engine, "sampled")
-        self.assertEqual(audio.instruments, {"melody": "clarinet", "piano": "piano", "bass": "upright-bass",
+        # Waltz is piano-vocal; this fixture MIDI still has a drums track, so drums still play.
+        self.assertEqual(audio.instruments, {"melody": "piano", "piano": "piano", "bass": "upright-bass",
                                              "drums": "drums"})
         self.assertEqual(sorted(p.name for p in audio.stems.values()),
                          ["bass.wav", "drums.wav", "melody.wav", "piano.wav"])

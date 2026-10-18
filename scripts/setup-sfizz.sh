@@ -34,13 +34,20 @@ if [ ! -x "$dest/sfizz_render" ]; then
   fi
 
   extra=()
+  # Apple Clang 17 treats older atomic_queue's `Base::template foo(` as an error
+  # (-Wmissing-template-arg-list-after-template-kw). Silence it until sfizz bumps
+  # that submodule. Deployment target 13 avoids a libc++ "platform unsupported" warning.
+  cxx_flags="-Wno-missing-template-arg-list-after-template-kw"
   if [ "$(uname)" = "Darwin" ]; then
     extra+=(-DCMAKE_OSX_DEPLOYMENT_TARGET=13.0)
   fi
+  # Reconfigure from scratch when the build dir was made with an older toolchain.
+  rm -rf "$src/build"
   "$cmake" -S "$src" -B "$src/build" -G Ninja -DCMAKE_MAKE_PROGRAM="$ninja" \
     -DCMAKE_BUILD_TYPE=Release -DSFIZZ_RENDER=ON -DSFIZZ_JACK=OFF -DSFIZZ_SHARED=OFF \
     -DSFIZZ_USE_SNDFILE=OFF -DSFIZZ_TESTS=OFF -DSFIZZ_DEMOS=OFF -DSFIZZ_DEVTOOLS=OFF \
-    -DSFIZZ_BENCHMARKS=OFF -DENABLE_LTO=OFF ${extra[@]+"${extra[@]}"}
+    -DSFIZZ_BENCHMARKS=OFF -DENABLE_LTO=OFF \
+    "-DCMAKE_CXX_FLAGS=${cxx_flags}" ${extra[@]+"${extra[@]}"}
   "$cmake" --build "$src/build" --target sfizz_render
   mkdir -p "$dest"
   cp "$(find "$src/build" -type f -name sfizz_render -perm -u+x | head -1)" "$dest/sfizz_render"

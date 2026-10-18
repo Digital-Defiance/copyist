@@ -191,8 +191,12 @@ def swing_only(midi_in: Path, midi_out: Path, meter: str, pickup_q: float, ratio
 
 
 def perform(midi_in: Path, midi_out: Path, meter: str, pickup_q: float = 0.0, seed: int = 1,
-            phrase_bars: int = PHRASE_BARS, swing: float = 0.5) -> dict:
-    """Write an expressive performance of `midi_in` to `midi_out`; returns what was done, for the report."""
+            phrase_bars: int = PHRASE_BARS, swing: float = 0.5, melody_legato: bool = True) -> dict:
+    """Write an expressive performance of `midi_in` to `midi_out`; returns what was done, for the report.
+
+    `melody_legato` overlaps successive melody notes (good for a wind sample). Turn it off when the
+    melody is on the piano: overlapping hammers click.
+    """
     mid = mido.MidiFile(str(midi_in))
     tpq = mid.ticks_per_beat
     notes, others = read(mid)
@@ -253,14 +257,18 @@ def perform(midi_in: Path, midi_out: Path, meter: str, pickup_q: float = 0.0, se
             m.start = max(0, m.start + d)
             m.end = max(m.start + ms(30), m.end + d)
 
-    # Touch: legato melody, tighter bass, the last chord rings
-    for r, fix in (("melody", "legato"), ("bass", "tight")):
+    # Touch: legato melody (or a clean release on piano), tighter bass, the last chord rings
+    melody_fix = "legato" if melody_legato else "piano"
+    for r, fix in (("melody", melody_fix), ("bass", "tight")):
         line = sorted((n for n in notes if role.get(n.track) == r), key=lambda n: n.start)
         for a, b in zip(line, line[1:]):
             gap = b.start - a.end
             if fix == "legato" and -ms(10) < gap < ms(40):
                 # overlap into the next note, except on a repeated pitch, which the overlap would cut off
                 a.end = b.start + ms(15) if a.pitch != b.pitch else b.start - ms(5)
+            elif fix == "piano" and gap < ms(40):
+                # release just before the next hammer; no overlap
+                a.end = max(a.start + ms(40), b.start - ms(8))
             elif fix == "tight":
                 a.end = min(a.end, b.start - ms(10))
                 a.end = max(a.start + ms(40), a.start + round((a.end - a.start) * 0.92))

@@ -65,7 +65,9 @@ def build(song: Song, out_root: Path, cache: Path = Path(".cache"), seed: int = 
         with tempfile.TemporaryDirectory(prefix="copyist-gallery-") as tmp:
             midi = engrave.write_midi(band.performance(), Path(tmp) / f"{style.id}.mid")
             retempo(midi, bpm / beat_bpm(song))
-            perform.perform(midi, midi, song.meter, pickup, seed=seed, swing=style.swing)
+            piano_melody = style.instruments.get("melody") == "piano"
+            perform.perform(midi, midi, song.meter, pickup, seed=seed, swing=style.swing,
+                            melody_legato=not piano_melody)
             audio = render.render_band(midi, folder / f"{style.id}.wav", style.id, cache)
         entries.append({"style": style.id, "name": style.name, "family": style.family, "about": style.about,
                         "feel": style.feel, "tempo": round(bpm), "file": f"{style.id}.wav",

@@ -24,7 +24,9 @@ class ArrangeTests(unittest.TestCase):
 
     def test_style_and_parts(self):
         self.assertEqual(self.band.style, "waltz")
-        self.assertEqual(set(self.band.parts), {"voice", "piano", "bass", "drums"})
+        self.assertEqual(set(self.band.parts), {"voice", "piano", "bass"})
+        self.assertIn("The waltz style has no drums", " ".join(self.band.notes))
+        self.assertIn("right hand rests", " ".join(self.band.notes))
 
     def test_every_part_lines_up_with_the_melody(self):
         expected = bar_lengths(self.song.melody)
@@ -33,15 +35,12 @@ class ArrangeTests(unittest.TestCase):
                 continue  # written in two voices; checked in test_drums
             self.assertEqual(bar_lengths(part), expected, part.partName)
 
-    def test_piano_plays_the_written_chords(self):
+    def test_piano_left_hand_plays_chord_tones(self):
         timeline = arrange.chord_timeline(self.song.melody)
-        rh = self.band.score.parts[1]
-        for ch in rh.recurse().getElementsByClass("Chord"):
-            if isinstance(ch, harmony.ChordSymbol):
-                continue
-            cs = arrange.chord_at(timeline, float(ch.getOffsetInHierarchy(rh)))
-            self.assertTrue({p.name for p in ch.pitches} <= {p.name for p in cs.pitches},
-                            f"{ch} doesn't fit {cs.figure}")
+        lh = self.band.score.parts[2]
+        for n in lh.recurse().getElementsByClass("Note"):
+            cs = arrange.chord_at(timeline, float(n.getOffsetInHierarchy(lh)))
+            self.assertIn(n.pitch.name, {p.name for p in cs.pitches}, f"{n} doesn't fit {cs.figure}")
 
     def test_bass_sounds_an_octave_below_written(self):
         perf = self.band.performance()

@@ -8,7 +8,9 @@ the arranger (arrange.py, drums.py) reads these patterns, and the tests check
 every file.
 
 A pattern is a list of [start, length, what] within one full bar, in quarter
-notes. What a part can play:
+notes. A part can also list several bars; those cycle as a phrase (bar 1 of
+the song plays the first, bar 2 the second, then it repeats). What a part can
+play:
 
 - piano right hand (`rh`): `chord` (a close voicing that moves as little as
   possible), `shell` (the 3rd and 7th, or 6th: jazz comping), `arp1`…`arp4`
@@ -20,7 +22,8 @@ notes. What a part can play:
   (chord tones climbing from the root, e.g. `{line: [root, third, fifth,
   sixth, seventh, sixth, fifth, third], every: 0.5}` for a boogie), or `none`;
 - drums: `hands`, `feet` and `fill`, each a list of [start, length, [pieces]],
-  with pieces from drums.KIT; or `none` for a style without drums.
+  with pieces from drums.KIT; or `none` for a style without drums. Drums can
+  also cycle a list of those groove maps.
 
 Starts and lengths can be fractions written as strings ("1/3") for triplets.
 """
@@ -70,6 +73,20 @@ class Style:
         return bool(p) and p.get("drums") != "none"
 
 
+def is_cycle(pattern) -> bool:
+    """True when a part lists several bars that cycle as a phrase."""
+    return bool(pattern) and isinstance(pattern[0], list)
+
+
+def bar_of(pattern, n_in_song: int):
+    """The one-bar pattern for full-bar number `n_in_song` (1 = first full bar)."""
+    if not pattern:
+        return []
+    if is_cycle(pattern):
+        return pattern[(max(n_in_song, 1) - 1) % len(pattern)]
+    return pattern
+
+
 def bar_quarters(meter: str) -> Fraction:
     num, den = (int(x) for x in meter.split("/"))
     return Fraction(4 * num, den)
@@ -94,6 +111,22 @@ def _tones(entries, allowed: set[str], where: str, full: Fraction) -> list[tuple
     return out
 
 
+def _is_phrase_cycle(entries) -> bool:
+    """A list of bars (each a list of [start, length, what]), not one bar's entries."""
+    if not entries or not isinstance(entries[0], list):
+        return False
+    if not entries[0]:
+        return len(entries) > 1
+    return isinstance(entries[0][0], list)
+
+
+def _tones_field(entries, allowed: set[str], where: str, full: Fraction):
+    """One bar's tones, or a list of bars that cycle."""
+    if _is_phrase_cycle(entries):
+        return [_tones(bar, allowed, f"{where}[{i}]", full) for i, bar in enumerate(entries)]
+    return _tones(entries, allowed, where, full)
+
+
 def _hits(entries, where: str, full: Fraction, kit) -> list[tuple[float, float, list[str]]]:
     out = []
     for e in entries or []:
@@ -104,6 +137,14 @@ def _hits(entries, where: str, full: Fraction, kit) -> list[tuple[float, float, 
             raise StyleError(f"{where}: no drum called {', '.join(unknown)} (the kit has {', '.join(kit)})")
         out.append((s, d, [str(p) for p in pieces]))
     return out
+
+
+def _drums_groove(kit: dict, where: str, full: Fraction, drum_kit) -> dict:
+    groove = {k: _hits(kit.get(k), f"{where} drums {k}", full, drum_kit)
+              for k in ("hands", "feet", "fill")}
+    if not groove["fill"]:
+        raise StyleError(f"{where}: drums need a fill (or `drums: none`)")
+    return groove
 
 
 def parse(data: dict, style_id: str) -> Style:
@@ -133,8 +174,8 @@ def parse(data: dict, style_id: str) -> Style:
             full = bar_quarters(str(meter))
         except ValueError:
             raise StyleError(f"{where}: {meter!r} isn't a meter like 4/4") from None
-        p: dict = {"rh": _tones(parts.get("rh"), RH_TONES, f"{where} rh", full),
-                   "lh": _tones(parts.get("lh"), BASS_TONES, f"{where} lh", full)}
+        p: dict = {"rh": _tones_field(parts.get("rh"), RH_TONES, f"{where} rh", full),
+                   "lh": _tones_field(parts.get("lh"), BASS_TONES, f"{where} lh", full)}
         bass = parts.get("bass")
         if bass in ("walk", "none"):
             p["bass"] = bass
@@ -145,17 +186,18 @@ def parse(data: dict, style_id: str) -> Style:
                                  f"and `every`, a step that divides the bar")
             p["bass"] = {"line": [str(x) for x in line], "every": float(every)}
         else:
-            p["bass"] = _tones(bass, BASS_TONES, f"{where} bass", full)
+            p["bass"] = _tones_field(bass, BASS_TONES, f"{where} bass", full)
         kit = parts.get("drums")
         if kit == "none":
             p["drums"] = "none"
         elif kit is None:
             p["drums"] = None              # a plain beat-by-beat groove
+        elif isinstance(kit, list):
+            if not kit:
+                raise StyleError(f"{where}: drums phrase is empty")
+            p["drums"] = [_drums_groove(g, f"{where}[{i}]", full, drums.KIT) for i, g in enumerate(kit)]
         else:
-            p["drums"] = {k: _hits(kit.get(k), f"{where} drums {k}", full, drums.KIT)
-                          for k in ("hands", "feet", "fill")}
-            if not p["drums"]["fill"]:
-                raise StyleError(f"{where}: drums need a fill (or `drums: none`)")
+            p["drums"] = _drums_groove(kit, where, full, drums.KIT)
         meters[str(meter)] = p
     return Style(style_id, str(data["name"]), str(data["family"]), str(data["about"]).strip(), feel, swing,
                  (tempo[0], tempo[-1]), chosen, " ".join(str(data["production"]).split()), meters)

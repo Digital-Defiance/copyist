@@ -68,6 +68,40 @@ class CatalogTests(unittest.TestCase):
                                                  "drums": "none"}}), "test")
         self.assertAlmostEqual(s.pattern("4/4")["rh"][0][0], 1 / 3)
 
+    def test_a_phrase_of_bars_cycles(self):
+        data = minimal(meters={"4/4": {
+            "rh": [[[0, 2, "arp1"], [2, 2, "arp2"]], [[0, 4, "chord"]]],
+            "lh": [[0, 4, "root"]],
+            "bass": [[0, 4, "root"]],
+            "drums": "none",
+        }})
+        s = styles.parse(data, "test")
+        rh = s.pattern("4/4")["rh"]
+        self.assertTrue(styles.is_cycle(rh))
+        self.assertEqual(styles.bar_of(rh, 1)[0][2], "arp1")
+        self.assertEqual(styles.bar_of(rh, 2)[0][2], "chord")
+        self.assertEqual(styles.bar_of(rh, 3)[0][2], "arp1")
+
+    def test_waltz_is_piano_vocal_without_drums(self):
+        w = styles.get("waltz")
+        self.assertEqual(w.instruments.get("melody"), "piano")
+        self.assertFalse(w.has_drums("3/4"))
+        self.assertTrue(styles.is_cycle(w.pattern("3/4")["lh"]))
+
+    def test_piano_vocal_leaves_the_right_hand_open(self):
+        song = load_song(SONGS["3/4"])
+        band = arrange.arrange_band(song)
+        self.assertIn("right hand rests", " ".join(band.notes))
+        rh = band.score.parts[1]
+        self.assertFalse(any(not isinstance(n, harmony.ChordSymbol) for n in rh.recurse().notes))
+        lh = band.score.parts[2]
+        full = [m for m in lh.getElementsByClass(stream.Measure)
+                if sum(e.quarterLength for e in m.notesAndRests
+                       if not isinstance(e, harmony.ChordSymbol)) >= 3]
+        # Four-bar bass-clef phrase: root / root+fifth / root / fifth.
+        counts = [len([n for n in m.notes if not isinstance(n, harmony.ChordSymbol)]) for m in full[:4]]
+        self.assertEqual(counts, [1, 2, 1, 1])
+
 
 class ArrangeEveryStyleTests(unittest.TestCase):
     """Every style, on a song in each of its meters: the parts line up and the piano plays the chords."""

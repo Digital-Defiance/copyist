@@ -55,8 +55,10 @@ def cmd_build(args) -> int:
     from . import perform, styles
     swing = styles.get(band.style).swing if styles.get(band.style) else 0.5
     if not args.plain:
+        style = styles.get(band.style)
+        piano_melody = bool(style and style.instruments.get("melody") == "piano")
         performed = perform.perform(midi, midi, song.meter, float(perform.pickup_of(song)), seed=args.seed,
-                                    swing=swing)
+                                    swing=swing, melody_legato=not piano_melody)
     elif swing > 0.5:
         perform.swing_only(midi, midi, song.meter, float(perform.pickup_of(song)), swing)
 
