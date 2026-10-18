@@ -28,14 +28,16 @@ class AudioUnavailable(RuntimeError):
 # ------------------------------------------------------------------ sampled instruments
 
 SAMPLE_RATE = 48000
-PART_OF_ROLE = {"melody": "melody", "piano_rh": "piano", "piano_lh": "piano", "bass": "bass",
-                "drums": "drums", "other": "other"}
-PART_ORDER = ["melody", "piano", "other", "bass", "drums"]
-BALANCE_DB = {"melody": 0.0, "piano": -4.0, "other": -6.0, "bass": -6.0, "drums": -9.0}   # loudness vs. the melody
-REVERB = {"melody": 0.18, "piano": 0.14, "other": 0.14, "bass": 0.04, "drums": 0.08}      # send to the room
+PART_OF_ROLE = {"melody": "melody", "piano_rh": "piano", "piano_lh": "piano", "guitar": "guitar",
+                "bass": "bass", "drums": "drums", "other": "other"}
+PART_ORDER = ["melody", "piano", "guitar", "other", "bass", "drums"]
+BALANCE_DB = {"melody": 0.0, "piano": -4.0, "guitar": -4.0, "other": -6.0, "bass": -6.0, "drums": -9.0}
+REVERB = {"melody": 0.18, "piano": 0.14, "guitar": 0.14, "other": 0.14, "bass": 0.04, "drums": 0.08}
 # When the melody is also on the piano (piano-vocal preview), the accompaniment sits further back.
-PIANO_VOCAL_BALANCE_DB = {"melody": 0.0, "piano": -8.0, "other": -6.0, "bass": -7.0, "drums": -12.0}
-PIANO_VOCAL_REVERB = {"melody": 0.12, "piano": 0.10, "other": 0.10, "bass": 0.03, "drums": 0.06}
+PIANO_VOCAL_BALANCE_DB = {"melody": 0.0, "piano": -8.0, "guitar": -8.0, "other": -6.0, "bass": -7.0,
+                          "drums": -12.0}
+PIANO_VOCAL_REVERB = {"melody": 0.12, "piano": 0.10, "guitar": 0.10, "other": 0.10, "bass": 0.03,
+                      "drums": 0.06}
 POLYPHONY = 256        # the piano with its pedal down needs plenty
 
 # Leads whose midrange harmonics fight piano shells at the normal -4 dB balance.

@@ -36,13 +36,14 @@ family: Jazz and blues
 about: Swung eighths. A walking bass, the ride cymbal's spang-a-lang, ...
 feel: swing                   # straight (default), swing or shuffle
 tempo: [110, 200]             # usual range, in beats a minute (a dotted quarter is the beat in 6/8)
-instruments: {bass: upright-bass}   # which instrument plays a part (copyist/instruments.py)
+instruments: {bass: upright-bass, guitar: nylon-guitar}   # which instrument plays a part
 keep_rh: false                    # optional; with melody: piano, keep the right-hand figure (open melody pitches)
 production: swing jazz, 1940s, walking upright bass, ride cymbal, piano comping, clarinet, ...
 meters:
   "4/4":
     rh: [[0, 0.5, shell], [1.5, 0.5, shell]]          # [start, length, what], quarter notes in one bar
     lh: []
+    guitar: [[1, 1, chord], [3, 1, chord]]            # optional; its own treble staff (shapes / picks)
     bass: walk
     drums:
       hands: [[0, 1, [ride]], [1, 0.5, [ride]], [1.5, 0.5, [ride]], ...]
@@ -63,6 +64,7 @@ rh:
 | Part | What it can play |
 |---|---|
 | Piano right hand (`rh`) | `chord`: a close voicing that moves as little as possible.<br>`shell`: the 3rd and 7th, or the 6th on a plain major chord, for jazz comping.<br>`arp1`–`arp4`: one note of the voicing, lowest first, for broken chords and arpeggios. |
+| Guitar (`guitar`) | One treble staff of guitar-range shapes: `chord` / `strum`, `arp1`–`arp4`, plus thumb tones (`root`, `fifth`, `octave`, …) for fingerpicking. Folk, country, pop, rock, power-ballad and blues use this instead of remapping the piano. |
 | Piano left hand (`lh`) and bass | `root`, `third`, `fifth`, `sixth`, `seventh` (the chord's own 7th, or the minor 7th).<br>`octave`: the root an octave up.<br>`approach`: a half step into the next chord's root. |
 | Bass, instead of a list | `walk`: a walking line, one note a beat. It starts each chord on its root, climbs through chord tones, and ends a half step from the next root.<br>`{line: [...], every: 0.5}`: chord tones climbing from the root, such as a boogie or disco octaves.<br>`none`: no bass part. |
 | Drums | `hands`, `feet` and `fill`, from the kit: kick, snare, side-stick, hi-hat (closed, open, pedal), ride, crash, tom, floor tom, tambourine, clap.<br>A fill replaces the end of every 8th bar, and a crash follows it.<br>`none`: no drum part. |
@@ -84,7 +86,7 @@ The arranger reads these files (`copyist/arrange.py`, `copyist/drums.py`). Every
 
 There are two ways to hear a song in every style that fits its meter. Each plays every style at a tempo inside its usual range.
 
-- **`copyist gallery SONG`: the exact band preview.** Each style is arranged, performed and played on the sampled band. It takes a few seconds a style and runs anywhere. It plays the written notes (the right job for judging a melody or a style sketch). Phrase-level patterns and per-style melody voices (the waltz is piano-vocal, no drums) are how that preview gets less like an arranger keyboard (TASKS 3f, SPEC §15); YuE2 takes stay on demand. Hymn uses the pipe organ, Broadway ballad oboe over harp, Broadway uptempo and march the flute, swing/jazz waltz/blues/bossa the alto sax (`winds`), gospel a tonewheel pad (`keys`), music box the glockenspiel (`bells`), folk the nylon guitar, country the steel-string plus fiddle, Celtic jig the fiddle (`folk` pack), and pop/rock/blues the clean electric (`electric` pack). Styles whose other signature instruments aren't downloaded yet (horns, real music box) are still only sketched.
+- **`copyist gallery SONG`: the exact band preview.** Each style is arranged, performed and played on the sampled band. It takes a few seconds a style and runs anywhere. It plays the written notes (the right job for judging a melody or a style sketch). Phrase-level patterns and per-style melody voices (the waltz is piano-vocal, no drums) are how that preview gets less like an arranger keyboard (TASKS 3f, SPEC §15); YuE2 takes stay on demand. Hymn uses the pipe organ, Broadway ballad oboe over harp, Broadway uptempo and march the flute, swing/jazz waltz/bossa the alto sax (`winds`), gospel a tonewheel pad (`keys`), music box the glockenspiel (`bells`), folk a nylon guitar staff, country/country-waltz steel-guitar staff plus fiddle, Celtic jig the fiddle (`folk` pack), and pop/rock/power-ballad/blues a dedicated electric-guitar staff (`electric` pack). Styles whose other signature instruments aren't downloaded yet (horns, real music box) are still only sketched.
 - **`copyist gallery SONG --takes`: finished takes.** YuE2 performs the song in each style, singer and whole band together. The style's own words go into its style line ("swing jazz, walking upright bass, ride cymbal, ... clarinet, horn section"), so each style gets its real instruments.
   - It takes about 45 seconds a style on an M4 Max and needs the singer installed.
   - `--lora` and `--prefix` sing it in a trained voice.
@@ -120,7 +122,7 @@ Each wave adds styles together with the parts and instruments they need. A style
 
 1. **New parts in the arranger.** Today it writes voice, piano, bass and drums. Next it needs:
    - organ (sustained chords, reggae bubble, gospel swells);
-   - guitar (strummed and fingerpicked patterns, with chord shapes);
+   - guitar staff (strummed and fingerpicked patterns, with chord shapes) — in for folk/country/pop/rock/blues;
    - strings (pads and lines);
    - brass and reeds (hits and backgrounds);
    - a lead line for instrumentals;

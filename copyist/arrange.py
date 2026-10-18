@@ -1,10 +1,11 @@
 """Arrangement templates (SPEC.md section 7).
 
-M1 ships one template, `band`: voice, piano (grand staff), bass and drums,
-following a style. Styles are data files (copyist/styles/, docs/styles.md):
+M1 ships one template, `band`: voice, piano (grand staff), guitar, bass and
+drums, following a style. Styles are data files (copyist/styles/, docs/styles.md):
 per part, a list of (start, length, what to play) in quarter notes within a
 full bar. Chord changes inside a pattern note split it, so the accompaniment
-always matches the chord symbols.
+always matches the chord symbols. Guitar styles write a single treble staff of
+shapes and picks instead of reusing the piano's hands.
 """
 from __future__ import annotations
 
@@ -21,12 +22,15 @@ from .song import INSTRUMENTS, Song
 RH_LOW, RH_TOP_MAX = pitch.Pitch("G3").midi, pitch.Pitch("D5").midi
 LH_LOW, LH_HIGH = pitch.Pitch("E2").midi, pitch.Pitch("D#3").midi
 BASS_WRITTEN_LOW, BASS_WRITTEN_HIGH = pitch.Pitch("E2").midi, pitch.Pitch("D3").midi  # sounds an octave lower
+# Guitar shapes sit above a separate bass part; thumb tones can go lower when alone.
+GUITAR_LOW, GUITAR_HIGH = pitch.Pitch("E2").midi, pitch.Pitch("A4").midi
+GUITAR_CHORD_LOW = pitch.Pitch("G3").midi
 
 SHELL_LOW = pitch.Pitch("E3").midi
 WALK_LOW, WALK_HIGH = pitch.Pitch("E2").midi, pitch.Pitch("A3").midi  # written; sounds an octave lower
 
-VELOCITY = {"voice": 100, "rh": 58, "lh": 64, "bass": 80}
-PROGRAM = {"voice": 53, "piano": 0, "bass": 33}  # GM: Voice Oohs, Acoustic Grand, Fingered Bass
+VELOCITY = {"voice": 100, "rh": 58, "lh": 64, "guitar": 62, "bass": 80}
+PROGRAM = {"voice": 53, "piano": 0, "guitar": 24, "bass": 33}  # GM: Voice Oohs, Grand, Nylon Guitar, Fingered Bass
 
 
 @dataclass
@@ -62,8 +66,8 @@ def pattern_for(song: Song) -> tuple[str, dict, list[str]]:
         notes.append(f"There's no style called {style_id!r}; used whole-bar chords instead.")
     elif style_id:
         notes.append(f"Style {style_id!r} has no pattern for {song.meter}; used whole-bar chords instead.")
-    generic = {"rh": [(0, full, "chord")], "lh": [(0, full, "root")], "bass": [(0, full, "root")],
-               "drums": None}
+    generic = {"rh": [(0, full, "chord")], "lh": [(0, full, "root")], "guitar": [],
+               "bass": [(0, full, "root")], "drums": None}
     return "generic", generic, notes
 
 
@@ -191,9 +195,47 @@ def shell(cs: harmony.ChordSymbol) -> list[pitch.Pitch]:
     return [low, high]
 
 
+def guitar_shape(cs: harmony.ChordSymbol, previous: list[pitch.Pitch] | None,
+                 with_bass_part: bool) -> list[pitch.Pitch]:
+    """A playable guitar-range shape: root–3rd–5th (and a high root on a strum).
+
+    When a bass part already covers the low end, shapes start around G3 so the
+    mix doesn't turn to mud.
+    """
+    low = GUITAR_CHORD_LOW if with_bass_part else GUITAR_LOW
+    high = GUITAR_HIGH
+    root = place(cs.bass(), low, low + 11)
+    third = place(chord_tone(cs, "third"), root.midi + 1, root.midi + 10)
+    fifth = place(chord_tone(cs, "fifth"), third.midi + 1, min(high, root.midi + 16))
+    shape = [root, third, fifth]
+    if previous is None:
+        return shape
+    # Prefer the inversion closest to the last shape (same idea as the piano RH).
+    options = [shape]
+    for rot in range(1, 3):
+        order = shape[rot:] + [p.transpose(12) for p in shape[:rot]]
+        if order[0].midi >= low and order[-1].midi <= high:
+            options.append(order)
+    def movement(v):
+        a, b = sorted(p.midi for p in v), sorted(p.midi for p in previous)
+        return sum(abs(x - y) for x, y in zip(a, b)) if len(a) == len(b) else 99
+    return min(options, key=movement)
+
+
+def pattern_plays(pattern) -> bool:
+    """True when a style pattern has at least one event to write."""
+    if not pattern or pattern in ("none", "walk"):
+        return False
+    if isinstance(pattern, dict):
+        return True
+    if styles.is_cycle(pattern):
+        return any(bool(bar) for bar in pattern)
+    return bool(pattern)
+
+
 # ---------------------------------------------------------------- building parts
 
-ABBREVIATIONS = {"Voice": "Vo.", "Piano": "Pno.", "Bass": "Bass"}
+ABBREVIATIONS = {"Voice": "Vo.", "Piano": "Pno.", "Guitar": "Gtr.", "Bass": "Bass"}
 
 
 def new_part(cls, name: str, inst: instrument.Instrument, program: int) -> stream.Part:
@@ -281,6 +323,65 @@ def build_role(song: Song, role: str, pattern: list, timeline, velocity: int,
                 el = note.Note(tone(cs, which, LH_LOW, LH_HIGH, next_cs), quarterLength=dur)
             else:
                 el = note.Note(tone(cs, which, BASS_WRITTEN_LOW, BASS_WRITTEN_HIGH, next_cs), quarterLength=dur)
+            if not isinstance(el, note.Rest):
+                el.volume.velocity = velocity
+            m.insert(off, el)
+            t = off + dur
+        if t < length - 1e-9:
+            m.insert(t, note.Rest(quarterLength=length - t))
+        if mb.rightBarline is not None:
+            m.rightBarline = copy.deepcopy(mb.rightBarline)
+        bars.append(m)
+    return bars
+
+
+def build_guitar(song: Song, pattern: list, timeline, velocity: int,
+                 with_bass_part: bool) -> list[stream.Measure]:
+    """One treble-staff guitar part: shapes, arpeggio picks and thumb bass tones."""
+    melody_bars = list(song.melody.getElementsByClass(stream.Measure))
+    full = melody_bars[0].barDuration.quarterLength
+    previous_shape = None
+    bars = []
+    first_full = 0 if bar_window(melody_bars[0], full, True)[2] < full else 1
+    for i, mb in enumerate(melody_bars):
+        lo, hi, length = bar_window(mb, full, first=i == 0)
+        start_abs = float(mb.getOffsetInHierarchy(song.melody))
+        n_in_song = i + first_full if first_full == 1 else i
+        events = []
+        for s, d, which in styles.bar_of(pattern, n_in_song):
+            s0, e0 = max(s, lo), min(s + d, hi)
+            if e0 <= s0:
+                continue
+            a, b = start_abs + s0 - lo, start_abs + e0 - lo
+            cuts = [a] + change_points(timeline, a, b) + [b]
+            for x, y in zip(cuts, cuts[1:]):
+                events.append((x - start_abs, y - x, which))
+        m = stream.Measure(number=mb.number)
+        m.paddingLeft = mb.paddingLeft
+        t = 0.0
+        for off, dur, which in sorted(events):
+            if off > t + 1e-9:
+                m.insert(t, note.Rest(quarterLength=off - t))
+            cs = chord_at(timeline, start_abs + off)
+            next_cs = chord_at(timeline, start_abs + off + dur)
+            if cs is None:
+                el = note.Rest(quarterLength=dur)
+            elif which in ("chord", "strum"):
+                previous_shape = guitar_shape(cs, previous_shape, with_bass_part)
+                notes = list(previous_shape)
+                if which == "strum":
+                    top = place(cs.bass(), notes[-1].midi + 1, GUITAR_HIGH)
+                    if top.midi <= GUITAR_HIGH:
+                        notes.append(top)
+                el = chord.Chord(notes, quarterLength=dur)
+            elif which.startswith("arp"):
+                previous_shape = guitar_shape(cs, previous_shape, with_bass_part)
+                ordered = sorted(previous_shape, key=lambda q: q.midi)
+                el = note.Note(ordered[(int(which[3:]) - 1) % len(ordered)], quarterLength=dur)
+            else:
+                low = GUITAR_LOW if not with_bass_part else GUITAR_CHORD_LOW - 12
+                low = max(GUITAR_LOW, low)
+                el = note.Note(tone(cs, which, low, low + 16, next_cs), quarterLength=dur)
             if not isinstance(el, note.Rest):
                 el.volume.velocity = velocity
             m.insert(off, el)
@@ -504,11 +605,15 @@ def arrange_band(song: Song) -> Arrangement:
         order.append(voice)
         parts["voice"] = single(voice)
 
-    if "piano" in wanted:
+    play_piano = pattern_plays(pat.get("rh")) or pattern_plays(pat.get("lh"))
+    play_guitar = pattern_plays(pat.get("guitar"))
+    if "piano" in wanted and not play_piano:
+        notes.append(f"The {style} style leaves the piano out.")
+    if "piano" in wanted and play_piano:
         rh = new_part(stream.PartStaff, "Piano", instrument.Piano(), PROGRAM["piano"])
         lh = new_part(stream.PartStaff, "Piano", instrument.Piano(), PROGRAM["piano"])
         for part, role, the_clef in ((rh, "rh", clef.TrebleClef()), (lh, "lh", clef.BassClef())):
-            bars = build_role(song, role, pat[role], timeline, VELOCITY[role],
+            bars = build_role(song, role, pat.get(role) or [], timeline, VELOCITY[role],
                               open_for_melody=open_rh_for_melody and role == "rh")
             start_bar(bars[0], song, the_clef)
             for m in bars:
@@ -518,6 +623,18 @@ def arrange_band(song: Song) -> Arrangement:
                                          barTogether=True))
         parts["piano"] = single(rh, lh, group=True)
         add_chord_symbols(parts["piano"].parts[0], timeline)  # chords above the right hand
+
+    if "guitar" in wanted and play_guitar:
+        with_bass = "bass" in wanted and pat.get("bass") != "none"
+        gtr = new_part(stream.Part, "Guitar", instrument.AcousticGuitar(), PROGRAM["guitar"])
+        bars = build_guitar(song, pat["guitar"], timeline, VELOCITY["guitar"], with_bass)
+        start_bar(bars[0], song, clef.TrebleClef())
+        for m in bars:
+            gtr.append(m)
+        order.append(gtr)
+        parts["guitar"] = single(gtr, chords=True)
+    elif "guitar" in wanted and style_obj and style_obj.instruments.get("guitar"):
+        notes.append(f"The {style} style has no guitar figure, so there's no guitar part.")
 
     if "bass" in wanted and pat["bass"] == "none":
         notes.append(f"The {style} style has no bass, so there's no bass part.")

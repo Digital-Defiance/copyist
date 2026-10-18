@@ -2,6 +2,10 @@
 
 Newest first. One entry per decision: what, why, and what we gave up.
 
+## 2026-10-18 (guitar staff)
+
+- **Guitar is its own staff and style part**, not the piano hands played on guitar samples. Styles declare `instruments.guitar` and a `guitar:` figure (`chord` / `strum`, arps, thumb tones). Folk (nylon fingerpicking), country and country-waltz (steel boom-chick), pop/rock/power-ballad/blues (electric) use it; the piano staff is omitted when empty. Shapes sit above a separate bass part so the mix stays clear. Song `instruments:` may list `guitar` (default includes it; empty styles skip the part).
+
 ## 2026-10-18 (oboe)
 
 - **Broadway ballad melody uses the VSCO oboe** (vibrato, CC0, ~24 MB, `winds` pack) over the harp. Flute stays on Broadway uptempo and march. Sparse whole-tone sampling (A♯/D/F) with stretch; take v1/v3 only (deterministic).

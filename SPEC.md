@@ -90,7 +90,8 @@ voice:
   range: [D4, E5]      # optional; the range check uses it
   clef: treble         # optional: treble (default), treble-8vb or bass
 style: waltz           # optional; a style from copyist/styles/ (section 8.2, docs/styles.md); default by meter
-instruments: [voice, piano, bass, drums]   # optional; default all four. Left out = no part at all
+instruments: [voice, piano, guitar, bass, drums]   # optional; default all five. Left out = no part at all.
+                       # Guitar is only written when the style has a guitar figure.
 melody: |
   D | "G"G2 B/G/ | B2 A | "C"G2 E | "G"D2 D |
 lyrics:                # one entry per verse; line breaks inside an entry are just spaces

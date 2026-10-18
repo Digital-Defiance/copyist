@@ -1,17 +1,18 @@
 format: copyist-style/0
 name: Blues shuffle
 family: Jazz and blues
-about: A shuffle. Boogie bass under piano punches that answer across two bars; the hi-hat shuffles.
+about: A shuffle. Boogie bass under guitar punches that answer across two bars; the hi-hat shuffles.
 feel: shuffle
 tempo: [84, 132]
-instruments: {melody: sax, piano: electric-guitar, bass: electric-bass}
+instruments: {melody: sax, guitar: electric-guitar, bass: electric-bass}
 production: electric blues shuffle, Chicago blues, overdriven guitar, harmonica, Hammond organ, boogie bass, gritty
 meters:
   "4/4":
-    rh:
+    rh: []
+    lh: []
+    guitar:
       - [[1, 0.5, chord], [1.5, 0.5, chord], [3, 0.5, chord], [3.5, 0.5, chord]]
       - [[1, 1, chord], [3, 1, chord]]
-    lh: []
     bass: {line: [root, third, fifth, sixth, seventh, sixth, fifth, third], every: 0.5}
     drums:
       hands: [[0, 0.5, [hihat]], [0.5, 0.5, [hihat]], [1, 0.5, [hihat, snare]], [1.5, 0.5, [hihat]], [2, 0.5, [hihat]], [2.5, 0.5, [hihat]], [3, 0.5, [hihat, snare]], [3.5, 0.5, [hihat]]]

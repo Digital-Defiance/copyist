@@ -1,19 +1,18 @@
 format: copyist-style/0
 name: Folk
 family: Country and folk
-about: Fingerpicked nylon guitar under the tune. The left hand alternates like a thumb; the right hand picks between the beats. No drums.
+about: Fingerpicked nylon guitar under the tune. The thumb alternates bass notes; the fingers pick between the beats. No drums.
 tempo: [80, 120]
-instruments: {melody: piano, piano: nylon-guitar, bass: upright-bass}
-keep_rh: true
+instruments: {melody: piano, guitar: nylon-guitar, bass: upright-bass}
 production: acoustic folk, fingerpicked acoustic guitar, upright bass, harmonica, warm and intimate, storytelling
 meters:
   "4/4":
-    rh:
-      - [[0.5, 0.5, arp3], [1.5, 0.5, arp2], [2.5, 0.5, arp3], [3.5, 0.5, arp2]]
-      - [[0.5, 0.5, arp2], [1.5, 0.5, arp3], [2.5, 0.5, arp2], [3.5, 0.5, arp1]]
-    lh:
-      - [[0, 1, root], [1, 1, fifth], [2, 1, octave], [3, 1, fifth]]
-      - [[0, 1, root], [1, 1, fifth], [2, 1, root], [3, 1, fifth]]
+    rh: []
+    lh: []
+    guitar:
+      # Thumb and fingers alternate (no overlapping durations — one staff, one voice).
+      - [[0, 0.5, root], [0.5, 0.5, arp3], [1, 0.5, fifth], [1.5, 0.5, arp2], [2, 0.5, octave], [2.5, 0.5, arp3], [3, 0.5, fifth], [3.5, 0.5, arp2]]
+      - [[0, 0.5, root], [0.5, 0.5, arp2], [1, 0.5, fifth], [1.5, 0.5, arp3], [2, 0.5, root], [2.5, 0.5, arp2], [3, 0.5, fifth], [3.5, 0.5, arp1]]
     bass:
       - [[0, 2, root], [2, 2, fifth]]
       - [[0, 2, root], [2, 2, root]]

@@ -3,16 +3,15 @@ name: Power ballad
 family: Pop and rock
 about: Big and slow. Arpeggios that rise, then hold; half-time drums with the snare on three.
 tempo: [60, 84]
-instruments: {piano: electric-guitar, bass: electric-bass}
+instruments: {guitar: electric-guitar, bass: electric-bass}
 production: power ballad, soaring, piano, big reverb drums, electric guitar, emotional build, anthemic chorus
 meters:
   "4/4":
-    rh:
+    rh: []
+    lh: []
+    guitar:
       - [[0, 0.5, arp1], [0.5, 0.5, arp2], [1, 0.5, arp3], [1.5, 0.5, arp2], [2, 0.5, arp1], [2.5, 0.5, arp2], [3, 0.5, arp3], [3.5, 0.5, arp2]]
       - [[0, 0.5, arp3], [0.5, 0.5, arp2], [1, 0.5, arp1], [1.5, 0.5, arp2], [2, 2, chord]]
-    lh:
-      - [[0, 4, root]]
-      - [[0, 2, root], [2, 2, fifth]]
     bass:
       - [[0, 2, root], [2, 2, root]]
       - [[0, 2, root], [2, 2, fifth]]

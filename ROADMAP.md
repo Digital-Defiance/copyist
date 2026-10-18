@@ -141,13 +141,14 @@ Copyist arranges in as many styles as can be written as correct scores: everyone
 - [x] Phrase cycles on every style (2026-10-18)
 - [x] Form build across the song + stereo place in the mix (2026-10-18)
 - [x] Richer stereo room (wet keeps pan; ~1.3 s hall) — 2026-10-18
-- [ ] Exact previews: dedicated guitar staff (flute/oboe/sax/fiddle melody voices are in). YuE2 takes stay on demand; see SPEC §15
+- [x] Exact previews: dedicated guitar staff (folk/country/pop/rock/blues); flute/oboe/sax/fiddle melody voices are in. YuE2 takes stay on demand; see SPEC §15
 - [x] Test songs in 4/4 and 6/8: *When the Saints Go Marching In*, *Silent Night* (public domain)
 - [x] Pipe organ (VCSL, hymn), concert harp (VSCO, Broadway), tonewheel synth for gospel (2026-10-18)
-- [x] Nylon/steel/electric guitars; fiddle on country/Celtic; flute/oboe on Broadway/march; sax on swing/jazz/blues/bossa (2026-10-18); dedicated guitar staff still open
-- [ ] More parts in the arranger: guitar staff (strummed and picked, chord shapes), strings, brass and reeds, a lead line, choir; the ensemble chosen by the style
+- [x] Nylon/steel/electric guitars; fiddle on country/Celtic; flute/oboe on Broadway/march; sax on swing/jazz/blues/bossa (2026-10-18)
+- [x] Guitar staff (strummed and picked, chord shapes) for folk/country/pop/rock/blues (2026-10-18)
+- [ ] More parts in the arranger: strings, brass and reeds, a lead line, choir; the ensemble chosen by the style
 - [x] Music-box stand-in (VCSL glock) + `music-box` style (2026-10-18); real music box/celesta still to find
-- [ ] Wave 1, finished with real parts: dedicated guitar writing; real music box/celesta when found (steel/electric guitars and fiddle in)
+- [ ] Wave 1, finished with real parts: real music box/celesta when found (guitar staff and fiddle in)
 - [ ] Wave 2: salsa, cumbia, bolero, tango, Western swing, bluegrass, Motown, funk, Celtic reel and air, polka, calypso, 12/8 doo-wop
 - [ ] Wave 3: big band, orchestral and cinematic, string quartet, SATB choir, electronic (house, synthwave, lo-fi, ambient)
 - [ ] A melody voice per style for previews (synth lead; flute/oboe/fiddle/sax are in)

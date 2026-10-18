@@ -28,13 +28,14 @@ from pathlib import Path
 import mido
 
 PHRASE_BARS = 4
-SIGMA_MS = {"melody": 7.0, "piano_rh": 5.0, "piano_lh": 5.0, "bass": 5.0, "drums": 4.0, "other": 5.0}
+SIGMA_MS = {"melody": 7.0, "piano_rh": 5.0, "piano_lh": 5.0, "guitar": 5.0, "bass": 5.0,
+            "drums": 4.0, "other": 5.0}
 MELODY_LEAD_MS = 8.0
-ROLL_MS = 7.0          # per note of a piano chord, bottom up
+ROLL_MS = 7.0          # per note of a piano or guitar chord, bottom up
 METRIC = {"down": 1.08, "secondary": 1.03, "beat": 0.97, "off": 0.92}
 RIT_TO = 0.80          # the final tempo, as a share of the written tempo
 BREATH = 0.95          # tempo on the last beat of each phrase
-BAND_ROLES = frozenset({"piano_rh", "piano_lh", "bass", "drums", "other"})
+BAND_ROLES = frozenset({"piano_rh", "piano_lh", "guitar", "bass", "drums", "other"})
 
 
 def form_build(bar: int, n_bars: int) -> float:
@@ -139,6 +140,8 @@ def roles(mid: mido.MidiFile, notes: list[Note]) -> dict[int, str]:
             out[ti] = "melody"
         elif "bass" in name:
             out[ti] = "bass"
+        elif "guitar" in name or "gtr" in name:
+            out[ti] = "guitar"
         elif "piano" in name:
             pianos.append(ti)
         else:
@@ -270,7 +273,7 @@ def perform(midi_in: Path, midi_out: Path, meter: str, pickup_q: float = 0.0, se
         shift = max(-2.5 * sigma, min(2.5 * sigma, rng.gauss(0, sigma)))
         if r == "melody":
             shift -= MELODY_LEAD_MS
-        roll = r == "piano_rh" and len(group) > 1
+        roll = r in ("piano_rh", "guitar") and len(group) > 1
         for k, m in enumerate(sorted(group, key=lambda m: m.pitch)):
             d = ms(shift + (ROLL_MS * k if roll else 0))
             m.start = max(0, m.start + d)

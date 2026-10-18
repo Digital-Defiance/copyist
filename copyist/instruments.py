@@ -132,7 +132,7 @@ SAMPLE_LINKS = {
 # Which instrument plays each part of the arrangement (roles from perform.roles), unless the
 # style chooses (the `instruments:` of a style file, copyist/styles/).
 ROLE_INSTRUMENT = {"melody": "clarinet", "piano_rh": "piano", "piano_lh": "piano", "piano": "piano",
-                   "bass": "electric-bass", "drums": "drums", "other": "piano"}
+                   "guitar": "nylon-guitar", "bass": "electric-bass", "drums": "drums", "other": "piano"}
 
 # Semitones to shift a part when rendering (score stays as written). The music-box stand-in's
 # samples sit high; sung melodies in C4–C5 sound dull when stretched down from G4.

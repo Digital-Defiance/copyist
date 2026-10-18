@@ -3,16 +3,15 @@ name: Country waltz
 family: Country and folk
 about: Oom-pah-pah that breathes — a held bar answers the boom-chick. Side-stick backbeat.
 tempo: [84, 132]
-instruments: {melody: fiddle, piano: steel-guitar, bass: electric-bass}
+instruments: {melody: fiddle, guitar: steel-guitar, bass: electric-bass}
 production: country waltz, 3/4, pedal steel, fiddle, acoustic guitar, brushed drums, heartfelt, honky-tonk
 meters:
   "3/4":
-    rh:
+    rh: []
+    lh: []
+    guitar:
       - [[1, 1, chord], [2, 1, chord]]
       - [[0, 3, chord]]
-    lh:
-      - [[0, 1, root]]
-      - [[0, 3, root]]
     bass:
       - [[0, 1, root]]
       - [[0, 3, root]]

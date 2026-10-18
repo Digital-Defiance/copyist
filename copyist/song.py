@@ -13,7 +13,7 @@ from . import lyrics as lyr
 
 FORMAT = "copyist-song/0"
 REQUIRED = ("title", "key", "meter", "melody")
-INSTRUMENTS = ("voice", "piano", "bass", "drums")  # the band template, in score order
+INSTRUMENTS = ("voice", "piano", "guitar", "bass", "drums")  # the band template, in score order
 
 
 class SongError(ValueError):

@@ -15,6 +15,9 @@ play:
 - piano right hand (`rh`): `chord` (a close voicing that moves as little as
   possible), `shell` (the 3rd and 7th, or 6th: jazz comping), `arp1`…`arp4`
   (one note of the voicing, lowest first: broken chords and arpeggios);
+- guitar (`guitar`): one treble staff of shapes and picks — `chord` / `strum`
+  (a guitar-range shape), `arp1`…`arp4`, plus the bass tones (`root`, `fifth`,
+  …) for thumb notes in a fingerpicking pattern;
 - piano left hand (`lh`) and bass (`bass`): `root`, `third`, `fifth`, `sixth`,
   `seventh` (the chord's 7th, or the minor 7th), `octave` (the root an octave
   up), `approach` (a half step into the next chord's root);
@@ -41,8 +44,9 @@ FORMAT = "copyist-style/0"
 FEELS = {"straight": 0.5, "swing": 2 / 3, "shuffle": 2 / 3}
 RH_TONES = {"chord", "shell", "arp1", "arp2", "arp3", "arp4"}
 BASS_TONES = {"root", "third", "fifth", "sixth", "seventh", "octave", "approach"}
+GUITAR_TONES = RH_TONES | BASS_TONES | {"strum"} - {"shell"}  # shapes and picks, not jazz shells
 LINE_TONES = {"root", "third", "fifth", "sixth", "seventh", "octave"}
-PARTS = ("melody", "piano", "bass", "drums")
+PARTS = ("melody", "piano", "guitar", "bass", "drums")
 DEFAULT_FOR_METER = {"3/4": "waltz", "4/4": "ballad", "6/8": "lullaby"}
 FAMILIES = ["Pop and rock", "Country and folk", "Musical theatre", "Jazz and blues", "Soul and gospel",
             "Latin and Caribbean", "Hymns and classical", "Children's", "Electronic"]
@@ -179,7 +183,8 @@ def parse(data: dict, style_id: str) -> Style:
         except ValueError:
             raise StyleError(f"{where}: {meter!r} isn't a meter like 4/4") from None
         p: dict = {"rh": _tones_field(parts.get("rh"), RH_TONES, f"{where} rh", full),
-                   "lh": _tones_field(parts.get("lh"), BASS_TONES, f"{where} lh", full)}
+                   "lh": _tones_field(parts.get("lh"), BASS_TONES, f"{where} lh", full),
+                   "guitar": _tones_field(parts.get("guitar"), GUITAR_TONES, f"{where} guitar", full)}
         bass = parts.get("bass")
         if bass in ("walk", "none"):
             p["bass"] = bass

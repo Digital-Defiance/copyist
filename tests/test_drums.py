@@ -69,7 +69,7 @@ class InstrumentChoiceTests(unittest.TestCase):
                          instruments=["voice", "piano"])
         band = arrange.arrange_band(song)
         self.assertEqual(set(band.parts), {"voice", "piano"})
-        self.assertEqual(band.excluded, ["bass", "drums"])
+        self.assertEqual(band.excluded, ["guitar", "bass", "drums"])
         names = {p.partName for p in band.performance().parts}
         self.assertNotIn("Drums", names)
         self.assertNotIn("Bass", names)

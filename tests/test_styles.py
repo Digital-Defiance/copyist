@@ -110,14 +110,23 @@ class CatalogTests(unittest.TestCase):
         self.assertNotIn("drums", band.parts)
         self.assertIn("right hand rests", " ".join(band.notes))
 
-    def test_folk_keeps_fingerpicking_under_a_piano_melody(self):
+    def test_folk_fingerpicks_a_guitar_staff_under_a_piano_melody(self):
         f = styles.get("folk")
-        self.assertTrue(f.keep_rh)
         self.assertEqual(f.instruments.get("melody"), "piano")
+        self.assertEqual(f.instruments.get("guitar"), "nylon-guitar")
         band = arrange.arrange_band(dataclasses.replace(load_song(SONGS["4/4"]), style="folk"))
-        self.assertIn("leaves the melody", " ".join(band.notes))
-        rh = band.score.parts[1]
-        self.assertTrue(any(not isinstance(n, harmony.ChordSymbol) for n in rh.recurse().notes))
+        self.assertIn("guitar", band.parts)
+        self.assertNotIn("piano", band.parts)
+        gtr = band.parts["guitar"].parts[0]
+        self.assertTrue(any(not isinstance(n, harmony.ChordSymbol) for n in gtr.recurse().notes))
+
+    def test_guitar_shapes_sit_above_the_bass(self):
+        band = arrange.arrange_band(dataclasses.replace(load_song(SONGS["4/4"]), style="country"))
+        gtr = band.parts["guitar"].parts[0]
+        chords = [n for n in gtr.recurse().notes
+                  if not isinstance(n, harmony.ChordSymbol) and hasattr(n, "pitches") and len(n.pitches) > 1]
+        self.assertTrue(chords)
+        self.assertTrue(all(min(p.midi for p in c.pitches) >= arrange.GUITAR_CHORD_LOW - 1 for c in chords))
 
     def test_straight_cycles_a_two_bar_phrase(self):
         s = styles.get("straight")
@@ -138,7 +147,7 @@ class CatalogTests(unittest.TestCase):
         """No style is stuck on a single bar forever (the arranger-keyboard feel)."""
         for s in styles.catalog().values():
             for meter, pat in s.meters.items():
-                cycled = any(styles.is_cycle(pat[p]) for p in ("rh", "lh", "bass")
+                cycled = any(styles.is_cycle(pat[p]) for p in ("rh", "lh", "guitar", "bass")
                              if isinstance(pat.get(p), list))
                 with self.subTest(style=s.id, meter=meter):
                     self.assertTrue(cycled, f"{s.id} {meter} has no phrase cycle")
@@ -179,14 +188,19 @@ class ArrangeEveryStyleTests(unittest.TestCase):
                     for part in band.score.parts:
                         self.assertEqual(bar_lengths(part), want, part.partName)
                     timeline = arrange.chord_timeline(song.melody)
-                    rh = band.score.parts[1]
-                    for ch in rh.recurse().notes:
-                        if isinstance(ch, harmony.ChordSymbol):
-                            continue
-                        cs = arrange.chord_at(timeline, float(ch.getOffsetInHierarchy(rh)))
-                        allowed = {p.name for p in cs.pitches} | {cs.root().transpose("M6").name}   # shells add a 6th
-                        self.assertTrue({p.name for p in ch.pitches} <= allowed, f"{ch} over {cs.figure}")
+                    acc = next((p for p in band.score.parts if p.partName == "Guitar"), None)
+                    if acc is None:
+                        pianos = [p for p in band.score.parts if p.partName == "Piano"]
+                        acc = pianos[0] if pianos else None
+                    if acc is not None:
+                        for ch in acc.recurse().notes:
+                            if isinstance(ch, harmony.ChordSymbol):
+                                continue
+                            cs = arrange.chord_at(timeline, float(ch.getOffsetInHierarchy(acc)))
+                            allowed = {p.name for p in cs.pitches} | {cs.root().transpose("M6").name}
+                            self.assertTrue({p.name for p in ch.pitches} <= allowed, f"{ch} over {cs.figure}")
                     self.assertEqual("drums" in band.parts, s.has_drums(meter))
+                    self.assertEqual("guitar" in band.parts, arrange.pattern_plays(s.pattern(meter).get("guitar")))
 
     def test_a_walking_bass_starts_each_chord_on_its_root_and_steps_into_the_next(self):
         song = self.songs["4/4"]
@@ -244,9 +258,7 @@ class ArrangeEveryStyleTests(unittest.TestCase):
         for style_id in ("swing", "jazz-waltz"):
             song = self.songs["4/4" if style_id == "swing" else "3/4"]
             band = arrange.arrange_band(dataclasses.replace(song, style=style_id))
-            rh = band.score.parts[1]
-            played = [n for n in rh.recurse().notes if not isinstance(n, harmony.ChordSymbol)]
-            self.assertEqual(played, [], style_id)
+            self.assertNotIn("piano", band.parts, style_id)
 
 
 class SwingTests(unittest.TestCase):

@@ -27,7 +27,7 @@ TARGET_LUFS = -16.0
 CEILING_DB = -1.0
 MAX_LIMIT_DB = 4.0
 # Constant-power pan: -1 = full left, 0 = centre, +1 = full right.
-PAN = {"melody": 0.0, "piano": -0.28, "other": 0.18, "bass": 0.0, "drums": 0.32}
+PAN = {"melody": 0.0, "piano": -0.28, "guitar": -0.22, "other": 0.18, "bass": 0.0, "drums": 0.32}
 
 
 # ------------------------------------------------------------------ files
