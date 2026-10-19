@@ -242,10 +242,11 @@ Spec: docs/transcribing.md. The owner asked for this on 18 October 2026; her mus
 - [x] Open-transcriber home repo as submodule: [Digital-Defiance/open-transcriber](https://github.com/Digital-Defiance/open-transcriber) → `open-transcriber/`
 - [x] T0 Basic Pitch + T0b adaptive / `clean_notes`: mean ~0.87 vs open 0.83; SN +0.05, Tyger +0.19; Saints/AG/MG within 0.02 — `open-transcriber/docs/t0-results.md`
 - [x] Magenta MT3 skipped for sung melody (not trained on singing); YourMT3 licence unclear
-- [x] Omnizart chord wrapper + setup script (blocked on Apple Silicon: x86 Vamp chroma)
+- [x] Omnizart chord wrapper + setup script; native arm64 `nnls-chroma` Vamp plugin built via `vamp-plugin-sdk` on Apple Silicon
 - [x] `copyist transcribe --engine neural` wired (BP melody + open harmony); default stays `open`
-- [ ] **NEXT:** close remaining note gaps (Saints −0.01, AG −0.02, MG −0.01) and win full `roundtrip.py` before making neural the default; T1 train only if that stalls
-- [ ] Silent Night open-engine chords past 0.69 (parallel; Omnizart arm64 chroma later)
+- [x] Close note gaps on truth takes: adaptive candidate selection tuned; Saints 0.85 (tied), AG 0.89 (+0.01), SN 0.85 (+0.05), Tyger 0.97 (+0.19), MG 0.83; mean 0.88 vs 0.83
+- [x] Full `roundtrip.py --engine neural` lead-sheet draft benchmark: mean 0.87 vs 0.83 (Saints 0.91 vs 0.85, Tyger 0.93 vs 0.78, AG 0.89 vs 0.88, MG 0.84 tied)
+- [ ] **NEXT:** Silent Night draft 6/8 compound rhythm snapping (0.78 vs 0.80) to make neural an across-the-board win; T1 domain training on synthetic stems
 - [ ] SheetSage ABC through the same fold/tidy path
 - [ ] Owner listen check on June Snow / other songs only after a table win. Never commit them
 - [ ] Repeats vote (SPEC 12.2a step 3): the same section sung again settles doubtful notes

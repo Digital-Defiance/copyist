@@ -118,7 +118,7 @@ def lyric_count(case: Case) -> int | None:
     return lyr.note_target(text)
 
 
-def run_case(case: Case, ev, device: str | None) -> dict:
+def run_case(case: Case, ev, device: str | None, engine: str = "open") -> dict:
     if not case.song.is_file() or not case.mix.is_file():
         return {"name": case.name, "ok": False, "error": "missing song or mix"}
     try:
@@ -128,7 +128,10 @@ def run_case(case: Case, ev, device: str | None) -> dict:
     syl = lyric_count(case)
     stems = tr.stems_from_files(case.mix, vocals, acc)
     try:
-        draft = tr.draft(stems, syllables=syl)
+        if engine == "neural":
+            draft = tr.draft_neural(stems, vocals, syllables=syl)
+        else:
+            draft = tr.draft(stems, syllables=syl)
     except Exception as e:
         return {"name": case.name, "ok": False, "error": f"draft: {e}"}
     abc_path = Path(f"/tmp/copyist-roundtrip-{case.name}.abc")
@@ -180,6 +183,7 @@ def main(argv=None) -> int:
     ap.add_argument("--only", nargs="*", help="case names to run (default: all available)")
     ap.add_argument("--write", type=Path, help="write the markdown table here")
     ap.add_argument("--device", default=None, help="Demucs device if stems must be built")
+    ap.add_argument("--engine", choices=("open", "neural"), default="open", help="transcription engine")
     args = ap.parse_args(argv)
     want = set(args.only) if args.only else None
     cases = [c for c in CASES if want is None or c.name in want]
@@ -187,7 +191,7 @@ def main(argv=None) -> int:
     rows = []
     for case in cases:
         print(f"… {case.name}", flush=True)
-        rows.append(run_case(case, ev, args.device))
+        rows.append(run_case(case, ev, args.device, engine=args.engine))
         if rows[-1].get("ok"):
             r = rows[-1]
             print(f"  note F1 {r['note_f1']:.2f}  chords {r['chords']:.2f}  "
