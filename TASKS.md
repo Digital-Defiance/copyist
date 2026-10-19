@@ -280,18 +280,19 @@ Spec: docs/transcribing.md. The owner asked for this on 18 October 2026; her mus
     - **T1 as planned** (a head on Basic Pitch plus log-mel) almost certainly won't beat it on pop and rock. It could on lyric-given vocals. T1 is re-scoped to multi-task heads on the winner of an encoder bake-off (MusicFM, Dasheng, HeartCodec's encoder, Whisper). It keeps Basic Pitch as a side input and gets structured decoding.
     - **The judge:** real, licence-clean recordings, never YuE2 takes. That's SheetSage2's own two tests, reproduced; neutral sets; and COTB-v1, about 120 public-domain recordings (musicals, choir, band, orchestral, syncopated, old), with performance-aligned truth checked by ear. Scored with strict metrics (octave-exact 50 ms F1, MV2H, notation edit distance, meter, key, underlay), paired bootstrap tests, and a pre-registered decision rule.
     - **Roadmap:** stage 0, the judge (3–4 weeks); stage 1, rhythm and notation decoding (3–4 weeks, overlapping); stage 2, the encoder bake-off and heads (5–7 weeks); stage 3, real data and priors (4–6 weeks); stage 4, the one-time test; stage 5, the product. About 4–5 months of GPU nights on the M4 Max. Full orchestral scores stay a research goal; orchestral lead sheets and short scores are the promise.
-  - [x] Budget: $0 (owner, 2026-10-19; DECISIONS). Nothing is bought: no Rock Corpus recordings, no external drive. Every dataset, model and tool is a free download, and the plan fits in about 300 GB of the Mac's disk (685 GB free after the owner's cleanup). Jobs stop by themselves below 150 GB free. Rock Corpus is out, so a claim on SheetSage2's own ground rests on RWC-Pop alone. Free stand-ins:
-    - RWC's other 75 sung pieces;
-    - the 39 Creative Commons songs with karaoke charts in UltraStar Deluxe's GitHub song library (the owner's idea). 4 of them are in HookTheory's training split and are scored apart.
-  - [ ] Owner decisions on the revised audit (plain words at the end of its report):
-    - testing-only use of non-commercial collections and systems (RWC, the 35 non-commercial karaoke songs, SheetSage2, MuScriptor, YourMT3+), publishing only scores for the non-commercial songs;
+  - [x] Budget: $0 (owner, 2026-10-19; DECISIONS). Nothing is bought: no Rock Corpus recordings, no external drive. Every dataset, model and tool is a free download, and jobs stop by themselves below 150 GB free.
+    - **Disk:** about 300 GB at most of the Mac's 685 GB free, for training and testing only (owner, 2026-10-19). After the test is published and the model ships, stage 6 shrinks the project to about 15 GB. That keeps the COTB recordings and their truth, plus manifests that can rebuild everything else.
+    - **Rock Corpus is out:** the owner owns none of its songs. So a claim on SheetSage2's own ground rests on RWC-Pop alone.
+    - **Free stand-ins:** RWC's other 75 sung pieces, and the Creative Commons songs with karaoke charts in UltraStar Deluxe's GitHub song library (the owner's idea). 32 of those karaoke songs are used. The 2 under older no-derivatives licences are left out, and the 4 that are in HookTheory's training split are scored apart.
+  - [x] Non-commercial test material: testing only, with safeguards (owner, 2026-10-19). This covers RWC, the non-commercial karaoke songs, and runs of SheetSage2, MuScriptor and YourMT3+. These songs are never trained on, shipped or shared. For them we publish only scores and credits, never their audio or our transcriptions. That's a reading of the licences, not legal advice; ask a lawyer before publishing if certainty is wanted
+  - [ ] Owner decisions still open on the revised audit (plain words at the end of its report):
     - real recordings as the judge, with YuE2 takes as practice;
     - about 8–12 hours of listening;
     - open-licence encoders whose training data can't be checked;
     - self-labelled CC0/CC BY music;
-    - up to about 300 GB of disk;
     - song format `copyist-song/1` (triplets, key, meter and tempo changes, repeats, a second voice);
     - claiming "best" only after the one-time test.
+  - [ ] Stage 6, give the disk back: once the test is published and the model ships, shrink the project from about 300 GB to about 15 GB. Check first that the manifests can rebuild everything that's deleted (recipes for renders; source links and checksums for downloads)
   - [ ] Stage 0, the judge (after the owner's decisions and the key-change fix, which touches the same scorer). It needs:
     - timed-event outputs from every engine;
     - SheetSage2's scorer replicated, and reproduced on RWC-Pop with its official implementation (testing only);

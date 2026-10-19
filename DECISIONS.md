@@ -17,10 +17,13 @@ Newest first. One entry per decision: what, why, and what we gave up.
   - **Gave up:** a training set with no licence doubt.
 - **Goal raised: the best open transcriber available, beating SheetSage2 objectively,** for songs, musicals and orchestral music (owner). A design audit comes before T1 trains anything. Gave up: starting the GPU data work today.
 - **The transcriber's budget is $0.** Owner's call.
-  - **What it rules out:** every dataset, model and tool must be a free download. No test recordings are bought, and there's no external drive. The plan fits in about 300 GB of the Mac's own disk (685 GB free after the owner's cleanup), and jobs stop by themselves below 150 GB free. Copyist keeps recipes rather than renders, and stores only the costly audio (SoulX and YuE2) as FLAC.
+  - **What it rules out:** every dataset, model and tool must be a free download. No test recordings are bought, and there's no external drive. Copyist keeps recipes rather than renders, and stores only the costly audio (SoulX and YuE2) as FLAC.
+  - **Disk:** about 300 GB at most of the Mac's own disk (685 GB free after the owner's cleanup), for training and testing only, never long term; jobs stop by themselves below 150 GB free. Owner's call. Once the test is published and the model ships, a final stage shrinks the project to about 15 GB. It keeps the COTB recordings and their truth, plus manifests that can rebuild the rest.
+  - **Rock Corpus is out:** the owner owns none of its songs.
   - **What replaces Rock Corpus,** SheetSage2's rock test, whose recordings must be bought, so it can't be scored:
     - RWC's other 75 sung pieces (CC BY-NC, testing only);
-    - the 39 Creative Commons songs with karaoke charts in UltraStar Deluxe's GitHub song library (the owner's idea). 4 of them are in HookTheory's training split and are scored apart; 35 are non-commercial, so they're testing only, and only scores are published for them.
+    - the Creative Commons songs with karaoke charts in UltraStar Deluxe's GitHub song library (the owner's idea), 32 of the 39. The 2 under older no-derivatives licences are left out, because a transcription may count as an adaptation, which those licences don't allow. The 4 that are in HookTheory's training split are scored apart.
+  - **Non-commercial test material is for testing only, with safeguards.** The owner left this to the audit's judgment. It covers RWC, the non-commercial karaoke songs, and runs of SheetSage2, MuScriptor and YourMT3+. These songs are never trained on, shipped or shared; for them we publish only scores and credits, never their audio or our transcriptions. Why: testing a free MIT tool with nothing sold sits on the non-commercial side, and RWC's re-release says its licence covers research, including research inside companies. This is a reading of the licences, not legal advice; ask a lawyer before publishing results if certainty is wanted.
   - **Gave up:** a head-to-head on SheetSage2's rock test. A claim to beat it on its own ground rests on RWC-Pop alone, and we'll say so.
 
 ## 2026-10-19 (v0.0.1 release and where the cask lives)
