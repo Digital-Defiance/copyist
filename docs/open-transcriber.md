@@ -25,26 +25,27 @@ SheetSage2 is the accuracy ceiling we measured (≈0.94–0.98 note F1 on takes)
 | Piece | Role | Licence |
 |---|---|---|
 | Demucs | vocal / band stems | MIT |
-| MT3 (or a small head on a similar encoder) | multi-instrument AMT → MIDI / note events | Apache-2.0 |
+| small lead-sheet head on frozen Basic Pitch posteriors + log-mel (ONNX) | sung melody + chords → note events | MIT code, MIT weights |
 | Omnizart (optional chord head) | beat / chord / vocal pitch | MIT |
 | HeartMuLa / open-singer B1 pipeline | supervised pairs later | Apache (adaptor work) |
 | Copyist open engine | fallback + feature baseline | MIT |
 | open-transcriber | baselines, train, inference package | MIT |
 
+MT3 was rejected as a base: there is no singing in its training and it works on 2-second windows. The head above instead sits on frozen Basic Pitch features.
+
 Start with **inference of existing Apache/MIT models** on our truth takes (T0). Only train if T0 loses to the open engine on the table.
 
 ## Data we can train on
 
-**Held out, always:** every song in `songs/` and every case in `scripts/transcribe/roundtrip.py`, in any key, tempo or rendition, with their lyrics. They are the benchmark, so items 1 and 2 below are for evaluation only and never for training. Training data comes from tunes that aren't held out, checked by a tested melodic-fingerprint filter (planned in T1; TASKS.md §7).
+**Held out, always:** every song in `songs/` and every case in `scripts/transcribe/roundtrip.py`, in any key, tempo, meter or rendition, with their lyrics — including the two long songs added later. The dataset builder refuses them by title and by melodic fingerprint (`open_transcriber/data/heldout.py`, tested). None of them is ever a training input; they exist only to be scored against.
 
-Paired (audio → known lead sheet), all public-domain or original to Copyist:
+**Training data (exact labels):** lead sheets from Copyist's sampler, sung by SoulX-Singer with CC BY voices (VocalSet) over the sfizz band, mixed and separated with Demucs — every note's label is exact because the score is the source. Real CC BY singing (Annotated-VocalSet, Choral Singing Dataset, ESMUC, Cantoría) for fine-tuning and checks.
 
-1. **Band renders** of every `songs/*.yaml` (sfizz / SoundFont) — exact notes and chords. Evaluation only (held out).
-2. **YuE2 truth takes** already in the round-trip loop (Saints, Silent Night, Amazing Grace, Tyger, Major-General, …) — melody via `follow`; chords vs written (accept that YuE2 harmony may disagree; optionally train a "played harmony" head separately). Evaluation only (held out).
-3. **Open-singer B1 corpus** (`scripts/open-singer/transcribe.py` gate): songs generated under Apache licences with lead sheets that pass `copyist follow` ≥ 90%.
-4. **Synthetic stress:** patter (Major-General-like), waltz vs 6/8, melisma holds (`_`).
+**After owner decisions:** YuE2 renders of sampler lead sheets (aligned and gated); HeartMuLa songs with gated pseudo-labels.
 
-Never: owner Broadway masters, private LoRAs, SheetSage outputs as pseudo-labels for a commercial model.
+**Dev and test kept apart:** the dev set, for tuning, is YuE2 and SoulX takes of 10–12 songs that aren't held out; the test set is the round-trip table, run once per candidate. No threshold or checkpoint is chosen on the test set.
+
+**Never:** owner Broadway masters, private LoRAs, SheetSage outputs as pseudo-labels for a commercial model; the non-commercial datasets above, the Essen encodings, and SoulX's bundled example voice.
 
 ## Gate
 
