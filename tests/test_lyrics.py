@@ -1,6 +1,6 @@
 import unittest
 
-from copyist.lyrics import EXTEND_MARK, HOLD, SKIP, SYL, tokenize
+from copyist.lyrics import EXTEND_MARK, HOLD, SKIP, SYL, note_target, tokenize
 from helpers import song_from
 
 
@@ -10,6 +10,11 @@ class TokenizeTests(unittest.TestCase):
         self.assertEqual([t.kind for t in toks], [SYL, SYL, SYL, HOLD, SYL])
         self.assertEqual([t.syllabic for t in toks if t.kind == SYL], ["begin", "middle", "end", "single"])
         self.assertEqual([t.word for t in toks if t.kind == SYL], [0, 0, 0, 1])
+
+    def test_note_target_counts_melisma_holds(self):
+        # Silent Night: syllables alone under-count the sung notes.
+        self.assertEqual(note_target("Si-lent night_ ho-ly night_"), 8)  # 6 syl + 2 holds
+        self.assertEqual(note_target("la * la"), 3)
 
     def test_word_continues_across_hyphen_at_chunk_end(self):
         toks = [t for t in tokenize("al-_ read-y come") if t.kind == SYL]

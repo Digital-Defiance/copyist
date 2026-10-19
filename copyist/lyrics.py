@@ -59,6 +59,15 @@ class VerseFit:
         return self.slots_used == self.slots_available
 
 
+def note_target(text: str) -> int:
+    """How many melody notes the lyric line expects: syllables plus `_` holds and `*` skips.
+
+    The open engine's tidy/split target must count holds — Silent Night has 41 syllables
+    but 46 sung notes because of `night_`, `peace_`, etc.
+    """
+    return sum(1 for t in tokenize(text) if t.kind in (SYL, HOLD, SKIP))
+
+
 def tokenize(text: str) -> list[Token]:
     """Split a verse into syllable, hold and skip tokens."""
     tokens: list[Token] = []
