@@ -1,6 +1,6 @@
 # Copyist website
 
-Static public site for GitHub Pages: what Copyist is, its features, and how to install it.
+Static public site for GitHub Pages: what Copyist is, its features, how to install it, and how to make music (`copyist serve`, write, build).
 
 - Source: this folder (`site/`)
 - Live URL: https://copyist.digitaldefiance.org/ (`site/CNAME`)

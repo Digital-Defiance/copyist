@@ -22,6 +22,7 @@
     <a href="#why">Why</a>
     <a href="#features">Features</a>
     <a href="#install">Install</a>
+    <a href="#make">Make music</a>
     <a href="https://github.com/Digital-Defiance/copyist">GitHub</a>
   </nav>
 </header>
@@ -106,8 +107,8 @@
       <h1>The song, the score, the sound.</h1>
       <p class="lede">Write from the notes. Hear what you wrote. Ship real sheet music that matches the recording — every time.</p>
       <p class="cta">
-        <a class="button primary" href="#install">Install Copyist</a>
-        <a class="button" href="https://github.com/Digital-Defiance/copyist">View on GitHub</a>
+        <a class="button primary" href="#install">Install the app</a>
+        <a class="button" href="#make">Make some music</a>
       </p>
     </div>
   </section>
@@ -188,42 +189,64 @@
   </section>
 
   <section id="install" class="band install">
-    <h2>Install and set up</h2>
-    <p class="section-lede">Python 3.10 or later on macOS or Linux. Everything runs locally; models and instruments download when you ask for them.</p>
+    <h2>Install the app</h2>
+    <p class="section-lede">The usual way is the Mac app via Homebrew. Everything runs on your computer; optional downloads (band, singer) happen inside Copyist when you choose them.</p>
 
-    <h3>1. Get the code</h3>
+    <h3>Homebrew (Mac)</h3>
+    <pre><code>brew tap digital-defiance/copyist https://github.com/Digital-Defiance/copyist
+brew install --cask copyist
+open -a Copyist</code></pre>
+    <p>Needs a published GitHub Release DMG (see <a href="https://github.com/Digital-Defiance/copyist/blob/main/docs/desktop-app.md">desktop app docs</a>). Until then, run from source (below).</p>
+
+    <h3>From source (Mac or Linux)</h3>
     <pre><code>git clone https://github.com/Digital-Defiance/copyist.git
 cd copyist
 python -m venv .venv
-source .venv/bin/activate   # Windows: .venv\Scripts\activate
-pip install -e .</code></pre>
+source .venv/bin/activate
+pip install -e .
+pip install --no-deps tinysoundfont
+scripts/package/run-app.sh          # Tauri window (needs Rust once)
+# or: copyist serve                 # same UI in the browser</code></pre>
+  </section>
 
-    <h3>2. Build a song</h3>
-    <pre><code>pip install --no-deps tinysoundfont   # fallback SoundFont (optional)
+  <section id="make" class="band install">
+    <h2>Make some music</h2>
+    <p class="section-lede">You do not need to read notation. Listen to the band previews and keep what you like. No download is required to start writing.</p>
+
+    <ol class="steps make-steps">
+      <li>
+        <span class="step-n">1</span>
+        <h3>Write a song</h3>
+        <p>Paste lyrics, pick a style, choose the writer (<strong>Copyist's own</strong> needs nothing extra; YuE2 when you've installed the singer). Keep a candidate by ear.</p>
+      </li>
+      <li>
+        <span class="step-n">2</span>
+        <h3>Install extras (optional)</h3>
+        <p><strong>Install extras</strong> in the drawer: the sampled band for exact previews, and/or the YuE2 singer for finished takes (licence shown first).</p>
+      </li>
+      <li>
+        <span class="step-n">3</span>
+        <h3>Shape it</h3>
+        <p><strong>Try again / Higher / Simpler</strong>, or edit the lyrics under the same melody. Transcribe a recording you own when you want a lead sheet from audio.</p>
+      </li>
+      <li>
+        <span class="step-n">4</span>
+        <h3>A finished take</h3>
+        <p>Sound tab → make a YuE2 take once the singer is installed. Check the melody against the score.</p>
+      </li>
+    </ol>
+
+    <h3>From the terminal</h3>
+    <pre><code>copyist write lyrics.txt --title Hope --style folk --engine rules
+copyist write --title Hope --keep 1 --build
 copyist build songs/amazing-grace.yaml</code></pre>
-    <p>Outputs land in <code>out/amazing-grace/</code>: lead sheet and band score as PDF, parts, MusicXML, MIDI, a preview WAV and a validation report.</p>
 
-    <h3>3. Sampled instruments (recommended)</h3>
-    <pre><code>scripts/setup-sfizz.sh --instruments   # ~1.1 GB band pack</code></pre>
-    <p>Then rebuild the same song to hear the concert grand, basses, kit and melody winds instead of the SoundFont fallback.</p>
+    <p>YuE2 weights are CC BY-NC 4.0, with permission for individual creators to sell their own songs. The app shows each licence before download.</p>
 
-    <h3>4. Open the local page</h3>
-    <pre><code>copyist serve</code></pre>
-    <p>Opens <code>http://127.0.0.1:8765/</code> — songs, score pages, band previews, writing and transcription. Nothing is loaded from the internet while you work.</p>
-
-    <h3>Optional: production singer (YuE2)</h3>
-    <pre><code>scripts/setup-yue.sh                   # runtime + weights (GPU recommended)
-copyist produce songs/amazing-grace.yaml
-copyist follow songs/amazing-grace.yaml out/amazing-grace/production/production.wav</code></pre>
-    <p>YuE2 weights are CC BY-NC 4.0, with permission for individual creators to sell their own songs. The page shows each licence before download.</p>
-
-    <h3>Run the tests</h3>
-    <pre><code>python -m unittest discover -s tests</code></pre>
-
-    <p class="more">More detail: <a href="https://github.com/Digital-Defiance/copyist/blob/main/CONTRIBUTING.md">CONTRIBUTING.md</a>,
-      <a href="https://github.com/Digital-Defiance/copyist/blob/main/docs/sound-set.md">sound set</a>,
-      <a href="https://github.com/Digital-Defiance/copyist/blob/main/docs/production.md">production</a>,
-      <a href="https://github.com/Digital-Defiance/copyist/blob/main/docs/web.md">web front end</a>.</p>
+    <p class="more">More:
+      <a href="https://github.com/Digital-Defiance/copyist/blob/main/docs/desktop-app.md">desktop app</a>,
+      <a href="https://github.com/Digital-Defiance/copyist/blob/main/README.md">README</a>,
+      <a href="https://github.com/Digital-Defiance/copyist/blob/main/docs/melody-writing.md">melody writing</a>.</p>
   </section>
 
   <section id="licence" class="band licence">

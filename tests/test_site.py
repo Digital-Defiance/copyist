@@ -17,13 +17,26 @@ class SiteFiles(unittest.TestCase):
             "script.js",
             "README.md",
             "CNAME",
-            "fonts/shantell-sans.woff2",
+            "fonts/instrument-serif.woff2",
+            "fonts/instrument-serif-italic.woff2",
+            "fonts/instrument-sans.woff2",
             "fonts/source-serif-4.woff2",
             "fonts/source-serif-4-italic.woff2",
             "fonts/OFL.txt",
         ):
             path = SITE / name
             self.assertTrue(path.is_file(), f"missing {path.relative_to(ROOT)}")
+        self.assertFalse(
+            (SITE / "fonts" / "shantell-sans.woff2").exists(),
+            "public site must not ship the handwritten display face",
+        )
+
+    def test_typography_uses_instrument_faces(self) -> None:
+        css = (SITE / "styles.css").read_text(encoding="utf-8")
+        self.assertIn("Instrument Serif", css)
+        self.assertIn("Instrument Sans", css)
+        self.assertNotIn("shantell", css.lower())
+        self.assertNotIn("--pencil", css)
 
     def test_custom_domain(self) -> None:
         cname = (SITE / "CNAME").read_text(encoding="utf-8").strip()
@@ -65,14 +78,21 @@ class SiteContent(unittest.TestCase):
 
     def test_install_commands(self) -> None:
         for needle in (
+            "brew install --cask copyist",
+            "brew tap digital-defiance/copyist",
             "git clone https://github.com/Digital-Defiance/copyist.git",
             "pip install -e .",
-            "copyist build songs/amazing-grace.yaml",
-            "scripts/setup-sfizz.sh --instruments",
+            "scripts/package/run-app.sh",
             "copyist serve",
-            "python -m unittest discover -s tests",
+            'id="make"',
         ):
             self.assertIn(needle, self.html)
+
+    def test_make_music_path(self) -> None:
+        lower = self.html.lower()
+        self.assertIn("make some music", lower)
+        self.assertIn("write a song", lower)
+        self.assertIn("install extras", lower)
 
     def test_relative_assets(self) -> None:
         self.assertIn('href="styles.css"', self.html)
