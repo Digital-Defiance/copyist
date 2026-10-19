@@ -41,7 +41,11 @@ Start with **inference of existing Apache/MIT models** on our truth takes (T0). 
 
 **Training data (exact labels):** lead sheets from Copyist's sampler, sung by SoulX-Singer with CC BY voices (VocalSet) over the sfizz band, mixed and separated with Demucs — every note's label is exact because the score is the source. Real CC BY singing (Annotated-VocalSet, Choral Singing Dataset, ESMUC, Cantoría) for fine-tuning and checks.
 
-**After owner decisions:** YuE2 renders of sampler lead sheets (aligned and gated); HeartMuLa songs with gated pseudo-labels.
+**Second round:**
+- YuE2 renders of sampler lead sheets (owner approved, 2026-10-19). Each phrase is aligned and gated note by note, and the labels are melody only, since YuE2's band doesn't always play the written chords. They're kept as a separate tagged slice of the manifest.
+- HeartMuLa songs with gated pseudo-labels.
+
+**Judging:** YuE2 learned from SheetSage2's transcriptions, so YuE2 takes favour SheetSage2, and would favour a model trained on YuE2 too. Only real recordings decide whether we're better than SheetSage2.
 
 **Dev and test kept apart:** the dev set, for tuning, is YuE2 and SoulX takes of 10–12 songs that aren't held out; the test set is the round-trip table, run once per candidate. No threshold or checkpoint is chosen on the test set.
 
@@ -71,7 +75,7 @@ A candidate ships as `--engine neural` (name TBD) only when every row is ≥ ope
 
 - Landed 2026-10-19: the held-out guard (`open_transcriber/data/heldout.py`) and a seeded, data-only score sampler (`open_transcriber/data/scores.py`) with a public-domain lyric pool.
 - Dataset builder: sampler lead sheets sung by SoulX over the band → exact melody events and chord symbols on the beat grid (labels come from the score, not from audio).
-- Train the lead-sheet head (see the licence stack) on that data. Never on the YuE2 truth takes, which are held out; YuE2 renders of sampler scores only if the owner approves YuE2 as training material.
+- Train the lead-sheet head (see the licence stack) on that data. Never on the YuE2 truth takes, which are held out. YuE2 renders of sampler scores come in the second data round (owner approved, 2026-10-19).
 - Wire `copyist transcribe --engine neural` behind the same tidy path (`clean_notes`, lyric `note_target`, `fold_grid_rearticulations`).
 - Done when the trained model is at or above open on every row of the round-trip table (all seven songs) for notes, with no row worse on chords. Silent Night's chords are their own item: melody training doesn't move them.
 

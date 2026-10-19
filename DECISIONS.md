@@ -9,6 +9,12 @@ Newest first. One entry per decision: what, why, and what we gave up.
 - **The trained weights will be MIT, like the code.** Owner's call; the plan had suggested Apache-2.0, like Basic Pitch. Gave up: Apache's explicit patent grant.
 - **The benchmark is held out by code, not by convention.** `open_transcriber/data/heldout.py` reads every `songs/*.yaml` and the round-trip cases at runtime and rejects a training score that matches one by title, lyrics or a transposition- and tempo-invariant melodic fingerprint; the sampler re-rolls on a hit. Gave up: nothing; without it the scores would mean nothing.
 - **SheetSage2 is a yardstick only:** run once on all seven test songs to measure the gap, never used to teach or to tune. Owner's call.
+- **YuE2 renders may be training material for the transcriber,** in the second data round. Owner's call.
+  - **What goes in:** renders of sampler scores only, never held-out tunes. Each phrase is aligned and checked note by note: a clip needs 95% of its notes within ±50 cents, and failed notes are masked. Labels are melody only, because YuE2's band doesn't always play the written chords. YuE2 audio is a separate, tagged slice of the manifest, so a model can be retrained without it.
+  - **Why:** it's the most realistic singing we can make, closer to real records than SoulX over the band.
+  - **The doubt:** YuE2's licence is CC BY-NC 4.0 with a permission for individual creators to sell their songs. It doesn't say whether a company may train a model on those songs and give it away under MIT. A written OK from the YuE team (contact in the 2026-10-16 entry) would settle it.
+  - **Judging:** YuE2 learned from SheetSage2's transcriptions, so YuE2 takes favour SheetSage2, and would favour a model trained on YuE2 too. Real recordings, not YuE2 takes, decide whether we're better.
+  - **Gave up:** a training set with no licence doubt.
 - **Goal raised: the best open transcriber available, beating SheetSage2 objectively,** for songs, musicals and orchestral music (owner). A design audit comes before T1 trains anything. Gave up: starting the GPU data work today.
 
 ## 2026-10-19 (v0.0.1 release and where the cask lives)
