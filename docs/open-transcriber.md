@@ -8,7 +8,7 @@
 git submodule update --init open-transcriber
 ```
 
-Status, 19 October 2026: submodule in place; **adaptive BP + `clean_notes`** (see `open-transcriber/docs/t0-results.md`) mean note F1 ~0.87 vs open 0.83; `copyist transcribe --engine neural` wired (default still `open`). Magenta MT3 skipped for singing; Omnizart chords blocked on Apple Silicon Vamp. SheetSage2 remains optional and non-commercial.
+Status, 19 October 2026: submodule in place; **adaptive BP + `clean_notes`** (see `open-transcriber/docs/t0-results.md`) mean note F1 ~0.87 vs open 0.83; `copyist transcribe --engine neural` wired (default still `open`). Magenta MT3 skipped for singing; Omnizart chords run natively on Apple Silicon since the arm64 nnls-chroma build. SheetSage2 remains optional and non-commercial. The 2026-10-19 design audit re-scopes T1 and moves the judge to real recordings (TASKS §7).
 
 ## Why
 
@@ -67,7 +67,7 @@ A candidate ships as `--engine neural` (name TBD) only when every row is ≥ ope
 
 - [x] Spotify Basic Pitch (Apache-2.0, CoreML) on the five truth takes via `scripts/transcribe/neural_baseline.py`.
 - [x] Adaptive path + Copyist `clean_notes`: mean ~0.87; SN/Tyger win; Saints/AG/MG within 0.02.
-- [x] Magenta MT3 evaluated and skipped for sung melody; Omnizart chord wrapper (arm64 chroma blocked).
+- [x] Magenta MT3 evaluated and skipped for sung melody; Omnizart chord wrapper (native arm64 nnls-chroma since 2026-10-18).
 - [x] `--engine neural` wired; default remains `open` until full-table + round-trip win.
 - Verdict: **T1 deferred** — finish the three small gaps first.
 
