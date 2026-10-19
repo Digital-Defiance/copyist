@@ -9,7 +9,7 @@ from music21 import pitch
 
 from copyist import abcplan, fit, lyrics, syllables, write, yue
 from copyist.song import SongError, load_song
-from helpers import song_from
+from helpers import KEY_CHANGE_VOCAL, song_from
 
 PLANS = Path(__file__).resolve().parent / "data" / "plans"
 
@@ -190,6 +190,52 @@ class PlanReadingTests(unittest.TestCase):
     def test_tempo(self):
         self.assertEqual(abcplan.tempo_field("1/4=86"), 86)
         self.assertEqual(abcplan.tempo_field("3/8=60"), "3/8=60")
+
+
+class KeyChangeReadingTests(unittest.TestCase):
+    """SheetSage2 and yue-plan change key with a `K:` line in both voices, or `[K:…]` inside a bar."""
+
+    def test_every_bar_is_kept_and_each_note_read_in_its_key(self):
+        plan = abcplan.parse(plan_text("key-change"))
+        self.assertEqual((len(plan.vocal), plan.key), (6, "C"))
+        self.assertEqual(abcplan.pitches(plan.vocal, plan.key), KEY_CHANGE_VOCAL)
+        self.assertEqual([b.new_key for b in plan.vocal], [None, None, "D", None, "Bb", None])
+        self.assertEqual(abcplan.key_changes(abcplan.trim(plan), plan.key), [(2, "C", "D"), (4, "D", "Bb")])
+        notes = [t for b in plan.vocal for t in b.toks if t.kind == "note"]
+        self.assertTrue(all(t.acc for t in notes))              # each note says its own accidental
+        self.assertEqual([s["name"] for s in abcplan.sections_of(abcplan.trim(plan))], ["verse", "chorus"])
+
+    def test_an_accidental_stops_at_the_bar_line_and_at_a_key_change(self):
+        plan = abcplan.parse(plan_text("key-change"))
+        rows = [[m for m in row if m is not None] for row in abcplan._note_midis(plan.vocal, plan.key)]
+        self.assertEqual(rows[1][0], 77)                         # not bar 1's F#
+        self.assertEqual(rows[3], [79, 77, 77, 73])
+        self.assertEqual(rows[4][2], 79)                         # the G# stops at [K:Bb]
+        plan = abcplan.parse(SMALL.replace('"C"c8c8c8c8|"G"d16z16|', '"C"c8c8c8^f8|"G"f16z16|'))
+        self.assertEqual(abcplan.pitches(abcplan.trim(plan), plan.key)[3:5], [78, 77])
+
+    def test_a_key_change_in_the_ins_voice_leaves_the_vocal_alone(self):
+        text = ('X:1\nM:4/4\nL:1/16\nQ:1/4=100\nK:C\n% verse\nV: Vocal\n"C"c4e4f4g4|\nV: Ins\nK:D\nD,16|\n'
+                'V: Vocal\n"F"f16|\n')
+        plan = abcplan.parse(text)
+        self.assertEqual(abcplan.pitches(plan.vocal, plan.key), [72, 76, 77, 79, 77])
+        self.assertTrue(all(b.new_key is None for b in plan.vocal))
+
+    def test_unreadable_keys_and_other_inline_fields_are_refused(self):
+        for bad in (SMALL.replace('"C"c8c8c8c8', '"C"c8c8[K:Hp]c8c8'),
+                    SMALL + "K:Hp\nc32|\n",
+                    SMALL.replace('"C"c8c8c8c8', '"C"c8c8[M:3/4]c8c8')):
+            with self.subTest(bad=bad), self.assertRaises(abcplan.PlanError):
+                abcplan.parse(bad)
+        with self.assertRaises(abcplan.PlanError):              # song melodies hold no fields
+            abcplan.tokenize_bar("[K:D]d4")
+
+    def test_pairing_two_four_bars_keeps_every_pitch(self):
+        text = SMALL.replace("M:4/4", "M:2/4").replace(
+            '"C"c8c8c8c8|"G"d16z16|"C"e8e8e8e8|"G"c16z16|', '"C"c8^f8|f16|"G"d16|z16|')
+        plan = abcplan.parse(text)
+        bars, _ = abcplan.pair_bars(abcplan.trim(plan), plan.meter)
+        self.assertEqual(abcplan.pitches(bars, plan.key), [72, 78, 77, 74])   # the F# stays in its own bar
 
 
 class FitTests(unittest.TestCase):

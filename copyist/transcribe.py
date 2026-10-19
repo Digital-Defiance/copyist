@@ -1143,7 +1143,7 @@ def voice_note_count(text: str, voice: str) -> int:
         for chunk in line.split("|"):
             if not chunk.strip():
                 continue
-            toks, _ = abcplan.tokenize_bar(chunk)
+            toks, _ = abcplan.tokenize_bar(chunk, fields=True)
             n += sum(1 for t in toks if t.kind == "note")
     return n
 

@@ -13,12 +13,15 @@ from unittest import mock
 import numpy as np
 
 from copyist import abcplan, transcribe as tr
+from helpers import KEY_CHANGE_INS
 
 HAVE_AUDIO = all(importlib.util.find_spec(m) for m in ("librosa", "soundfile", "scipy"))
 if HAVE_AUDIO:
     import soundfile as sf
 NEEDS_AUDIO = unittest.skipUnless(HAVE_AUDIO, "transcribing needs librosa (pip install copyist[transcribe])")
 from copyist.song import load_song
+
+KEY_CHANGE = Path(__file__).resolve().parent / "data" / "plans" / "key-change.abc"   # SheetSage2's layout
 
 SR = tr.SR
 BPM = 100
@@ -424,6 +427,13 @@ Z|
         from copyist import fit as fitting
         slots = fitting.slots(bars, plan.unit, plan.meter)
         self.assertGreaterEqual(len(slots), 9)   # the Ins tune, not the empty Vocal Zs
+
+    def test_the_ins_voice_reads_its_own_key_changes(self):
+        text = KEY_CHANGE.read_text(encoding="utf-8")
+        self.assertEqual((tr.voice_note_count(text, "Vocal"), tr.voice_note_count(text, "Ins")), (22, 12))
+        plan = abcplan.parse(tr.lead_from_ins(text))
+        self.assertEqual(abcplan.pitches(plan.vocal, plan.key), KEY_CHANGE_INS)
+        self.assertEqual([b.new_key for b in plan.vocal], [None, None, "D", None, "Bb", None])
 
     @NEEDS_AUDIO
     def test_sheetsage_through_a_fake_runner_is_moved_down_an_octave(self):

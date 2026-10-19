@@ -2,6 +2,10 @@
 
 Newest first. One entry per decision: what, why, and what we gave up.
 
+## 2026-10-19 (key changes, and the scorer's alignment)
+
+- **Copyist's ABC reader keeps every bar through a key change, and each note leaves it with its own accidental.** SheetSage2 and yue-plan write a key change as a `K:` line in both voices, or `[K:…]` inside a bar. `abcplan.parse` started a new plan at every `K:` line, so it kept only the bars after the last one, and it refused `[K:…]`. Now `abcplan.read_vocal` follows ABC 2.1 and SheetSage2's own writer. The first `K:` ends the header and sets every voice's key. After that, a `K:` line or `[K:…]` changes the key of the voice it's written in, from that point on. Accidentals hold for their letter, in every octave, until the bar line or the key change. Every note then gets the accidental for the pitch it sounds (`=` for a natural), so the rest of the pipeline reads the right pitch under one key, with no other change. That also fixes a bug: pairing 2/4 bars joined one bar's `^f` with the next bar's `f`, and the F came out sharp. Any other inline field, and a key Copyist can't read, is refused. Gave up: nothing.
+
 ## 2026-10-19 (the owner's goal, and SheetSage kept away from her songs)
 
 - **Copyist's purpose, in the owner's words, has two parts.**

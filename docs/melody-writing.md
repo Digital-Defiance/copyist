@@ -117,9 +117,11 @@ Output: `out/<slug>/rewrite/<how>/candidate-*/` with song file, report and band 
    - note `[_^=]*[A-Ga-g][,']*` plus an optional length (`n`, `n/m`, `/`) and an optional tie `-`;
    - rest `z` plus a length;
    - whole-bar rest `Z` plus a count;
+   - an inline key field `[K:…]` (a key change inside a bar; any other inline field is refused);
    - the bar line `|`.
 
    Anything else, such as a tuplet `(3`, broken rhythm `>` or decorations, rejects the candidate with a clear note in the report. Don't guess.
+   - **Key changes:** the first `K:` ends the header and sets every voice's key. After that, a `K:` line inside a voice, or `[K:…]` inside a bar, changes that voice's key from there on. Accidentals hold for the letter, in every octave, until the bar line or the key change. Each note is then written with its own accidental, so pairing bars can't change a pitch.
 2. **Trim to the singing:**
    - Drop bars before the first bar with a vocal note, and after the last.
    - Expand `Zn` into n bars of `z<full bar>`.

@@ -3,11 +3,15 @@
 The planner's dialect (docs/melody-writing.md): a header (M, L, Q, K), then
 `% section` comments and alternating `V: Vocal` / `V: Ins` blocks; lengths are
 integers in units of L (1/32); chords are quoted; `Z` / `Zn` are whole-bar
-rests; `-` ties. YuE2 sings an octave below what it writes.
+rests; `-` ties. A key change is a `K:` line inside a voice's block, or `[K:…]`
+inside a bar, and each voice reads its own (SheetSage2 writes the same dialect).
+YuE2 sings an octave below what it writes.
 
 Copyist keeps the vocal line and its chords, trims it to the bars that are
 sung, puts it in the singer's octave, and writes it back as ABC a person can
-read. Anything outside the dialect (tuplets, broken rhythms) is refused, never
+read. Each note is read in the key in force where it stands and written out
+with its own accidental, so re-barring can't change a pitch. Anything outside
+the dialect (tuplets, broken rhythms, other inline fields) is refused, never
 guessed.
 """
 from __future__ import annotations
@@ -23,8 +27,8 @@ class PlanError(ValueError):
 
 @dataclass
 class Tok:
-    kind: str                     # "chord", "note", "rest"
-    text: str = ""                # chord: the symbol
+    kind: str                     # "chord", "note", "rest"; "key" only inside `read_vocal` (never in a Bar)
+    text: str = ""                # chord: the symbol; key: the new key (`[K:…]` in a bar)
     acc: str = ""                 # note: accidentals as written (^, _, =)
     step: str = ""                # note: letter, upper case
     octave: int = 4               # note: 4 = C4..B4 (ABC "C".."B")
@@ -37,6 +41,10 @@ class Bar:
     toks: list[Tok]
     section: str
     units: Fraction | None = None        # how long the bar should be, if the score changed meter for it
+    # The key in force at the end of this bar, when the score changed key in it (a `K:` line
+    # before it or `[K:…]` inside); else None. Only the reports use it: the notes carry their own
+    # accidentals.
+    new_key: str | None = None
 
     @property
     def length(self) -> Fraction:
@@ -61,7 +69,8 @@ class Plan:
         return Fraction(num, den) / self.unit
 
 
-NOTE = re.compile(r"""("[^"]*")|([_^=]*)([A-Ga-g])([,']*)(\d*)(/(\d*))?(-?)|([zx])(\d*)(/(\d*))?|(Z)(\d*)|(\S)""")
+NOTE = re.compile(r"""(\[([A-Za-z]):([^\]]*)\])|("[^"]*")|([_^=]*)([A-Ga-g])([,']*)(\d*)(/(\d*))?(-?)"""
+                  r"""|([zx])(\d*)(/(\d*))?|(Z)(\d*)|(\S)""")
 
 
 def _length(num: str, slash: str | None, den: str | None) -> Fraction:
@@ -71,12 +80,21 @@ def _length(num: str, slash: str | None, den: str | None) -> Fraction:
     return n
 
 
-def tokenize_bar(text: str) -> tuple[list[Tok], int]:
-    """Tokens of one bar's text; returns (tokens, number of whole-bar rests if the bar is `Zn`)."""
+def tokenize_bar(text: str, *, fields: bool = False) -> tuple[list[Tok], int]:
+    """Tokens of one bar's text; returns (tokens, number of whole-bar rests if the bar is `Zn`).
+
+    `fields`: read an inline key change `[K:…]` as a "key" token, for planner scores (`read_vocal`).
+    Song melodies hold no fields, so by default every inline field is refused, and any other field
+    always is."""
     toks, z_bars = [], 0
     for m in NOTE.finditer(text):
-        chord, acc, letter, marks, num, slash, den, tie, rest, rnum, rslash, rden, big_z, z_count, other = m.groups()
-        if chord:
+        (field, field_letter, field_value, chord, acc, letter, marks, num, slash, den, tie,
+         rest, rnum, rslash, rden, big_z, z_count, other) = m.groups()
+        if field:
+            if not fields or field_letter != "K":
+                raise PlanError(f"The plan uses {field!r}, which Copyist doesn't read yet (in {text.strip()!r}).")
+            toks.append(Tok("key", text=field_value.strip()))
+        elif chord:
             toks.append(Tok("chord", chord[1:-1]))
         elif letter:
             octave = 4 if letter.isupper() else 5
@@ -92,17 +110,37 @@ def tokenize_bar(text: str) -> tuple[list[Tok], int]:
     return toks, z_bars
 
 
-def parse(text: str, allow_meter_changes: bool = False) -> Plan:
-    """The vocal line of a yue-plan score, bar by bar, each bar tagged with its section.
+def _key_change(value: str) -> str:
+    """A key the score changes to, refused unless Copyist reads it exactly (never guessed)."""
+    value = value.strip()
+    parts = _key_parts(value)
+    mode = parts[2].lower() if parts else ""
+    if not parts or (mode not in MODE_SHIFT and mode[:3] not in MODE_SHIFT):
+        raise PlanError(f"The plan changes key to {value!r}, which Copyist can't read.")
+    return value
 
-    `allow_meter_changes`: SheetSage often inserts short 1/4 or 2/4 bars mid-song; keep them
-    so a later `consolidate_meters` can re-bar into the header meter. Melody writing still
-    refuses mid-song meter changes (default).
+
+def read_vocal(text: str) -> Plan:
+    """The Vocal voice of a planner-dialect score, every bar as written: sections, chords, `Zn` rests,
+    meter lines and key changes in every voice. Each note is read in the key in force where it
+    stands and given its own accidental, so the bars sound the same read in any key. None of
+    `parse`'s checks: evaluate.py reads a draft's chords with it even when the Vocal voice has no notes.
+
+    Keys, as ABC 2.1 and SheetSage2's writer have them: the first `K:` ends the header and sets every
+    voice's key, and a `K:` before any music still counts as the header's. After that, a `K:` line
+    changes the key of the voice it's written in, and `[K:…]` inside a bar changes it from there on.
+    An accidental holds for its letter, in every octave, until the bar line or the next key change.
+    `Plan.key` is the key in force at the first sung note, and `Bar.new_key` marks where it changes.
     """
     header: dict[str, str] = {}
     section, voice = "intro", None
     plan: Plan | None = None
     inline_units: Fraction | None = None     # a meter changed inside the music (a pickup bar, say)
+    start_key = ""                           # the header's key, every voice's until it changes
+    keys: dict[str | None, str] = {}         # a voice's key, once the music has changed it
+    pending: dict[str | None, bool] = {}     # a K: line has changed this voice's key for its next bar
+    music_started = False
+    first_sung_key: str | None = None
     for raw in text.splitlines():
         line = raw.strip()
         if not line:
@@ -115,32 +153,73 @@ def parse(text: str, allow_meter_changes: bool = False) -> Plan:
             inline = Fraction(*(int(x) for x in m.group(2).strip().split("/"))) / plan.unit
             inline_units = None if inline == plan.bar_units else inline
             continue
+        if m and music_started and m.group(1) == "K":
+            keys[voice] = _key_change(m.group(2))
+            pending[voice] = True
+            continue
         if m and not line.startswith("V:"):
             header[m.group(1)] = m.group(2).strip()
-            if m.group(1) == "K":
+            if m.group(1) == "K":            # the header's key (no music yet, so nothing is lost)
                 plan = Plan(header.get("M", "4/4"), Fraction(header.get("L", "1/8")), header.get("Q", ""), m.group(2).strip())
+                start_key = plan.key
             continue
         if line.startswith("V:"):
             voice = line[2:].split()[0].strip()
             continue
         if plan is None:
             raise PlanError("The plan has no K: line before its music.")
+        music_started = True
         if voice != "Vocal":
             continue
+        key_now = keys.get("Vocal", start_key)
         for chunk in line.split("|"):
             if not chunk.strip():
                 continue
-            toks, z_bars = tokenize_bar(chunk)
+            toks, z_bars = tokenize_bar(chunk, fields=True)
+            changed = pending.pop("Vocal", False)
+            state: dict[str, int] = {}               # accidentals written so far in this bar, by letter
+            kept: list[Tok] = []
+            for t in toks:
+                if t.kind == "key":                  # [K:…]: a new key from here, and no accidentals held
+                    key_now = keys["Vocal"] = _key_change(t.text)
+                    state, changed = {}, True
+                    continue
+                if t.kind == "note":
+                    if t.acc:
+                        state[t.step] = t.acc.count("^") - t.acc.count("_")
+                    alter = state.get(t.step, key_accidentals(key_now).get(t.step, 0))
+                    if alter not in ACC_TEXT:
+                        raise PlanError(f"The plan writes {t.acc}{t.step}, which Copyist can't spell "
+                                        f"(in {chunk.strip()!r}).")
+                    t.acc = ACC_TEXT[alter]
+                    if first_sung_key is None and not z_bars:
+                        first_sung_key = key_now
+                kept.append(t)
             if z_bars:
-                for _ in range(z_bars):
+                for k in range(z_bars):
                     plan.vocal.append(Bar([Tok("rest", length=inline_units or plan.bar_units)], section,
-                                          inline_units))
+                                          inline_units, new_key=key_now if changed and k == 0 else None))
                 continue
-            if not toks:          # a trailing "|]" or empty chunk after split
+            if not kept:          # a trailing "|]" or empty chunk after split; a key change alone holds on
+                pending["Vocal"] = changed
                 continue
-            plan.vocal.append(Bar(toks, section, inline_units))
+            plan.vocal.append(Bar(kept, section, inline_units, new_key=key_now if changed else None))
     if plan is None:
         raise PlanError("That isn't a plan: there's no K: line.")
+    plan.key = first_sung_key if first_sung_key is not None else start_key
+    return plan
+
+
+def parse(text: str, allow_meter_changes: bool = False) -> Plan:
+    """The vocal line of a yue-plan score, bar by bar, each bar tagged with its section and every note
+    read in its key (`read_vocal`), then checked: it has sung notes, each bar is as long as its meter
+    says, and the meter doesn't change mid-song.
+
+    `allow_meter_changes`: SheetSage often inserts short 1/4 or 2/4 bars mid-song; keep them
+    so a later `consolidate_meters` can re-bar into the header meter. Melody writing still
+    refuses mid-song meter changes (default).
+    """
+    plan = read_vocal(text)
     if not any(b.sung for b in plan.vocal):
         raise PlanError("The plan has no sung notes.")
     first_sung = next(k for k, b in enumerate(plan.vocal) if b.sung)
@@ -158,26 +237,31 @@ def parse(text: str, allow_meter_changes: bool = False) -> Plan:
 def consolidate_meters(bars: list[Bar], bar_units: Fraction) -> list[Bar]:
     """Re-bar a stream of tokens into bars of `bar_units`, preserving durations and chords.
 
-    SheetSage writes occasional 1/4 or 2/4 bars mid-song; Copyist songs keep one meter.
+    SheetSage writes occasional 1/4 or 2/4 bars mid-song; Copyist songs keep one meter. A bar's
+    key-change mark goes to the new bar its first token lands in.
     """
-    stream: list[tuple[Tok, str]] = [(t, bar.section) for bar in bars for t in bar.toks]
+    stream: list[tuple[Tok, str, str | None]] = [(t, bar.section, bar.new_key if k == 0 else None)
+                                                 for bar in bars for k, t in enumerate(bar.toks)]
     out: list[Bar] = []
     cur: list[Tok] = []
     cur_len = Fraction(0)
     cur_section = bars[0].section if bars else "verse"
+    cur_key: str | None = None
 
     def flush():
-        nonlocal cur, cur_len
+        nonlocal cur, cur_len, cur_key
         if not cur:
             return
         if cur_len < bar_units:
             cur.append(Tok("rest", length=bar_units - cur_len))
-        out.append(Bar(cur, cur_section))
-        cur, cur_len = [], Fraction(0)
+        out.append(Bar(cur, cur_section, new_key=cur_key))
+        cur, cur_len, cur_key = [], Fraction(0), None
 
-    for tok, section in stream:
+    for tok, section, new_key in stream:
         if cur_len == 0:
             cur_section = section
+        if new_key:                       # this token goes into the current bar (it always has room)
+            cur_key = new_key
         if tok.kind == "chord":
             cur.append(tok)
             continue
@@ -243,8 +327,19 @@ def pair_bars(bars: list[Bar], meter: str) -> tuple[list[Bar], str]:
         work.insert(0, Bar([Tok("rest", length=full)], bars[0].section))
     if len(work) % 2:
         work.append(Bar([Tok("rest", length=full)], work[-1].section))
-    paired = [Bar(a.toks + b.toks, a.section) for a, b in zip(work[::2], work[1::2])]
+    paired = [Bar(a.toks + b.toks, a.section, new_key=b.new_key or a.new_key) for a, b in zip(work[::2], work[1::2])]
     return pickup + paired, "4/4"
+
+
+def key_changes(bars: list[Bar], key: str) -> list[tuple[int, str, str]]:
+    """Where the key changes: (index in `bars`, key before, key after) for each bar whose `new_key`
+    differs from the key running into it, which starts as `key`."""
+    out, running = [], key
+    for k, bar in enumerate(bars):
+        if bar.new_key and bar.new_key != running:
+            out.append((k, running, bar.new_key))
+            running = bar.new_key
+    return out
 
 
 KEY_SHARPS = ["F", "C", "G", "D", "A", "E", "B"]
