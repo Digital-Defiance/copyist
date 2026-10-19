@@ -200,7 +200,13 @@ A singer anyone may use commercially that follows Copyist's score: HeartMuLa-oss
 - [ ] Riffs and variations: let the singer decorate (SoulX's F0-curve mode, or YuE2's freedom) while a check confirms the structural notes still match the score (downbeats, phrase ends)
 - [ ] Sing all the verses, not just bars 0–4
 - [ ] Retry any segment that fails the pitch or lyric check, using a new seed
-- [ ] Run SoulX on the Mac (`--device mps`) and time it
+- [x] Run SoulX on the Mac (`--device mps`) and time it. Measured 2026-10-19 on the M4 Max (local report `.agents/tasks/soulx-timing-2026-10-19/report.md`):
+  - **Speed:** about 0.5× real time on the GPU once loaded, plus about 8 s of model load per call. A whole verse takes about 0.8× real time; the CPU takes 2.2–2.8×.
+  - **Pitch:** 10 of 10 notes on bars 0–4; 29–31 of 32 on the whole verse.
+  - **Fix:** the setup script's torch 2.2.0 crashed on `mps` in SoulX's vocoder. It now pins torch 2.8.0; 2.9+ would break SoulX's `torchaudio.load`.
+  - **Install:** in `.cache/SoulX-Singer`, about 3.4 GB, in about a minute. Set `COPYIST_SOULX_DIR` to that folder.
+- [ ] Seed SoulX. It has no seed flag and its flow-matching noise is unseeded, so the same score sings differently each run. That breaks AGENTS.md's deterministic-build rule and T1's per-render seeds. A small wrapper that seeds torch before SoulX's CLI would fix it
+- [ ] fp16 on `mps`: SoulX halves the model and autocasts only on CUDA, so trying it on the Mac means patching SoulX. Low priority
 
 ## 5. Score polish (M1 leftovers)
 
@@ -258,7 +264,10 @@ Spec: docs/transcribing.md. The owner asked for this on 18 October 2026; her mus
 - [ ] T1: train the neural transcriber. The owner wants this soon, as soon as the non-training passes run out (two attempts in a row that don't move either benchmark table). Plan written 2026-10-19 (local report on the Mac: `.agents/tasks/t1-training-plan-2026-10-19/report.md`):
   - Model: a small lead-sheet model of Copyist's own (5–10M parameters; MIT code, MIT weights (owner, 2026-10-19); run with ONNX, so the app needs no TensorFlow) on frozen Basic Pitch outputs plus a log-mel of the Demucs vocal. Fallback: the GAME architecture (MIT code), trained on our data
   - Data: melodies from a widened rule-based writer (minor keys, 6/8 and 12/8, syncopation, melismas, patter), sung by SoulX-Singer with CC BY 4.0 VocalSet voices over the sfizz band, mixed, then separated with Demucs. Labels are exact by construction and checked note by note. Never `songs/`, the owner's songs, Suno, or SheetSage output
-  - Compute: Mac only (owner, 2026-10-19; no rented GPU). Making the singing data is the slow part (about 1–3.5 days of background GPU; SoulX's speed on mps is unmeasured, TASKS §4); a training run takes about 2–5 hours. About three weeks wall clock on the Mac
+  - Compute: Mac only (owner, 2026-10-19; no rented GPU).
+    - **Singing data:** 30 hours of SoulX singing takes about 16 h of GPU, if one long-lived SoulX process sings many phrases, or about 23 h at one call per verse (measured 2026-10-19, TASKS §4). The render pipeline should keep SoulX loaded rather than start it per phrase.
+    - **Mixing and Demucs** come on top.
+    - **Training:** a run takes about 2–5 hours. The audit's re-scope changes the training budget (see the design audit below).
   - It fixes note-level errors (patter onsets, ornament or real note, stray extras, onset timing), not Silent Night's 6/8 snap, The Tyger's meter, or the chords
   - Mind the yardstick: SheetSage2 is now measured on all five takes (mean 0.97 notes, against neural 0.87). The metric is lenient, and the takes are YuE2 renders from SheetSage2's own lab. Today's numbers are also scored on the same takes the rules were tuned on
   - Build-on check (owner asked, 2026-10-19): Basic Pitch and SoulX remain the right foundation. Basic Pitch isn't used as the transcriber, only as a frozen feature under our own trained head, so its raw accuracy doesn't gate us; it's the only strong, genuinely Apache-2.0, small, ONNX-shippable option. SoulX stays the English-singing data source for v1. Newer options checked and set aside: VocalParse-1.7B (Mandarin audio-LLM, too big, crawled training data); T3MS / phoneme-informed / VOCANO / ROSVOT transcribers (research-grade, weights trained on CC BY-NC singing sets). Watch: VocalRender (arXiv 2607.27768, pymaster17, Apache-2.0 code + weights) is a score-native SVS that would simplify the data pipeline, but its released checkpoints are Mandarin-only (training data, not architecture; base is multilingual VoxCPM2). Re-evaluate for plan B (§3h) if an English or multilingual checkpoint ships

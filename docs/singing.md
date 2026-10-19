@@ -18,10 +18,17 @@ Output goes to `out/<song>/sung/<verse>[-bars…]/`:
 ## Setup (once)
 
 1. Install Copyist with the singing extras: `pip install -e ".[sing]"`
-2. Install SoulX-Singer next to Copyist: `scripts/setup-soulx.sh` (about 6 GB; it downloads the 2.8 GB model and Whisper-base).
+2. Install SoulX-Singer next to Copyist: `scripts/setup-soulx.sh` (about 4 GB: the 2.8 GB model, its own Python environment and Whisper-base; about a minute on a fast connection). Pass a folder to put it elsewhere, for example `scripts/setup-soulx.sh "$PWD/.cache/SoulX-Singer"`.
 3. Add the two `export` lines it prints to your shell profile.
 
-On an Apple Silicon Mac it tries the GPU (`mps`) first and falls back to the CPU for anything the GPU can't do; force one with `--device cpu` or `--device mps`. On a 2-core cloud machine with no GPU, 7 seconds of singing took about 3 minutes; expect a Mac with many cores or a GPU to be much faster.
+On an Apple Silicon Mac it uses the GPU (`mps`) by default; force one with `--device cpu` or `--device mps`.
+
+Measured on an M4 Max (2026-10-19, torch 2.8):
+- **On the GPU:** SoulX sings at about 0.5× real time once its model is loaded, and each call spends about 8 s loading it. A whole verse of Amazing Grace (37 s of singing) takes about 30 s, band and checks included.
+- **On the CPU:** 2–3× real time.
+- **On a 2-core cloud machine** with no GPU, 7 seconds of singing took about 3 minutes.
+
+The GPU needs torch 2.8, which the setup script pins. Older installs with torch 2.2 crash on `mps` in SoulX's vocoder, and the CPU fallback setting doesn't catch that crash; re-run the script to upgrade. SoulX's output isn't seeded, so the same score can sing slightly differently each time.
 
 ## Voices
 
