@@ -143,7 +143,8 @@ The song file records where it came from: `written_with: {transcriber: copyist-o
 
 - Synthetic recordings made in the test (sine-tone melody, chord pads), so the expected notes, chords, key and meter are exact: the engine recovers them.
 - `clean_notes`: quiet notes, outliers, fragments, joins, the lyric count.
-- Inline meter changes in a draft (a pickup bar), the octave convention per engine.
+- Inline meter changes in a draft (a pickup bar), key changes (a `K:` line in both voices, `[K:…]` mid-bar), the octave convention per engine.
+- The scorer (`tests/test_evaluate.py`): both of its readers keep every bar of a key change, identical inputs score 1.00, and a draft 21.6 s late still aligns.
 - The command end to end with stems given (no Demucs in the test), and with a fake `yue-transcribe`.
 
 ## Later

@@ -218,7 +218,7 @@ Each candidate has "Keep this one", which keeps it, writes its score and opens i
 ## Tests (tests/test_write.py)
 
 Use hand-written plans in the YuE2 dialect, not model output, kept in `tests/data/plans/`. Cover:
-- **Parsing:** sections, both voices, `Zn`, ties, chords on rests, and refusal of tuplets.
+- **Parsing:** sections, both voices, `Zn`, ties, chords on rests, and refusal of tuplets. Key changes (`tests/data/plans/key-change.abc`, SheetSage2's layout): a `K:` line in both voices and `[K:…]` mid-bar keep every bar and every pitch, an accidental stops at the bar line and at the key change, and the song file keeps one key signature.
 - **Octave and range:** an alto plan, a tenor plan, and one needing a semitone transposition.
 - **Units:** 1/32 data rescaling to 1/8 and to 1/16.
 - **Syllables:** a table of 40 words with their expected splits and stresses (feathers, perches, sweetest, extremity, alleluia, being, fire, hour, every, heaven).
