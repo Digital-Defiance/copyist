@@ -1,0 +1,72 @@
+# Build Mac DMGs for GitHub Releases (docs/desktop-app.md, scripts/package/README.md).
+# Tag v0.0.1 (etc.) to run. Default: unsigned CI artifacts.
+# Signed releases: prefer scripts/package/bundle-mac.sh --sign on the Mac with the
+# Digital Defiance Developer ID, then attach the DMG — or add APPLE_CERTIFICATE*
+# secrets here later.
+name: Release Mac app
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  mac:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-14
+            triple: aarch64-apple-darwin
+            arch: aarch64
+          - os: macos-13
+            triple: x86_64-apple-darwin
+            arch: x64
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Python engine
+        run: |
+          python -m venv .venv
+          .venv/bin/pip install -U pip
+          .venv/bin/pip install -e .
+          .venv/bin/pip install --no-deps tinysoundfont
+          chmod +x scripts/package/freeze-engine.sh
+          scripts/package/freeze-engine.sh ${{ matrix.triple }}
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+
+      - name: Tauri build
+        working-directory: app
+        run: |
+          npm ci
+          npm run build
+
+      - name: Stage DMG
+        run: |
+          mkdir -p dist/release
+          dmg=$(find app/src-tauri/target/release/bundle/dmg -name '*.dmg' | head -1)
+          test -n "$dmg"
+          cp "$dmg" "dist/release/Copyist_${GITHUB_REF_NAME#v}_${{ matrix.arch }}.dmg"
+          shasum -a 256 "dist/release/Copyist_${GITHUB_REF_NAME#v}_${{ matrix.arch }}.dmg" | tee "dist/release/Copyist_${GITHUB_REF_NAME#v}_${{ matrix.arch }}.sha256"
+
+      - uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: dist/release/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

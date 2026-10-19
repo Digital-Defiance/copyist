@@ -77,7 +77,10 @@ fn main() {
 fn library_and_env(app: &AppHandle) -> Result<(PathBuf, PathBuf, Vec<(String, String)>), Box<dyn std::error::Error>> {
     let data = app.path().app_data_dir()?;
     std::fs::create_dir_all(&data)?;
-    let mut env = vec![("COPYIST_HOME".to_string(), data.to_string_lossy().into_owned())];
+    let mut env = vec![
+        ("COPYIST_HOME".to_string(), data.to_string_lossy().into_owned()),
+        ("COPYIST_DESKTOP".to_string(), "1".to_string()),
+    ];
     if cfg!(debug_assertions) {
         // Development: the engine runs from this checkout, on its own songs and .cache/.
         let repo = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..").canonicalize()?;

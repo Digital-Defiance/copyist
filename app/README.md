@@ -1,34 +1,54 @@
 # Copyist, the desktop app
 
-The Tauri 2 shell around Copyist (docs/desktop-app.md). It opens a window, starts the Copyist engine as a sidecar, waits for the engine's JSON start line, loads the engine's page, and stops the engine on quit. Links out of Copyist open in your browser, and only one copy runs at a time.
+The Tauri 2 shell around Copyist ([docs/desktop-app.md](../docs/desktop-app.md)). **This is the product people install** (Homebrew cask → `Copyist.app`). The window loads the engine's page; the engine runs as a sidecar.
 
-## Run it on a Mac (development)
+## People installing Copyist
 
-Once, install the tools:
+```
+brew tap digital-defiance/copyist https://github.com/Digital-Defiance/copyist
+brew install --cask copyist
+open -a Copyist
+```
+
+See the main [README](../README.md) and [docs/desktop-app.md](../docs/desktop-app.md).
+
+## Run it from a checkout (development)
+
+Once on the machine:
 
 ```
 xcode-select --install                                           # Apple's command-line tools
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh   # Rust
 ```
 
-Then, from this folder:
+From the repository root (with `.venv` and `pip install -e .` already done):
 
 ```
-npm install        # Tauri's command-line tool (or: cargo install tauri-cli --version "^2")
-npm run dev        # builds and opens Copyist
+scripts/package/run-app.sh
+# or: cd app && npm install && npm run dev
 ```
 
-In development the engine runs from this checkout (`../.venv`, your songs, your `.cache/`), through `src-tauri/binaries/copyist-engine-<platform>`, a small script that stands in for the frozen engine. The first build compiles Tauri, which takes a few minutes.
+The engine uses this checkout (`COPYIST_REPO`), your `songs/` and `.cache/`. The first build compiles Tauri (a few minutes).
+
+## Package a release
+
+Signing uses **Developer ID Application: Digital Defiance (J6887N729S)** (already in the keychain). See [scripts/package/README.md](../scripts/package/README.md) for the app-specific password.
+
+```
+source ~/.config/copyist/notarize.env     # APPLE_ID, APPLE_PASSWORD, TEAM_ID, …
+scripts/package/freeze-engine.sh
+scripts/package/bundle-mac.sh --sign      # notarized DMG
+```
+
+CI builds DMGs on `v*` tags (`.github/workflows/release-mac.yml`). Update SHA-256 in `Casks/copyist.rb` after each release.
 
 ## Layout
 
 ```
-shell/             the start page ("Starting…", or why the engine stopped)
+shell/             start page ("Starting…", or why the engine stopped)
 src-tauri/
-  src/main.rs      the window, the engine sidecar, links, quitting
-  tauri.conf.json  the app's name, identifier (org.digitaldefiance.copyist), icons, sidecar
-  binaries/        the engine sidecar, one per platform (development scripts until step 3)
-  icons/           generated from ../icon.png with `npx @tauri-apps/cli icon icon.png -o src-tauri/icons`
+  src/main.rs      window, sidecar, links, quitting; sets COPYIST_DESKTOP=1
+  tauri.conf.json  name, identifier (org.digitaldefiance.copyist), icons, externalBin
+  binaries/        copyist-engine-<triple> (dev script or frozen binary)
+  icons/
 ```
-
-Step 3 (packaging) swaps the scripts in `binaries/` for a PyInstaller build of the engine, adds yue2.cpp's `yue-synth` and `yue-tokenize`, and signs and notarizes with the Developer ID.
