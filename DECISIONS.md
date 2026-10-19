@@ -2,6 +2,101 @@
 
 Newest first. One entry per decision: what, why, and what we gave up.
 
+## 2026-10-18 (T0 Basic Pitch loses on lyrical takes)
+
+- **Spotify Basic Pitch (Apache-2.0, CoreML) is the first T0 baseline.** Raw note F1: Saints 0.46, Silent Night 0.58, Amazing Grace 0.37, Tyger 0.64, Major-General 0.82 — vs open engine 0.85 / 0.80 / 0.88 / 0.78 / 0.84. High recall, severe over-segmentation except on allegro patter. On Python 3.12 macOS, install with `open-transcriber/scripts/setup_baseline.sh` (pip's tensorflow-macos pin is unavailable). Gave up: treating off-the-shelf BP as a product engine without Copyist's tidy path or training.
+
+## 2026-10-18 (open-transcriber as a submodule)
+
+- **Neural lead-sheet work lives in its own MIT repo** ([Digital-Defiance/open-transcriber](https://github.com/Digital-Defiance/open-transcriber)), vendored as the git submodule `open-transcriber/`. Copyist keeps the product gate (`roundtrip.py`), tidy path, and `--engine` wiring; the submodule holds baselines, training and inference. Gave up: growing a large train/infer tree inside `copyist/` or cloning only into `.cache/` (not versioned with the product).
+
+## 2026-10-18 (scoop fold when lyric overshoot ≥ 2)
+
+- **After the mild overshoot gate, fold brief approach tones (≤0.28 s, ≤2.5 semitones, some spread) down to the lyric count — but only if overshoot was ≥ 2.** Saints sat at 35 vs 33 (D-before-E scoops); the old target+2 gate never fired. Forcing every song to the exact count hurt Amazing Grace and Tyger. Gate on ≥2 extras: Saints 0.79→0.85; AG 0.88 and Tyger 0.78 flat. Gave up: always folding to the lyric count.
+
+## 2026-10-18 (cap consonant onset pull)
+
+- **`pull_onset_start` moves a note start back to a nearby onset by at most 0.08 s** (was uncapped within a 0.15 s window). Uncapped pulls on Silent Night's YuE2 take walked some onsets ~0.12 s early; the quarter-beat match then lost D5/F5 (note F1 0.77). Cap → 0.80; Tyger 0.76→0.78; other rows flat. Forcing note count to 46 with onset splits matched the lyric tally but dropped F1 to 0.74 — the four missing pitches aren't hiding in long same-pitch holds. Gave up: uncapped consonant lead-in.
+
+## 2026-10-18 (tonal chord prior + open neural lead-sheet plan)
+
+- **Chord reading adds a tonal boost (I/IV/V(7)/vi in major) and, in compound meter, dearer mid-bar changes plus wider chroma smooth.** Silent Night's YuE2 band was naming Dm/Em every bar against written C/G7/F; priors lifted chords 0.40→0.69 without moving note F1. Saints 0.83→0.89, Amazing Grace 0.78→0.91, Major-General 0.61→0.79. Gave up: matching the take's played harmony instead of the lead sheet (evaluation stays vs written).
+- **A commercially usable neural lead-sheet engine is planned (docs/open-transcriber.md), not started.** Apache/MIT stack only (MT3, Omnizart, Demucs); no SheetSage/MuScriptor weights. Gate is the same round-trip table; open DSP stays default until neural wins. Gave up: treating SheetSage as the product path.
+
+## 2026-10-18 (lyric note target includes melisma holds)
+
+- **Open-engine tidy target = syllables + `_` holds + `*`** (`lyrics.note_target` / `slots_available`), not syllable count alone. Silent Night is 46 notes / 41 syllables; targeting 41 left F5-adjacent gaps. Also keep long loud notes within ±12 of the median (Silent Night's F5). Blind bisection only when starting count < 85% of target; mild shortfalls stop at ~92% so weak onset fills don't tank precision. Round-trip: Silent Night 0.76→0.77, Amazing Grace 0.82→0.88, Major-General 0.79→0.84 (128 vs 128); Saints flat; Tyger 0.78→0.76.
+
+## 2026-10-18 (key from the most confident chroma source)
+
+- **`choose_key` picks among accompaniment, mix, vocal, and melody pitch-class histograms** by Krumhansl margin. When the Demucs band stem's own key is weak or disagrees, chord chroma comes from the mix. Major-General was C#m @ 0.09 from accompaniment alone; mix/melody said Eb — now Eb, chords 0.46 → 0.61. Saints/Silent Night flat; Tyger chords 0.78 → 0.81. Gave up: always using accompaniment only (wrong when the stem is thin).
+
+## 2026-10-18 (lyric-guided split for allegro patter)
+
+- **When lyrics give a syllable target and clean_notes under-counts, `split_toward_target` cuts long same-pitch holds** (inner onsets first, else bisect by the tracked eighth). YuE2's Major-General take follows the score (124/128 by `follow`) but pYIN heard ~80 continuous-pitch notes; without the split, open-engine F1 was 0.44 (43 vs 128).
+- **`fold_grid_rearticulations` takes a `floor` (lyric count) and a 0.4 length ratio** so equal eighths on a pedal don't cascade-merge after rhythm snap. Major-General: 0.44 → 0.79 (117 vs 128). Saints stays 0.79; Tyger 0.76 → 0.78. Gave up: loosening the onset loudness climb (hurt Saints).
+
+## 2026-10-18 (MusicXML import + Major-General stress case)
+
+- **`copyist import` turns MusicXML into a song YAML** (melody ABC, chord symbols, lyrics by verse, key/meter/tempo). Prefers a part named like Voice/Melody when a piano-vocal score has several. This is the first slice of MusicXML import; full edit round-trip that preserves every Copyist field is still open. Gave up: blocking the Major-General table row on that fuller import.
+- **Major-General stress case is a lead-sheet reduction of Sullivan's No. 13** (verse 1 only, ~128 eighths, Eb, broadway-uptempo), not a full vocal-score dump. Source rights: Gilbert & Sullivan 1879 / US PD vocal score. Produce truth take on the Mac before `roundtrip.py` can score it.
+
+## 2026-10-18 (gentle fragments only when lyrics say we under-detected)
+
+- **If `clean_notes` finishes under 92% of the lyric syllable count, retry with gentler fragment folding** (keep short steady step-tones). Always-on gentle folding lifted Silent Night but hurt Saints; the undershoot gate gets Silent Night 0.74 → 0.76 with Saints/Tyger/Amazing Grace flat. Round-trip now includes Amazing Grace (0.82). Hardest case remains Silent Night (46 true notes, chords still ~0.40 vs the take's band).
+
+## 2026-10-18 (tighter re-articulation keeps repeated syllables)
+
+- **Re-articulation fold: short < 0.25 s (was 0.4) and neighbour gap < 0.25 s (was 0.4).** The looser rule merged Tyger's same-pitch syllable pairs into one note (0.69 F1). Tighter: Tyger 0.69 → 0.76, Saints flat at 0.79, Silent Night 0.75 → 0.74. Grace-note echoes still fold; equal-weight repeats stay.
+
+## 2026-10-18 (waltz guard on double-tempo → 6/8)
+
+- **Skip the Silent Night double-tempo→6/8 rebuild when the plain eighth grid already prefers simple meter with confidence ≥ 0.35.** Tyger's YuE2 take (written 3/4 @ 80) has the same tracked≈108 / peak≈54 shape as Silent Night, but acoustically it's four pulses per waltz bar (~107 ≈ 80×4/3); forcing 6/8 @ 54 was wrong. After the guard: 4/4 ~108 (same bar length as 3/4 @ 80), note F1 0.67→0.69. Silent Night stays 6/8 (plain simple confidence only ~0.21).
+
+## 2026-10-18 (late downbeats beat solo offbeats in rhythm snap)
+
+- **Solo eighth pattern cost 0.05 → 0.25.** A lone onset ~0.35 into the beat was snapping to the and-of-beat; on Saints' YuE2 take that was a systematic +½-beat error (note F1 0.74 → 0.79). Silent Night unchanged. Real off-beats (onset ~0.5) and two-onset (0, ½) patterns stay. Gave up: forcing every onset before 0.5 to the downbeat (hurts Silent Night).
+
+## 2026-10-18 (transcription improves by round-trip F1, not owner-song ear alone)
+
+- **The yardstick is `scripts/transcribe/roundtrip.py`:** public-domain score → YuE2 truth take → open engine → note/chord F1. Keep a change only when that table rises and no row collapses. June Snow remains a listen check after a win — it has no written truth, so ear-only chasing misled (open engine scored higher on `--sung`/`follow` but felt more broken).
+- **Measured trade-off:** keeping short steady "passing" notes helps Silent Night (~0.75→0.77) but hurts Saints (~0.74→0.71). Left the Saints-winning fragment fold in place until a rule helps both.
+
+## 2026-10-18 (YuE2 snaps tuplets; open engine avoids them in 4/4)
+
+- **`copyist produce` snaps tuplet onsets/lengths to sixteenths** when YuE2's ABC can't write them (`yue.snap_to_unit`). Open-engine June Snow had `4/3` figures from beat-triplet patterns and refused to render. The song file keeps the rhythm for reading; the take approximates it. Gave up: refusing the whole produce.
+- **Simple-meter `BEAT_PATTERNS` no longer offer 1/3 onsets.** Spurious triplets on Broadway takes hurt feel and blocked YuE2; 6/8 still uses `COMPOUND_PATTERNS`.
+
+## 2026-10-18 (ornament folding + scoring owner songs)
+
+- **Short same-pitch re-articulations fold into the longer note**, even with an onset and across a brief rest; after rhythm snap the grid does the same. Equal-length repeated syllables stay. The lyric-count fold now stops near `target + 2` / `1.08×` (was `1.25×`, which let Saints' 41 notes past a 33-syllable lyric). Stray pitches more than 7 semitones from the line's median drop. Saints YuE2 take: 0.68 → 0.74 note F1. Gave up: folding every same-pitch pair (real repeated notes in the tune).
+- **Owner songs without a score are scored with `evaluate.py --sung VOCAL.wav`** (pYIN + tidy as truth) and/or `copyist follow`. SheetSage June Snow sat ~0.32 note F1 vs the vocal — useful before/after, not a written-score F1.
+
+## 2026-10-18 (desktop app is the default install)
+
+- **People install `Copyist.app` (Homebrew cask), not a bare `pip` + `copyist serve`.** The Tauri shell is the product; the CLI and `copyist serve` stay for contributors. Optional packs (band, singer, voices) download from **Install extras** when chosen — writing with the rules engine needs no download. Gave up: treating the browser UI as the primary story on the README and site.
+- **Homebrew tap lives in this repo** (`Casks/copyist.rb` + `brew tap digital-defiance/copyist`). Releases attach DMGs from CI; SHA-256 is filled in after the first notarized build. Gave up: waiting to submit to homebrew-cask before anyone can `brew install --cask`.
+- **Ship with Digital Defiance's Developer ID Application (`J6887N729S`),** not the personal Developer ID. Same keychain has both; `bundle-mac.sh --sign` prefers the Defiance identity. Notarization uses an app-specific password (or ASC API key) kept outside the repo.
+- **Freeze via `scripts/package/engine_entry.py` (absolute import of `copyist.cli`), not `copyist/__main__.py`.** PyInstaller runs the entry as a bare `__main__` script, so relative imports die. Also `--copy-metadata` / `--collect-all` for `cmudict` and `pronouncing` — they call `importlib.metadata.version` at import. Gave up: freezing `__main__.py` directly.
+- **SheetSage2 is a downloadable Install-extras pack** (`sheetsage` + MERT, ~1 GB), offered on Transcribe when missing, with its stricter NC licence (no creator sell-through). `yue-transcribe` ships with the desktop app; weights stay opt-in. Gave up: leaving SheetSage as a disabled menu item with no install path.
+- **Frozen jobs re-invoke `sys.executable` with the subcommand only** (`engine_argv`). `python -m copyist …` is for a checkout; the PyInstaller sidecar *is* Copyist, so `-m copyist` made every UI job die with `invalid choice: 'copyist'`.
+- **Model downloads always land in `COPYIST_HOME/models`**, copying from `.cache/yue/` when present. SheetSage's `yue-transcribe` loads MERT from beside the head GGUF; treating a checkout MERT as "already installed" left the app folder with SheetSage alone and failed every run.
+- **Transcription trims long lyrics to the notes heard** (`syllables_for_transcription`): drop spoken sections, then whole lines from the start until the fit's split budget. A full libretto against a shorter SheetSage draft used to abort with "written for different words"; the melody from the recording is the source of truth.
+- **SheetSage Ins lead + short bars:** when Ins has more notes than Vocal, swap voices; allow mid-song 1/4–2/4 bars then `consolidate_meters` into the header meter. Otherwise the lead sheet was mostly empty rests (tune left on Ins).
+- **Transcription check previews are piano-led** (`ballad` / `waltz` / `lullaby` by meter). The default full band buried the melody so you couldn't tell if the transcription was right; YuE2 stays the finished listen after Keep.
+
+## 2026-10-18 (README and Pages: how to make music)
+
+- **README and the Pages site lead with `copyist serve`, then write/build.** Quick start was only `copyist build`; newcomers never saw the local page, `--engine rules`, rewrite/refit or transcribe. The site gained a "Make some music" section. Gave up: keeping the install page as build-only.
+
+## 2026-10-18 (chord chroma smoothing)
+
+- **Accompaniment chroma is averaged with nearby beats that still match (cosine ≥ 0.55).** Blind ±2-beat means smeared real changes (synthetic C→F→G→C lost the last C). Edge-aware smoothing raised Saints take chords from 0.70 to 0.83 (Amazing Grace 0.75 → 0.78) without that smear. Bass chroma is not smoothed. Silent Night's take still scores ~0.41–0.49 because long stretches of the accompaniment read as Em against the written C/G7/F — a take/score mismatch, not only a detector bug.
+
+## 2026-10-18 (6/8 double-tempo on takes)
+
+- **When the beat tracker doubles a soft 6/8 pulse, rebuild eighths from the slow peak and read 6/8 only.** Silent Night's YuE2 take locked onto ~108 BPM (half of each dotted-quarter) and became a wrong 4/4; autocorrelation preferred ~54. Every other tracked beat, trisected, plus `compound_duple` meter choice fixes the lead sheet's meter and tempo. Gave up: keeping the slightly higher note F1 of the wrong 4/4 (0.78 vs 0.75) — the band preview has to feel like a lullaby.
+
 ## 2026-10-18 (lyric refit)
 
 - **Refit keeps the melody and re-runs the write fitter.** `copyist refit` / the page's "Edit the lyrics" place new words under existing notes (splits allowed). Multi-verse hymn files become one fitted verse block when refit from plain text — same as `copyist write`. Gave up: editing each Amazing Grace verse independently without a syllable budget UI.

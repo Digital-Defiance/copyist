@@ -44,6 +44,12 @@ Take the first unchecked item in the current milestone. Tick items when they're 
 - [ ] Analysis-by-synthesis fitting loop: render, compare per stem, keep edits that improve closeness + simplicity
 - [ ] A/B listening page: original vs fitted render, mark bars that sound wrong
 - [x] Accuracy measured against Copyist's own songs (`scripts/transcribe/evaluate.py`; numbers in docs/transcribing.md)
+- [x] YuE2 truth takes of Saints and Silent Night measured; double-tempo 6/8 correction on soft takes
+- [x] Beat-chroma smoothing + tonal chord prior on YuE2 takes (Silent Night chords 0.69; Saints 0.89; Major-General 0.79)
+- [x] Ornament folding / lyric-guided splits on busy takes (TASKS §7; Major-General 128 notes)
+- [x] Open-transcriber submodule ([Digital-Defiance/open-transcriber](https://github.com/Digital-Defiance/open-transcriber))
+- [x] T0 Basic Pitch baseline scored (loses to open engine except Major-General ≈)
+- [ ] Open neural lead-sheet: T0b tidy path, then T1 if needed (docs/open-transcriber.md)
 - [ ] Repeats vote, per-doubt A/B by ear (SPEC 12.2a)
 - [ ] The owner transcribes her own songs on the Mac and listens
 
@@ -96,12 +102,13 @@ Take the first unchecked item in the current milestone. Tick items when they're 
 
 ## D: Desktop app (docs/desktop-app.md)
 
-A free, open-source Tauri app: the page as its window, the engine and yue2.cpp as sidecars, models downloaded on first run, everything on the person's own computer.
+A free, open-source Tauri app (Homebrew cask → `Copyist.app`): the page as its window, the engine and yue2.cpp as sidecars, optional packs downloaded when the person chooses them, everything on their own computer. Default install path for users.
 
 - [x] Engine as a sidecar: `--root` library folder, `--port 0 --machine`, health and version endpoint, model manager (pinned, verified, resumable downloads with progress and the licence shown first), `copyist models`
 - [x] Tauri shell: the window loads the engine's page; the engine starts and stops with the app (app/; compiles; first Mac run pending)
-- [ ] Mac packaging: PyInstaller engine, yue2.cpp with Metal, signing and notarization (Apple Developer account)
-- [ ] First run: hardware check, model download, a demo song
+- [x] Default path: Homebrew cask (`Casks/copyist.rb`), packaging scripts, release workflow; Install extras in the UI; write without the singer
+- [ ] Mac packaging finish: freeze-engine + signed/notarized DMG on a `v*` tag so `brew install --cask copyist` works
+- [ ] First run polish: hardware check; demo already via `--demo`
 - [ ] Best of several takes, ranked by the melody and lyric checks; re-render one section
 - [ ] Windows and Linux builds; updates
 
@@ -175,7 +182,8 @@ Edit transcribed and written songs. By ear and by note, both first-class.
 - [ ] By ear: nudge, chord list, try another bar, A/B
 - [ ] By note: select on the score, change pitch/duration/chord/lyrics
 - [ ] Persist to the song file; re-validate; re-engrave; refresh the exact preview
-- [ ] MusicXML import of edits
+- [x] MusicXML → song file (`copyist import`: lead sheet / vocal line)
+- [ ] MusicXML import of edits (keep Copyist fields)
 
 ## OS: The open singer (docs/open-singer.md)
 

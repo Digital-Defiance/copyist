@@ -1,0 +1,3 @@
+[submodule "open-transcriber"]
+	path = open-transcriber
+	url = https://github.com/Digital-Defiance/open-transcriber.git

@@ -8,7 +8,7 @@ Instructions for AI coding agents (Claude, Cursor, anything else) and people pic
 
 The work moved fast and may change hands at any moment. Here is where things stand.
 
-**Done and working** (tests pass: `python -m unittest discover -s tests`, 245 tests):
+**Done and working** (tests pass: `python -m unittest discover -s tests`, 273 tests):
 - Song files become a lead sheet, band score and parts, MIDI, and a validation report.
 - 23 styles as data files, with a style gallery; styles can cycle a phrase of bars.
 - Expressive performance.
@@ -16,15 +16,17 @@ The work moved fast and may change hands at any moment. Here is where things sta
 - YuE2 takes that follow the score, checked by `copyist follow`.
 - Voice LoRA training on the Mac.
 - The local web page (`copyist serve`).
-- The Tauri desktop shell.
-- MIT licence and GitHub Actions.
+- The Tauri desktop shell (default product path: Homebrew cask → app; Install extras in the UI).
+- MIT licence and GitHub Actions (including Mac release workflow).
 - `copyist write` (YuE2 plan or `--engine rules`), `copyist rewrite` (again / higher / simpler) and `copyist transcribe`. Mac write timed: ~8 s a candidate on MTL0.
+- `copyist import` (MusicXML → song file). Round-trip table includes Saints, Silent Night, Amazing Grace, Tyger; Major-General (~128 notes) ready once its truth take is produced.
 - Public site in `site/` → https://copyist.digitaldefiance.org/
 
 **Next, in this order:**
-1. **Transcribing recordings:** TASKS.md section 7 — more sung truth (Saints, Silent Night YuE2 takes), then the owner's songs.
-2. **Less-cheesy exact previews (rest of 3f):** crank/comb music box when a CC0 set can be hosted (celesta is in).
-3. **The open singer (plan B):** TASKS.md section 3h, spec in [docs/open-singer.md](docs/open-singer.md). Start with phase B0 (feasibility).
+1. **Ship the Mac app:** TASKS.md §3d — `freeze-engine` + `bundle-mac`, sign/notarize, tag `v0.0.1` so `brew install --cask copyist` works.
+2. **Transcribing recordings:** TASKS.md section 7 — open table Saints 0.85 / SN 0.80; T0 Basic Pitch loses on lyrical takes (next: tidy path / T1); owner songs only after a table win.
+3. **Less-cheesy exact previews (rest of 3f):** crank/comb music box when a CC0 set can be hosted (celesta is in).
+4. **The open singer (plan B):** TASKS.md section 3h, spec in [docs/open-singer.md](docs/open-singer.md). Start with phase B0 (feasibility).
 
 **The owner's machine:**
 - An M4 Max Mac with 64 GB, the repository at `/Volumes/Code/copyist`, a `.venv` there.
@@ -60,6 +62,7 @@ copyist check songs/amazing-grace.yaml    # run validators only
 copyist sing songs/amazing-grace.yaml --bars 0-4   # sung vocal (needs SoulX-Singer; docs/singing.md)
 copyist produce songs/amazing-grace.yaml           # YuE2 production from the score (docs/production.md)
 copyist follow songs/amazing-grace.yaml VOCAL.wav # does a recording sing the melody? (timing and octave allowed)
+copyist import score.musicxml -o songs/foo.yaml    # MusicXML lead sheet → song file
 copyist serve                                      # the web front end (docs/web.md)
 copyist gallery songs/when-the-saints.yaml         # the song in every style that fits it (docs/styles.md)
 python -m unittest discover -s tests      # tests
@@ -79,6 +82,7 @@ copyist/          the package
   gallery.py      a song played in every style that fits it
   drums.py        drum grooves, fills and crashes; notation and MIDI from one list of hits
   engrave.py      MusicXML, SVG and PDF output via Verovio and PyMuPDF
+  musicxml_in.py  MusicXML → song file (`copyist import`)
   perform.py      expressive performance: the arrangement MIDI played, not just written
   render.py       the band: each part on its sampled instrument (sfizz), SoundFont fallback; a sung vocal over the band
   mixdown.py      loudness (BS.1770), the shared room, the gentle master, WAV in and out
@@ -103,6 +107,7 @@ site/             the public GitHub Pages site (static HTML: advert, features, i
 scripts/          setup-yue.sh, setup-yue-train.sh, setup-sfizz.sh, setup-demucs.sh, setup-soulx.sh;
                   yue-lora/ (prepare, train, run.sh); instruments/ (manifest.py, clarinet.py)
 app/              the desktop app (Tauri), which runs the engine as a sidecar (docs/desktop-app.md)
+open-transcriber/ git submodule: neural lead-sheet AMT (docs/open-transcriber.md); `git submodule update --init`
 out/              build output (ignored)
 .cache/           downloaded assets (ignored)
 ```

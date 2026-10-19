@@ -8,33 +8,68 @@ Copyist writes songs the way a working composer, copyist and band would: it star
 
 Tools like Suno and Mozart AI generate audio first. Their notes don't exist as data, so any sheet music has to be guessed back out of the recording. Copyist works the other way around.
 
-## Status
+## Install the app (recommended)
 
-Early. A song file becomes a validated lead sheet, a band arrangement (voice, piano, bass, drums) with full score and parts, MIDI, and a recording of the score played on sampled instruments (a concert grand, upright and electric basses, a drum kit, a clarinet on the melody), mixed and mastered, with a stem per part ([docs/sound-set.md](docs/sound-set.md)). The arrangement follows one of 23 styles, from waltz, hymn and lullaby to swing, bossa nova, reggae, disco and Broadway, and `copyist gallery` plays a song in every style that fits it, as a band preview or (with `--takes`) as finished YuE2 takes, so you can choose by ear ([docs/styles.md](docs/styles.md)). `copyist produce` has YuE2 perform the same score, band and singer together ([docs/production.md](docs/production.md)), and `copyist follow` checks that the take sings the written melody. A trained voice can be added with a LoRA ([docs/voice-lora.md](docs/voice-lora.md)). `copyist write` turns new lyrics into several melodies with chords, the words fitted under the notes, each played by the band so you can keep the one you like ([docs/melody-writing.md](docs/melody-writing.md)). `copyist transcribe` writes the lead sheet of a recording you have the rights to: the melody as sung, the chords and the words under the notes ([docs/transcribing.md](docs/transcribing.md)). `copyist serve` puts it all in a browser ([docs/web.md](docs/web.md)). `copyist sing` (SoulX-Singer) sings the exact notes, for checking ([docs/singing.md](docs/singing.md)). See [ROADMAP.md](ROADMAP.md) and [TASKS.md](TASKS.md).
-
-## Quick start
+On a Mac, when a release is published:
 
 ```
+brew tap digital-defiance/copyist https://github.com/Digital-Defiance/copyist
+brew install --cask copyist
+open -a Copyist
+```
+
+That opens the desktop app. **Write a song** from lyrics immediately (Copyist's own writer needs no download). Under **Install extras**, download only what you want: the sampled band for exact previews, the YuE2 singer for finished takes, or SheetSage2 for optional transcription (licences shown first). Songs live in `~/Music/Copyist/`. Details: [docs/desktop-app.md](docs/desktop-app.md).
+
+### Run the app from this repository (today)
+
+While the first Homebrew release is being notarized:
+
+```
+git clone --recurse-submodules https://github.com/Digital-Defiance/copyist.git
+cd copyist
+# if you cloned without submodules: git submodule update --init open-transcriber
+python -m venv .venv && source .venv/bin/activate
 pip install -e .
-pip install --no-deps tinysoundfont      # the fallback sound; skips an optional playback library
-scripts/setup-sfizz.sh --instruments     # the sampled instruments' player, and the band (about 1.1 GB)
+pip install --no-deps tinysoundfont
+scripts/package/run-app.sh          # needs Rust once (see app/README.md)
+```
+
+Or open the same UI in a browser without Tauri:
+
+```
+copyist serve                       # http://127.0.0.1:8765/
+```
+
+## Make some music
+
+In the app (or after `copyist serve`):
+
+1. **Write a song** — paste lyrics, pick a style and writer, listen to each band preview, keep one.
+2. **Install extras** — optional band / singer / voice tools.
+3. **Try another melody** or **edit the lyrics** on a kept song; **transcribe** a recording you own.
+4. **Sound** — make a YuE2 take when the singer is installed.
+
+From the terminal (same engine):
+
+```
+copyist write lyrics.txt --title Hope --style folk --engine rules
+copyist write --title Hope --keep 1 --build
 copyist build songs/amazing-grace.yaml
 ```
 
-Outputs land in `out/<song>/`: the lead sheet and band score as PDF, every part, MusicXML, MIDI, the band recording and its stems, and a validation report. Without sfizz or the instruments, a SoundFont plays instead, and the report says so.
+## Status
+
+Early. Twenty-three styles; sampled band through sfizz; `copyist write` / `rewrite` / `refit` / `transcribe` / `produce` / `follow`; local page and Tauri shell; public site. See [ROADMAP.md](ROADMAP.md) and [TASKS.md](TASKS.md).
 
 ## Licence and contributing
 
-Copyist is free and open source under the [MIT licence](LICENSE), stewarded by [Digital Defiance](https://github.com/Digital-Defiance), a nonprofit. Contributions are welcome, styles and instruments especially: see [CONTRIBUTING.md](CONTRIBUTING.md).
+Copyist is free and open source under the [MIT licence](LICENSE), stewarded by [Digital Defiance](https://github.com/Digital-Defiance). Contributions welcome — styles, instruments, and packaging especially: [CONTRIBUTING.md](CONTRIBUTING.md).
 
-What Copyist downloads has its own terms:
-- **YuE2, the singer:** CC BY-NC 4.0, with a permission for individual creators to sell their songs.
-- **The sampled instruments:** CC0, CC BY 3.0 or CC BY-SA 3.0, with the credits owed shown in every song's report.
-- **The page's fonts:** SIL Open Font License.
+Downloaded pieces have their own terms (YuE2 CC BY-NC 4.0 with creator sell-through; optional SheetSage2 non-commercial; instruments CC0 / CC BY as credited in each song's report).
 
 ## Read next
 
-- [SPEC.md](SPEC.md): what Copyist is, how it works, the song file format, the quality bar.
-- [ROADMAP.md](ROADMAP.md): milestones and the next thing to do.
-- [AGENTS.md](AGENTS.md): instructions for AI coding agents (and humans) picking up the work.
-- [DECISIONS.md](DECISIONS.md): why things are the way they are.
+- [docs/desktop-app.md](docs/desktop-app.md) — Homebrew, packaging, first run
+- [docs/web.md](docs/web.md) — the page inside the app
+- [docs/melody-writing.md](docs/melody-writing.md) — write / rewrite / refit
+- [SPEC.md](SPEC.md) · [ROADMAP.md](ROADMAP.md) · [AGENTS.md](AGENTS.md) · [DECISIONS.md](DECISIONS.md)

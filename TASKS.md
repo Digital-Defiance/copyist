@@ -89,8 +89,11 @@ The SoundFont band plus a SoulX vocal will never sound like Suno: they're checki
 - [x] Step 1, the engine as a sidecar: `--root`, `--port 0 --machine`, `/api/health`, `/api/models`, the model manager (`copyist/models.py`, `copyist/paths.py`), the install panel on the page, `copyist models`. 90 tests pass
 - [x] Apple Developer account: she has one
 - [x] Step 2, the Tauri shell: written (`app/`, app/README.md) and compiling on Linux
-- [ ] First run on the Mac: `npm run dev` built `copyist-app` on 2026-10-17. Confirm the window opens, the engine starts, and the page loads
-- [ ] Step 3, packaging: PyInstaller for the engine, yue2.cpp with Metal, `externalBin`, signing and notarization
+- [x] App as the default path: README + Pages lead with Homebrew/`Copyist.app`; **Install extras** page (`#/setup`); write works without the singer (rules/auto); `COPYIST_DESKTOP=1`; packaging scripts (`scripts/package/`), `Casks/copyist.rb`, release workflow
+- [x] Signing path ready: Digital Defiance Developer ID (`J6887N729S`) on this Mac; `bundle-mac.sh --sign` + entitlements + notarize env documented (`scripts/package/README.md`)
+- [ ] **NEXT:** on this Mac: create app-specific password, `source` notarize env, `freeze-engine.sh` then `bundle-mac.sh --sign`; smoke-test the DMG; update `Casks/copyist.rb` SHA-256; tag `v0.0.1`
+- [ ] First run on the Mac (dev): quit any old Copyist, then `scripts/package/run-app.sh` — confirm the window opens, the engine starts (`/api/health`), and the page loads (frozen sidecar: `engine_entry.py`, cmudict metadata, `engine_argv` so UI jobs work)
+- [ ] Optional later: CI secrets (`APPLE_CERTIFICATE` …) so release-mac.yml signs in GitHub Actions; until then sign on this Mac
 
 ## 3e. Sound set and default voices (ROADMAP milestone S)
 
@@ -166,7 +169,8 @@ For transcribed and written songs. Both modes ship; neither is a consolation pri
 
 - [ ] Spec and page sketch: by-ear controls (nudge pitch/length, chord list, "try this bar again") and by-note controls (select on the score, change pitch/duration/chord/lyrics)
 - [ ] Write edits back into the song file; re-validate; refresh the engraving and the exact preview
-- [ ] MusicXML round-trip (export already exists; import edits without losing Copyist fields)
+- [x] MusicXML → song file (`copyist import`, `copyist/musicxml_in.py`): lead sheet or vocal line → melody ABC, chords, lyrics, key/meter/tempo. First slice of import; edit round-trip that keeps every Copyist field still open
+- [ ] MusicXML edit round-trip (import edits without losing Copyist fields)
 - [ ] "Try another version of this bar" uses the melody writer on one section
 
 ## 3h. The open singer, plan B (ROADMAP milestone OS, spec: docs/open-singer.md)
@@ -216,10 +220,32 @@ Spec: docs/transcribing.md. The owner asked for this on 18 October 2026; her mus
 - [x] The open engine (`copyist/transcribe.py`): Demucs stems (`stems.split_vocals`), beats on band and voice with a steady tempo, meter by testing groupings of eighths (beat first, then bar: 3/4, 4/4, 6/8, 12/8), key, chords (chroma above the bass, Viterbi, the bass naming roots on downbeats), pYIN notes tidied (`clean_notes`: bleed, outliers, scoops, slides that wander, splits, syllable attacks kept, the lyric count), rhythm snapped to the plainest pattern per beat, pitches settled by context, syllable-start hints for the lyric fit
 - [x] `copyist transcribe RECORDING --title [--lyrics] [--engine open|sheetsage] [--voice] [--vocals --accompaniment]` and `--keep [--replace] [--build]`; out/<slug>/transcribe/ with source, stems, draft.abc, song file, report with doubts, band playback, transcription.json
 - [x] The page: "Transcribe a recording" (upload, title, lyrics, engine with SheetSage's licence spelled out), the result with the original and the band side by side, doubts, notes, "Keep it". Driven end to end in a browser
+- [x] SheetSage2 install from the page: `copyist models download sheetsage` (weights + MERT); **Install extras** pack and download-on-transcribe when it isn't installed (licence shown; non-commercial)
 - [x] Tests: `tests/test_transcribe.py` (a tune synthesised in the test: notes including a repeated one, rhythm, chords, key, meter; cleaning rules; rhythm snapping; a SheetSage-style draft with a pickup bar through a fake runner) and the page's upload and actions in `tests/test_web.py`
 - [x] Evaluation: `scripts/transcribe/evaluate.py SONG.yaml DRAFT.abc [--octave-free]`; the numbers are in docs/transcribing.md
-- [ ] **NEXT:** more sung truth: YuE2 takes of the Saints and Silent Night (being rendered in the cloud container at the time of writing; render them on the Mac with `copyist produce` if they're missing), then improve the open engine where they show it's weakest (chords on real mixes, sung ornaments)
-- [ ] On the Mac: the owner transcribes a few of her own songs from the page and listens; note what goes wrong. Never commit them
+- [x] More sung truth: YuE2 takes of the Saints and Silent Night (`copyist produce … --take truth --device MTL0`); open-engine numbers in docs/transcribing.md
+- [x] Soft 6/8 double-tempo lock: when autocorrelation peaks at half the tracked tempo, rebuild the eighth grid and read 6/8 (Silent Night's take was 4/4 @ 108; now 6/8 @ 55)
+- [x] Edge-aware beat-chroma smoothing (cosine ≥ 0.55): Saints YuE2 chords 0.70 → 0.83, Amazing Grace 0.75 → 0.78; Silent Night ~0.49 (the take's band often sounds like Em against the written C/G7/F)
+- [x] Ornament / re-articulation folding in the open engine (`clean_notes` + post-snap grid merge; tighter lyric count; median outlier drop): Saints YuE2 take notes 0.68 → 0.74 (35 vs 33 true; chords stay 0.83). Equal-weight repeated syllables still kept
+- [x] Score a transcription against a recording when there is no written truth: `scripts/transcribe/evaluate.py --sung VOCAL.wav SONG.yaml`. Never commit owner songs
+- [x] Round-trip harness: `scripts/transcribe/roundtrip.py` (truth take → open engine → note/chord F1 table). Baselines: Saints 0.74/0.83, Silent Night 0.75/0.40. Improve only when this table moves
+- [x] Saints late-downbeat snap: solo eighth reading cost 0.05 → 0.25 (note F1 0.74 → 0.79; Silent Night flat). Still headroom to ~0.88 at looser onset match
+- [x] Tyger truth take in the round-trip loop; waltz guard on double-tempo→6/8 (Tyger 0.67/0.62 @ false 6/8 → 0.69/0.73 @ 4/4 ~108; Silent Night stays 6/8)
+- [x] Tighter re-articulation (short < 0.25 s, gap < 0.25 s): Tyger note F1 0.69 → 0.76; Saints 0.79; Silent Night 0.75 → 0.74
+- [x] Amazing Grace in `roundtrip.py` (0.82 / 0.77); lyric-undershoot → gentle fragment retry: Silent Night 0.74 → 0.76 without dropping Saints/Tyger/AG
+- [x] Bigger stress case: *Major-General's Song* (`songs/major-general.yaml`, ~128 notes). Truth take produced; lyric-guided `split_toward_target` + grid-fold floor: note F1 0.44 → 0.79 (117 vs 128). Key still misread as C#m; chords 0.46
+- [x] Key from best of acc/mix/vocal/melody chroma (`choose_key`); mix chroma for chords when the band stem disagrees. Major-General → Eb, chords 0.46 → 0.61; Tyger chords 0.81
+- [x] Lyric note target includes `_` holds; keep long high notes near the line; gentler split cap. Silent Night 0.76→0.77 (42 vs 46); Amazing Grace 0.82→0.88; Major-General 0.84 / 128 vs 128
+- [x] Chord tonal prior (I/IV/V) + dearer mid-bar changes in compound meter + wider smooth: Silent Night chords 0.40→0.69; Saints 0.83→0.89; Amazing Grace 0.78→0.91; Major-General 0.61→0.79 (notes flat)
+- [x] Cap consonant onset pull at 0.08 s: Silent Night note F1 0.77→0.80; Tyger 0.76→0.78 (still 42 vs 46 — missing pitches aren't in long same-pitch holds)
+- [x] Scoop fold when lyric overshoot ≥ 2: Saints 0.79→0.85 (33 vs 33); AG/Tyger flat (single extras stay)
+- [x] Open-transcriber home repo as submodule: [Digital-Defiance/open-transcriber](https://github.com/Digital-Defiance/open-transcriber) → `open-transcriber/`
+- [x] T0 Basic Pitch baseline (`scripts/transcribe/neural_baseline.py`): loses to open engine on lyrical takes; ≈ open on Major-General — see `open-transcriber/docs/t0-results.md`
+- [ ] **NEXT:** T0b — Basic Pitch (or MT3) notes through Copyist `clean_notes` / lyric target; optional Omnizart chords; then T1 only if still behind
+- [ ] Open neural lead-sheet (docs/open-transcriber.md): train (T1) if tidy path isn't enough; never SheetSage weights; wire `--engine neural` when it wins
+- [ ] Silent Night open-engine chords past 0.69 (parallel; not blocked by T0)
+- [ ] SheetSage ABC through the same fold/tidy path
+- [ ] Owner listen check on June Snow / other songs only after a table win. Never commit them
 - [ ] Repeats vote (SPEC 12.2a step 3): the same section sung again settles doubtful notes
 - [ ] Per-doubt A/B by ear (SPEC 12.2a step 7), writing the choice back into the song file
 - [ ] Bass line, drum groove and band parts (SPEC 12.1); analysis by synthesis (SPEC 12.2 step 4)
