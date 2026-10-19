@@ -10,7 +10,7 @@ Newest first. One entry per decision: what, why, and what we gave up.
   - Gave up: nothing. This orders the work: the transcriber, the closeness loop, then arrangements.
 - **SheetSage never touches the owner's songs, not even as a yardstick.** Owner's call. Her lead sheets come only from Copyist's own engines, so no song of hers carries SheetSage's non-commercial terms. SheetSage stays an optional engine for other people, with its licence shown, and a yardstick on public test sets only.
   - The Lights On loop waits for our engine.
-  - SheetSage files already made from June Snow (2026-10-18) are listed in TASKS §7 for removal, pending her OK.
+  - SheetSage files already made from June Snow on 2026-10-18 went to the Trash with her OK: a transcription, and a take rendered from another. SheetSage2 came out of both Copyist model folders; the only copy left is test-only (TASKS §7).
   - Gave up: a private comparison on her songs, and starting the loop with today's engine.
 
 ## 2026-10-19 (the open transcriber: what it builds on, and how it's judged)

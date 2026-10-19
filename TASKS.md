@@ -321,7 +321,7 @@ Spec: docs/transcribing.md. The owner asked for this on 18 October 2026; her mus
     - a 40-recording COTB pilot, then 120;
     - baselines run once.
   - [ ] The open-transcriber README still says Omnizart chords are blocked on Apple Silicon; they run natively since the arm64 nnls-chroma build (DECISIONS 2026-10-18). Fix it with the next submodule change
-  - [ ] SheetSage2 once on all seven test songs as a yardstick (evaluation only; owner OK 2026-10-19). Five done 2026-10-19 on the M4 Max, about 5 s a take. Notes: Saints 0.97, Silent Night 0.96, Amazing Grace 0.94, Tyger 1.00, Major-General 0.98. Chords: 0.87, 0.91, 0.97, 0.91, 0.74. It reads The Tyger's 3/4 right and writes Silent Night as 3/4. Docs: docs/transcribing.md; raw outputs: `out/<slug>/sheetsage-yardstick/`; script: `.agents/tasks/sheetsage-yardstick-2026-10-19/yardstick.py`, which reads roundtrip's CASES. The two big songs get the same single run when they land
+  - [ ] SheetSage2 once on all seven test songs as a yardstick (evaluation only; owner OK 2026-10-19). Five done 2026-10-19 on the M4 Max, about 5 s a take. Notes: Saints 0.97, Silent Night 0.96, Amazing Grace 0.94, Tyger 1.00, Major-General 0.98. Chords: 0.87, 0.91, 0.97, 0.91, 0.74. It reads The Tyger's 3/4 right and writes Silent Night as 3/4. Docs: docs/transcribing.md; raw outputs: `out/<slug>/sheetsage-yardstick/`; script: `.agents/tasks/sheetsage-yardstick-2026-10-19/yardstick.py`, which reads roundtrip's CASES. The two big songs get the same single run when they land, with `COPYIST_SHEETSAGE=/Volumes/Code/copyist/.cache/judge/sheetsage-gguf/SheetSage2-Q8_0.gguf` (the test-only copy)
   - [ ] Key changes break Copyist's ABC readers (found by the yardstick run, 2026-10-19). `abcplan.parse` keeps only the bars after the last `K:` line, and a mid-bar `[K:…]` stops it with a PlanError; evaluate.py's chord reader (`parse_any`) resets the same way (read, not run). SheetSage2 writes a key change as `K:` in both voices. Fix with tests before the big songs, since one should change key
   - [ ] Widen `evaluate.py`'s ±14 s shift search, or align on the first sung note: SheetSage2 keeps intro bars, and its best shifts on the five takes were already −8.4 to −11.5 s, so a longer intro would mis-score
 - [ ] SheetSage ABC through the same fold/tidy path
@@ -330,12 +330,17 @@ Spec: docs/transcribing.md. The owner asked for this on 18 October 2026; her mus
   - **When:** it runs on her songs only once our engine is ready (owner, 2026-10-19). Never with SheetSage.
   - **Meanwhile:** build and test the loop on public-domain music. The audit's playback check is its measuring part.
   - **Never** train or tune on her songs, and never commit them.
-- [ ] Clean out SheetSage-made files of the owner's songs (found 2026-10-19; waiting for her OK):
-  - `out/08-lights-on-june-snow/`: a SheetSage transcription of June Snow, made 2026-10-18;
-  - `out/june-snow/takes/lightson-sheetsage/`: a YuE2 take rendered from it;
-  - a leftover `out/june-snow/transcribe/sheetsage.log`. That folder's transcription itself is from Copyist's open engine.
+- [x] SheetSage-made files of the owner's songs moved to the Trash (owner OK, 2026-10-19). They can be restored from `/Volumes/Code/.Trashes` until it's emptied:
+  - `out/08-lights-on-june-snow/`: a SheetSage transcription of June Snow, 18 October at 15:52;
+  - `out/june-snow/takes/lightson/`: a YuE2 take from 16:04. It was rendered from a second SheetSage transcription at 15:58, which the open engine later overwrote. Its tempo is SheetSage's 106, not the open engine's 103;
+  - the leftover `out/june-snow/transcribe/sheetsage.log`.
 
-  Proposed: move them to the Trash, and take `SheetSage2-Q8_0.gguf` out of both model folders (the checkout's and the Mac app's), so neither offers SheetSage for her songs. Keep a copy only for the public-test yardstick. The `lightson` voice is clean: its training list has only audio, lyrics, name and style, and no scores.
+  Kept, because they're Copyist's own:
+  - the open-engine transcription in `out/june-snow/transcribe/` (16:24);
+  - both later takes, `lightson-open` and `lightson-sheetsage`. The second one's name is misleading: its score matches the open transcription exactly.
+
+  The `lightson` voice is clean: its training list has only audio, lyrics, name and style.
+- [x] SheetSage2 is out of both model folders (the checkout's and the Mac app's), so neither the page nor the app offers it for her songs. The only copy is a test-only one in `.cache/judge/sheetsage-gguf/`, with its SHA-256 checked and MERT linked beside it
 - [ ] Repeats vote (SPEC 12.2a step 3): the same section sung again settles doubtful notes
 - [ ] Per-doubt A/B by ear (SPEC 12.2a step 7), writing the choice back into the song file
 - [ ] Bass line, drum groove and band parts (SPEC 12.1); analysis by synthesis (SPEC 12.2 step 4)

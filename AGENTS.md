@@ -44,7 +44,7 @@ The work moved fast and may change hands at any moment. Here is where things sta
 
 **Never commit:** `voices/`, `.cache/` (weights, LoRAs, instruments), `out/`, or anything from the owner's musical *I Left the Lights On* (`lights-on*` folders). The `lightson` LoRA is private and never ships.
 
-**SheetSage never touches the owner's songs** (owner, 2026-10-19). That covers *I Left the Lights On*, her second musical and anything else of hers. Never run SheetSage on them, not even as a yardstick, and never keep or use SheetSage output for them. Her lead sheets come only from Copyist's own engines. SheetSage stays a yardstick on public test sets only.
+**SheetSage never touches the owner's songs** (owner, 2026-10-19). That covers *I Left the Lights On*, her second musical and anything else of hers. Never run SheetSage on them, not even as a yardstick, and never keep or use SheetSage output for them. Her lead sheets come only from Copyist's own engines. SheetSage stays a yardstick on public test sets only. Its model file lives only in `.cache/judge/sheetsage-gguf/`; point `COPYIST_SHEETSAGE` at it for public-test yardsticks. Never install SheetSage into a Copyist data folder on this Mac.
 
 **The owner's goal** (2026-10-19). Everything else serves these two parts:
 1. **Lights On.** Her musical exists only as audio demos, with no sheet music: a black box. Transcribe the demos into lead sheets. Reproduce them with YuE2 from those lead sheets, as close to the demos as can be measured: transcribe, render, measure, refine. Then make lead sheets and orchestra arrangements from them. This waits for Copyist's own engine, because she won't have it done with SheetSage. Build and test the loop on public-domain music in the meantime.
