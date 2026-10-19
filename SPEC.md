@@ -338,6 +338,8 @@ Two ways to change the notes, both first-class, for transcribed songs and writte
 1. **By ear.** Hear a bar, move the melody up or down, lengthen or shorten, pick another chord from a list, try another version of the bar, keep or undo. No reading required.
 2. **By note.** Click a note on the engraved score to select it; change pitch, duration and ties; edit chord symbols and lyrics under the notes; paste or import MusicXML (e.g. from MuseScore). For people who read music or want that control.
 
+`copyist import FILE.musicxml` already turns a MusicXML lead sheet (or the vocal line of a piano-vocal score) into a song file. Import that keeps every Copyist field through an edit round-trip is still planned.
+
 Either path writes the song file. Validators run again. Previews and takes re-render from the new score. YAML remains editable by hand.
 
 ## 15. Previews (planned)

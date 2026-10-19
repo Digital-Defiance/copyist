@@ -1,0 +1,86 @@
+"""MusicXML → song file (first slice of import)."""
+from __future__ import annotations
+
+import tempfile
+import unittest
+from pathlib import Path
+
+from music21 import converter, harmony, note, stream
+
+from copyist import engrave, musicxml_in
+from copyist.song import load_song
+from copyist.validate import is_finished, validate
+
+ROOT = Path(__file__).resolve().parents[1]
+
+
+class MusicxmlImportTests(unittest.TestCase):
+    def test_round_trip_amazing_grace_keeps_key_meter_and_note_count(self):
+        song = load_song(ROOT / "songs" / "amazing-grace.yaml")
+        out = Path(tempfile.mkdtemp(prefix="copyist-mxl-"))
+        paths = engrave.engrave(song.score, out, "lead-sheet", song.title, song.credits)
+        data = musicxml_in.song_data_from_musicxml(paths["musicxml"], style="waltz")
+        self.assertEqual(data["key"], "G")
+        self.assertEqual(data["meter"], "3/4")
+        self.assertEqual(data["title"], "Amazing Grace")
+        self.assertEqual(data["style"], "waltz")
+        # Same number of pitched notes (ties may differ in spelling).
+        imported = Path(tempfile.mkdtemp(prefix="copyist-song-")) / "ag.yaml"
+        musicxml_in.import_musicxml(paths["musicxml"], imported, style="waltz")
+        again = load_song(imported)
+        n_orig = sum(1 for n in song.melody.flatten().notes if n.isNote)
+        n_imp = sum(1 for n in again.melody.flatten().notes if n.isNote)
+        self.assertEqual(n_imp, n_orig)
+
+    def test_picks_the_vocal_part_in_a_piano_vocal_score(self):
+        score = stream.Score()
+        piano = stream.Part(id="P1")
+        piano.partName = "Piano"
+        piano.append(note.Note("C4", quarterLength=4))
+        vocal = stream.Part(id="P2")
+        vocal.partName = "Voice"
+        vocal.append(note.Note("G4", quarterLength=1))
+        vocal.append(note.Note("A4", quarterLength=1))
+        vocal.append(note.Note("B4", quarterLength=1))
+        vocal.append(note.Note("C5", quarterLength=1))
+        score.insert(0, piano)
+        score.insert(0, vocal)
+        path = Path(tempfile.mkdtemp(prefix="copyist-pv-")) / "pv.musicxml"
+        score.write("musicxml", fp=str(path))
+        part = musicxml_in.pick_melody_part(converter.parse(str(path)))
+        self.assertTrue("Voice" in (part.partName or "") or "voice" in (part.id or "").lower())
+        data = musicxml_in.song_data_from_musicxml(path, title="Demo")
+        # Voice has four quarter notes; piano's single whole note must not be chosen.
+        self.assertGreaterEqual(data["melody"].count("G") + data["melody"].count("A")
+                                + data["melody"].count("B") + data["melody"].count("c"), 4)
+
+    def test_chord_symbols_become_quoted_abc(self):
+        part = stream.Part()
+        m = stream.Measure(number=1)
+        m.append(harmony.ChordSymbol("G"))
+        m.append(note.Note("G4", quarterLength=2))
+        m.append(harmony.ChordSymbol("D7"))
+        m.append(note.Note("A4", quarterLength=2))
+        part.append(m)
+        score = stream.Score()
+        score.insert(0, part)
+        path = Path(tempfile.mkdtemp(prefix="copyist-ch-")) / "ch.musicxml"
+        score.write("musicxml", fp=str(path))
+        data = musicxml_in.song_data_from_musicxml(path, title="Chords")
+        self.assertIn('"G"', data["melody"])
+        self.assertIn('"D7"', data["melody"])
+
+    def test_missing_file_is_readable(self):
+        with self.assertRaises(musicxml_in.MusicxmlImportError) as ctx:
+            musicxml_in.song_data_from_musicxml(ROOT / "no-such.musicxml")
+        self.assertIn("No file", str(ctx.exception))
+
+    def test_major_general_song_is_finished(self):
+        song = load_song(ROOT / "songs" / "major-general.yaml")
+        self.assertTrue(is_finished(validate(song)))
+        notes = sum(1 for n in song.melody.flatten().notes if n.isNote)
+        self.assertGreaterEqual(notes, 100)
+
+
+if __name__ == "__main__":
+    unittest.main()
