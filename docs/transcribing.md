@@ -23,7 +23,7 @@ Giving the lyrics helps a lot: they fix how many syllables, and so how many note
 | Engine | What | Licence | Measured (below) |
 |---|---|---|---|
 | `open` (default) | Copyist's own (`copyist/transcribe.py`): beats from the band and the voice, chords from chroma with a Viterbi path, the melody from pYIN on the separated vocal, every doubt settled by the music around it | MIT, with librosa (ISC) and Demucs (MIT) | Band renders: 0.89–0.98 note F1. A YuE2 take: 0.87 |
-| `sheetsage` (optional) | SheetSage2 through yue2.cpp's `yue-transcribe` (melody, chords, key, meter from the full mix) | Weights CC BY-NC 4.0, with no added permission: **non-commercial use only** | Band render 0.98; the YuE2 take 0.94 notes, 0.97 chords |
+| `sheetsage` (optional) | SheetSage2 through yue2.cpp's `yue-transcribe` (melody, chords, key, meter from the full mix) | Weights CC BY-NC 4.0, with no added permission: **non-commercial use only** | Band render 0.98. The five YuE2 takes: 0.94–1.00 notes (mean 0.97), 0.74–0.97 chords (mean 0.88) |
 
 SheetSage2 is more accurate today, especially on sung vocals, but its licence forbids commercial use, and unlike YuE2's it has no permission for individual creators to sell their songs. So the open engine is the default. SheetSage2 is an optional download (`copyist models download sheetsage --accept-licence`, or **Install extras** / the transcribe form): SheetSage2-Q8_0.gguf plus MERT beside it (~1 GB), licence shown first. The desktop app bundles `yue-transcribe`; from a checkout run `scripts/setup-yue.sh`. SheetSage2 writes melodies an octave above the singing, YuE2's convention; Copyist moves them down. When it puts the tune on the Ins voice (Vocal left as rests), Copyist takes that line; short mid-song 1/4 or 2/4 bars are joined into the song's meter.
 
@@ -65,17 +65,26 @@ The truth set is Copyist's own public-domain songs, where every note is known: t
 | When the Saints, band (4/4) | 0.98, 0.89 | not run yet |
 | Silent Night, band (6/8) | 0.89, 0.89 | not run yet |
 | Amazing Grace, YuE2 take, Demucs vocal | 0.88, 0.78 | 0.94, 0.97 |
-| When the Saints, YuE2 take (`--take truth`) | 0.85, 0.89 | not run yet |
-| Silent Night, YuE2 take (`--take truth`) | 0.80, 0.69 | not run yet |
-| The Tyger, YuE2 take (`--take truth`) | 0.78, 0.81† | not run yet |
-| Major-General, YuE2 take (`--take truth`) | 0.84, 0.79‡ | not run yet |
+| When the Saints, YuE2 take (`--take truth`) | 0.85, 0.89 | 0.97, 0.87 |
+| Silent Night, YuE2 take (`--take truth`) | 0.80, 0.69 | 0.96, 0.91§ |
+| The Tyger, YuE2 take (`--take truth`) | 0.78, 0.81† | 1.00, 0.91 |
+| Major-General, YuE2 take (`--take truth`) | 0.84, 0.79‡ | 0.98, 0.74 |
 
-† Written 3/4 @ 80; open engine reads 4/4 ~108 (same bar length: waltz ×4/3 pulse). Was false 6/8 ~54 before the waltz guard.
+† Written 3/4 @ 80; open engine reads 4/4 ~108 (same bar length: waltz ×4/3 pulse). Was false 6/8 ~54 before the waltz guard. SheetSage2 reads 3/4 @ 81.
 ‡ Note count recovered by lyric-guided splits (was 0.44 / 43 vs 128). Key was C#m from Demucs accompaniment alone; `choose_key` (mix/melody) → Eb; tonal chord prior → chords 0.79.
+§ SheetSage2 writes Silent Night as 3/4 at 1/4=82: the same bar length, but three quarters instead of two dotted quarters. The open engine reads its 6/8 right.
+
+SheetSage2's take rows were measured on 2026-10-19 as a yardstick only (never labels, never tuning; local report in `.agents/tasks/sheetsage-yardstick-2026-10-19/`). Same-session means on the five takes, notes then chords: open 0.83 / 0.82, neural 0.87 / 0.79, SheetSage2 0.97 / 0.88.
+
+These numbers compare engines with each other and nothing more:
+- The metric is lenient. SheetSage2's own card scores pitch class with onsets within 50 ms.
+- The meter isn't scored.
+- SheetSage2 hears only the mix, while the open and neural engines also get the stems and the lyric count.
+- The takes are YuE2 renders, and SheetSage2 comes from the same lab.
 
 Meter, key and tempo: right on the band renders and on Amazing Grace's take; Saints' take is 4/4 C ~112; Silent Night's take was heard as 4/4 ~108 until the double-tempo correction, and is now 6/8 ~55 (true is `3/8=56`).
 
-On a Mac with Metal, Demucs + the open engine is under 10 s a song after the first model load; SheetSage2 is slower (not re-timed here).
+On the M4 Max: Demucs + the open engine is under 10 s a song after the first model load. SheetSage2 takes 4–6 s a take on Metal after loading its ~1 GB of models: a fixed 2 s to encode its 300 s window, then about 5 ms a token.
 
 ### Round-trip (how to improve)
 
