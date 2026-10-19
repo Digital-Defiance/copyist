@@ -74,7 +74,7 @@ The SoundFont band plus a SoulX vocal will never sound like Suno: they're checki
 - [x] The musical's song list: `.cache/lora/lights-on/songs.jsonl`, 41 songs from `lights-on/AI Prompts` (demo style + tagged lyrics) paired with `lights-on-audio`, trigger word `lightson`
 - [x] Trained on the Mac, 2026-10-17, about 11:00 to 14:09 Pacific: 800 steps, about 15 s a step, with `scripts/setup-yue-train.sh` then `scripts/yue-lora/run.sh .cache/lora/lights-on/songs.jsonl ~/Documents/lights-on-audio lights-on`. Held-out loss (two songs it never saw): 4.77 at the start, 3.83 at step 300, 3.85 at 500, then rising to 4.01 at 800 while the training songs kept falling (2.91): past about 500 it memorizes the songs rather than learning the voice. The minted guard set held steady (3.61 → 3.56), so general singing didn't degrade. Checkpoints every 100 steps in `.cache/lora/lights-on/lora/`
 - [ ] Listen: `produce --lora` with steps 300 and 500 first (then 400 and 600) and the Jennifer style line, check each with `follow`, and pick one
-- [ ] If the score fights the voice: train with each song's own score too (SheetSage2 transcription, `cot=full` prefixes)
+- [ ] If the score fights the voice: train with each song's own score too (`cot=full` prefixes), transcribed by Copyist's own engine once it's ready. Never SheetSage (owner, 2026-10-19)
 - [ ] Use the realaudio NAR adapter (`nar_lora_joint_v9.bf16.safetensors`) in `copyist produce` (`--adapters`), and compare it by ear with a plain render
 
 ## 3c. Web front end (docs/web.md)
@@ -322,7 +322,17 @@ Spec: docs/transcribing.md. The owner asked for this on 18 October 2026; her mus
   - [ ] Key changes break Copyist's ABC readers (found by the yardstick run, 2026-10-19). `abcplan.parse` keeps only the bars after the last `K:` line, and a mid-bar `[K:…]` stops it with a PlanError; evaluate.py's chord reader (`parse_any`) resets the same way (read, not run). SheetSage2 writes a key change as `K:` in both voices. Fix with tests before the big songs, since one should change key
   - [ ] Widen `evaluate.py`'s ±14 s shift search, or align on the first sung note: SheetSage2 keeps intro bars, and its best shifts on the five takes were already −8.4 to −11.5 s, so a longer intro would mis-score
 - [ ] SheetSage ABC through the same fold/tidy path
-- [ ] Optional, never blocking: the owner hears her own songs (June Snow and others) through the new engine if she wants to, after a table win. Never commit them
+- [ ] **The Lights On loop** (owner's goal, part 1; AGENTS.md):
+  - **What it does:** transcribes each demo with Copyist's own engine, renders the lead sheet with YuE2 (seeds, and optionally the `lightson` voice), and measures how close the render is to the demo automatically: melody, chords, tempo, words and sections, per section. It then refines the weakest spots by rendering the alternatives and keeping whichever is closer, keeps the closest take, and makes lead sheets and orchestra arrangements.
+  - **When:** it runs on her songs only once our engine is ready (owner, 2026-10-19). Never with SheetSage.
+  - **Meanwhile:** build and test the loop on public-domain music. The audit's playback check is its measuring part.
+  - **Never** train or tune on her songs, and never commit them.
+- [ ] Clean out SheetSage-made files of the owner's songs (found 2026-10-19; waiting for her OK):
+  - `out/08-lights-on-june-snow/`: a SheetSage transcription of June Snow, made 2026-10-18;
+  - `out/june-snow/takes/lightson-sheetsage/`: a YuE2 take rendered from it;
+  - a leftover `out/june-snow/transcribe/sheetsage.log`. That folder's transcription itself is from Copyist's open engine.
+
+  Proposed: move them to the Trash, and take `SheetSage2-Q8_0.gguf` out of both model folders (the checkout's and the Mac app's), so neither offers SheetSage for her songs. Keep a copy only for the public-test yardstick. The `lightson` voice is clean: its training list has only audio, lyrics, name and style, and no scores.
 - [ ] Repeats vote (SPEC 12.2a step 3): the same section sung again settles doubtful notes
 - [ ] Per-doubt A/B by ear (SPEC 12.2a step 7), writing the choice back into the song file
 - [ ] Bass line, drum groove and band parts (SPEC 12.1); analysis by synthesis (SPEC 12.2 step 4)

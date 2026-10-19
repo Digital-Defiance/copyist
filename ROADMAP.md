@@ -62,7 +62,9 @@ Take the first unchecked item in the current milestone. Tick items when they're 
 - [ ] Stage 1, rhythm and notation: global tempo and meter, a tuplet-aware note grid, key changes, and `copyist-song/1` with a converter
 - [ ] Stages 2–4: the encoder bake-off and trained heads; real data, a symbolic prior and the repeats vote; then the one-time test. About 2.5–3 months to the test if GPU jobs may run whenever the Mac is idle (the owner's open decision)
 - [ ] Repeats vote, per-doubt A/B by ear (SPEC 12.2a)
-- [ ] Optional: the owner transcribes her own songs on the Mac and listens, if she wants to (never blocking)
+- [ ] The Lights On loop (the owner's goal, part 1; AGENTS.md):
+  - **Steps:** transcribe each demo with Copyist's own engine; reproduce it with YuE2; measure how close the take is, automatically; refine; then make lead sheets and arrangements.
+  - **When:** it waits for our engine. Never SheetSage. Build and test the loop on public-domain music first.
 
 ## M2: Song planning and following directions
 

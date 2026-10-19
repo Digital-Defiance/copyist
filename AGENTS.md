@@ -41,6 +41,12 @@ The work moved fast and may change hands at any moment. Here is where things sta
 
 **Never commit:** `voices/`, `.cache/` (weights, LoRAs, instruments), `out/`, or anything from the owner's musical *I Left the Lights On* (`lights-on*` folders). The `lightson` LoRA is private and never ships.
 
+**SheetSage never touches the owner's songs** (owner, 2026-10-19). That covers *I Left the Lights On*, her second musical and anything else of hers. Never run SheetSage on them, not even as a yardstick, and never keep or use SheetSage output for them. Her lead sheets come only from Copyist's own engines. SheetSage stays a yardstick on public test sets only.
+
+**The owner's goal** (2026-10-19). Everything else serves these two parts:
+1. **Lights On.** Her musical exists only as audio demos, with no sheet music: a black box. Transcribe the demos into lead sheets. Reproduce them with YuE2 from those lead sheets, as close to the demos as can be measured: transcribe, render, measure, refine. Then make lead sheets and orchestra arrangements from them. This waits for Copyist's own engine, because she won't have it done with SheetSage. Build and test the loop on public-domain music in the meantime.
+2. **Her second musical,** written from scratch with Copyist.
+
 ## The project in one paragraph
 
 Copyist makes songs score-first: a song file (YAML with an ABC melody, chord symbols and lyrics) becomes a canonical music21 score, which is validated, arranged, engraved to PDF and MusicXML, exported to MIDI and rendered to audio. The score is always the source of truth; audio is derived from it, never the other way around. Tagline: *the song, the score, the sound.*

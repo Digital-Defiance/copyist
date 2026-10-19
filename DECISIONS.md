@@ -2,6 +2,17 @@
 
 Newest first. One entry per decision: what, why, and what we gave up.
 
+## 2026-10-19 (the owner's goal, and SheetSage kept away from her songs)
+
+- **Copyist's purpose, in the owner's words, has two parts.**
+  - **Part 1:** transcribe the audio demos of her musical *I Left the Lights On*, which have no sheet music, and reproduce them with YuE2 from the transcriptions as closely as can be measured. Then make lead sheets and orchestra arrangements from them.
+  - **Part 2:** write her second musical from scratch.
+  - Gave up: nothing. This orders the work: the transcriber, the closeness loop, then arrangements.
+- **SheetSage never touches the owner's songs, not even as a yardstick.** Owner's call. Her lead sheets come only from Copyist's own engines, so no song of hers carries SheetSage's non-commercial terms. SheetSage stays an optional engine for other people, with its licence shown, and a yardstick on public test sets only.
+  - The Lights On loop waits for our engine.
+  - SheetSage files already made from June Snow (2026-10-18) are listed in TASKS §7 for removal, pending her OK.
+  - Gave up: a private comparison on her songs, and starting the loop with today's engine.
+
 ## 2026-10-19 (the open transcriber: what it builds on, and how it's judged)
 
 - **The trained transcriber builds on Basic Pitch and SoulX-Singer (both Apache-2.0), though their own training data can't be audited.** Owner's call. Basic Pitch is only a frozen input under our own head; SoulX sings the training data. Newer options were checked and set aside: VocalParse (Mandarin, 1.7B, crawled data), T3MS, the phoneme-informed model, VOCANO and ROSVOT (weights trained on non-commercial singing sets), and VocalRender (Apache-2.0 score-native singer, but its checkpoints are Mandarin-only; watched for an English one). Gave up: a fully auditable data chain, which only an open singer trained on our own data would give (plan B).
