@@ -11,6 +11,7 @@ writing (`write.song_from_plan`) turns it into a Copyist song file with the lyri
 from __future__ import annotations
 
 import math
+import re
 from dataclasses import dataclass, field
 from fractions import Fraction
 from pathlib import Path
@@ -87,9 +88,8 @@ class Grid:
         return idx - self.first_downbeat
 
 
-def beat_times(acc: np.ndarray, vocals: np.ndarray | None = None) -> tuple[np.ndarray, float]:
-    """Beats from the band's onsets and the singer's together, with a steady tempo (songs rarely
-    drift much, and a tight tracker won't wander onto the off-beats in a sparse intro)."""
+def onset_envelope(acc: np.ndarray, vocals: np.ndarray | None = None) -> np.ndarray:
+    """Band onsets, plus the singer's when given, normalised."""
     import librosa
     env = librosa.onset.onset_strength(y=acc, sr=SR, hop_length=HOP)
     env = env / (env.max() + 1e-9)
@@ -97,10 +97,47 @@ def beat_times(acc: np.ndarray, vocals: np.ndarray | None = None) -> tuple[np.nd
         ev = librosa.onset.onset_strength(y=vocals, sr=SR, hop_length=HOP)
         n = min(len(env), len(ev))
         env = env[:n] + ev[:n] / (ev.max() + 1e-9)
+    return env
+
+
+def tempo_peak_bpm(env: np.ndarray, lo: float = 40.0, hi: float = 180.0) -> float | None:
+    """Strongest autocorrelation peak in the singing range, or None if the envelope is empty."""
+    import librosa
+    if env.size < 40:
+        return None
+    ac = librosa.autocorrelate(env, max_size=max(40, len(env) // 2))
+    best: tuple[float, float] | None = None
+    for lag in range(20, max(21, len(ac) // 3)):
+        bpm = 60.0 * SR / (lag * HOP)
+        if lo <= bpm <= hi and (best is None or ac[lag] > best[0]):
+            best = (float(ac[lag]), float(bpm))
+    return None if best is None else best[1]
+
+
+def beat_times(acc: np.ndarray, vocals: np.ndarray | None = None) -> tuple[np.ndarray, float]:
+    """Beats from the band's onsets and the singer's together, with a steady tempo (songs rarely
+    drift much, and a tight tracker won't wander onto the off-beats in a sparse intro)."""
+    import librosa
+    env = onset_envelope(acc, vocals)
     tempo, frames = librosa.beat.beat_track(onset_envelope=env, sr=SR, hop_length=HOP, start_bpm=100, tightness=400)
     tempo = float(np.atleast_1d(tempo)[0])
     times = librosa.frames_to_time(frames, sr=SR, hop_length=HOP)
     return times, tempo
+
+
+def subdivide_beats(beats: np.ndarray, parts: int) -> np.ndarray:
+    """Place `parts` equal steps between each pair of beats (2 = eighths from quarters; 3 = eighths
+    from dotted-quarter beats in 6/8)."""
+    from itertools import pairwise
+    if parts < 2 or len(beats) < 2:
+        return beats
+    out: list[float] = []
+    for a, b in pairwise(beats):
+        out.append(float(a))
+        for k in range(1, parts):
+            out.append(float(a + (b - a) * k / parts))
+    out.append(float(beats[-1]))
+    return np.asarray(out, dtype=float)
 
 
 def beat_chroma(y: np.ndarray, beats: np.ndarray, low: bool = False) -> np.ndarray:
@@ -123,13 +160,48 @@ def beat_chroma(y: np.ndarray, beats: np.ndarray, low: bool = False) -> np.ndarr
 
 def key_of(chroma_total: np.ndarray) -> tuple[int, bool, float]:
     """(tonic pitch class, minor?, confidence) by correlation with the Krumhansl profiles."""
+    if not np.any(chroma_total) or float(np.std(chroma_total)) < 1e-9:
+        return 0, False, 0.0
     scores = []
     for tonic in range(12):
         for minor, prof in ((False, MAJOR_PROFILE), (True, MINOR_PROFILE)):
-            scores.append((np.corrcoef(chroma_total, np.roll(prof, tonic))[0, 1], tonic, minor))
+            corr = np.corrcoef(chroma_total, np.roll(prof, tonic))[0, 1]
+            if np.isnan(corr):
+                corr = -1.0
+            scores.append((float(corr), tonic, minor))
     scores.sort(reverse=True)
     best, second = scores[0], scores[1]
     return best[1], best[2], float(best[0] - second[0])
+
+
+def melody_chroma(notes: list[HeardNote]) -> np.ndarray:
+    """Pitch-class weights from sung note durations (ignores the band)."""
+    hist = np.zeros(12)
+    for n in notes:
+        hist[int(round(n.midi)) % 12] += max(0.0, n.end - n.start)
+    return hist
+
+
+def choose_key(*candidates: np.ndarray) -> tuple[int, bool, float]:
+    """Best key among chroma totals (accompaniment, mix, vocal, melody…).
+
+    YuE2 band stems can disagree with the sung line (Major-General: Demucs
+    accompaniment → C#m at low confidence; mix and melody → Eb). Pick the
+    candidate with the largest Krumhansl margin.
+    """
+    best: tuple[int, bool, float] | None = None
+    for chroma in candidates:
+        if chroma is None or not np.any(chroma):
+            continue
+        total = chroma if chroma.ndim == 1 else chroma.sum(axis=0)
+        tonic, minor, conf = key_of(total)
+        if np.isnan(conf):
+            continue
+        if best is None or conf > best[2]:
+            best = (tonic, minor, conf)
+    if best is None:
+        return 0, False, 0.0
+    return best
 
 
 def key_name(tonic: int, minor: bool) -> str:
@@ -185,6 +257,23 @@ QUALITY_PRIOR = {"": 0.0, "m": 0.0, "7": -0.03, "m7": -0.04, "maj7": -0.08, "sus
 PRIOR = np.array([QUALITY_PRIOR[c.quality] for c in CHORDS])
 
 
+def tonal_boost(tonic: int, minor: bool) -> np.ndarray:
+    """Favour I / IV / V(7) (and vi) in major — Silent Night's band was naming Dm/Em every bar."""
+    # (root offset from tonic, allowed qualities, weight)
+    targets = (
+        [(0, {"m"}, 0.10), (3, {""}, 0.06), (5, {"m"}, 0.08), (7, {"", "7"}, 0.08), (8, {""}, 0.06)]
+        if minor else
+        [(0, {"", "maj7"}, 0.12), (5, {""}, 0.10), (7, {"", "7"}, 0.10), (9, {"m"}, 0.04)]
+    )
+    boost = np.zeros(len(CHORDS))
+    for i, c in enumerate(CHORDS):
+        for off, quals, w in targets:
+            if c.root == (tonic + off) % 12 and c.quality in quals:
+                boost[i] += w
+                break
+    return boost
+
+
 @dataclass
 class ChordReading:
     chords: list[Chord]            # one per beat
@@ -192,18 +281,41 @@ class ChordReading:
     runner_up: list[Chord]
 
 
+def smooth_chroma(chroma: np.ndarray, radius: int = 2, min_cos: float = 0.55) -> np.ndarray:
+    """Average each beat with nearby beats that still sound like the same harmony.
+
+    Passing tones and YuE2 voicing wobble rename chords every beat if left raw; averaging only with
+    neighbours whose chroma cosine is at least `min_cos` keeps real changes (C→F→G→C) sharp. Bass
+    chroma is left alone (roots should stay sharp).
+    """
+    if radius <= 0 or len(chroma) < 2:
+        return chroma
+    norm = chroma / (np.linalg.norm(chroma, axis=1, keepdims=True) + 1e-9)
+    out = np.empty_like(chroma)
+    n = len(chroma)
+    for i in range(n):
+        vals = [chroma[i]]
+        for d in range(1, radius + 1):
+            for j in (i - d, i + d):
+                if 0 <= j < n and float(norm[i] @ norm[j]) >= min_cos:
+                    vals.append(chroma[j])
+        out[i] = np.mean(vals, axis=0)
+    return out
+
+
 def read_chords(chroma: np.ndarray, bass_chroma: np.ndarray | None, key: tuple[int, bool],
                 beat_cost: list[float] | None = None, change_cost: float = 0.25,
-                downbeats: list[bool] | None = None) -> ChordReading:
+                downbeats: list[bool] | None = None, *, smooth_radius: int = 2) -> ChordReading:
     """A chord for every beat: chroma against chord templates, the bass's note favouring roots, the
     key favouring its own chords, and a Viterbi path that only changes chord when it pays. `beat_cost`
     gives the cost of a change on each beat (cheap on downbeats, dear in the middle of a bar)."""
+    chroma = smooth_chroma(chroma, radius=smooth_radius)
     norm = chroma / (np.linalg.norm(chroma, axis=1, keepdims=True) + 1e-9)
     emit = norm @ TEMPLATES.T + PRIOR                           # (beats, chords) cosine similarity
     tonic, minor = key
     diatonic = scale_of(tonic, minor)
     in_key = np.array([1.0 if c.tones() <= diatonic else 0.0 for c in CHORDS])
-    emit = emit + 0.08 * in_key
+    emit = emit + 0.10 * in_key + tonal_boost(tonic, minor)
     if bass_chroma is not None:
         bnorm = bass_chroma / (bass_chroma.max(axis=1, keepdims=True) + 1e-9)
         roots = np.array([c.root for c in CHORDS])
@@ -319,9 +431,23 @@ def clean_notes(notes: list[HeardNote], times: np.ndarray, midi: np.ndarray, rms
     3. Fold short fragments into the neighbour nearest in pitch: scoops, slides and vibrato that the
        tracker cut into pieces.
     4. Join neighbours on the same pitch with no gap: one note the tracker split.
-    5. If the number of sung syllables is known (`target`, from the lyrics), keep folding the most
+    5. Fold re-articulations / ornaments: a short same-pitch echo (even with an onset, and across a
+       short rest) into the longer note — YuE2 and Broadway singers often hit "G, G" for one written G.
+    6. If the number of sung syllables is known (`target`, from the lyrics), keep folding the most
        doubtful fragments until the notes are within reach of it: the words fix the count.
+    7. If that still leaves far fewer notes than syllables, retry with gentler fragment folding so
+       short steady passing tones survive (Silent Night) — but only then, so Saints stays sharp.
     """
+    kept = _clean_notes(notes, times, midi, rms, target, gate, short, gentle_fragments=False)
+    if target and len(kept) < target * 0.92:
+        retry = _clean_notes(notes, times, midi, rms, target, gate, short, gentle_fragments=True)
+        if len(retry) > len(kept):
+            return retry
+    return kept
+
+
+def _clean_notes(notes: list[HeardNote], times: np.ndarray, midi: np.ndarray, rms: np.ndarray,
+                 target: int | None, gate: float, short: float, *, gentle_fragments: bool) -> list[HeardNote]:
     if not notes:
         return notes
     voiced = ~np.isnan(midi)
@@ -334,27 +460,27 @@ def clean_notes(notes: list[HeardNote], times: np.ndarray, midi: np.ndarray, rms
     kept = [n for n in notes if level(n) >= gate]
     if not kept:
         return kept
-    body = np.array([n.midi for n in kept])
-    lo, hi = np.percentile(body, 5) - 7, np.percentile(body, 95) + 7
-    kept = [n for n in kept if lo <= n.midi <= hi]
+    med = float(np.median([n.midi for n in kept]))
+    # Within ±7 always; a longer loud note up to ±12 also stays (Silent Night's F5
+    # sits ~8 above a G median — not a partial — while short octave errors still drop).
+    kept = [n for n in kept if abs(n.midi - med) <= 7 or (
+        abs(n.midi - med) <= 12 and (n.end - n.start) >= 0.25 and level(n) >= 0.25)]
 
     def merge(i, j):
-        """Join neighbours i and j; the joined note keeps the longer one's pitch (the other was a
-        scoop, a slide or a wobble on the way)."""
         a, b = kept[min(i, j)], kept[max(i, j)]
         pitch = a.midi if (a.end - a.start) >= (b.end - b.start) else b.midi
         kept[min(i, j)] = HeardNote(a.start, b.end, pitch, attack=a.attack, spread=max(a.spread, b.spread))
         del kept[max(i, j)]
 
-    def neighbours(i):
+    def neighbours(i, gap: float = 0.08):
         for j in (i - 1, i + 1):
-            if 0 <= j < len(kept) and kept[max(i, j)].start - kept[min(i, j)].end < 0.08:
+            if 0 <= j < len(kept) and kept[max(i, j)].start - kept[min(i, j)].end < gap:
                 yield j
 
-    def fold_best(allowed, score):
+    def fold_best(allowed, score, gap: float = 0.08):
         best = None
         for i, n in enumerate(kept):
-            for j in neighbours(i):
+            for j in neighbours(i, gap):
                 if allowed(n, kept[j]):
                     sc = score(n, kept[j])
                     if best is None or sc < best[0]:
@@ -365,10 +491,25 @@ def clean_notes(notes: list[HeardNote], times: np.ndarray, midi: np.ndarray, rms
         return True
 
     length = lambda n: n.end - n.start                                    # noqa: E731
-    # Fragments: too short to be a sung note at all.
-    while fold_best(lambda n, m: length(n) < short, lambda n, m: (length(n), abs(m.midi - n.midi))):
-        pass
-    # Slides: a short note a semitone or so from a much longer neighbour, on the way in or out.
+
+    def is_rearticulation(n, m):
+        # Grace / echo into a longer note. Stop once at the lyric count (below) so
+        # cascading merges can't erase allegro patter when `target` is known.
+        if abs(n.midi - m.midi) >= 0.5:
+            return False
+        a, b = length(n), length(m)
+        short_n, long_n = min(a, b), max(a, b)
+        return short_n < 0.25 and short_n <= 0.55 * long_n
+
+    if gentle_fragments:
+        # Keep short steady notes a step from their neighbour (passing tones).
+        while fold_best(lambda n, m: length(n) < short and (
+                n.spread > 0.2 or length(n) < 0.07 or abs(n.midi - m.midi) < 0.5),
+                        lambda n, m: (length(n), abs(m.midi - n.midi))):
+            pass
+    else:
+        while fold_best(lambda n, m: length(n) < short, lambda n, m: (length(n), abs(m.midi - n.midi))):
+            pass
     while fold_best(lambda n, m: length(n) < 0.35 and abs(m.midi - n.midi) <= 1.2 and length(m) >= 2 * length(n)
                     and n.spread > 0.25,
                     lambda n, m: (length(n) * (1 + abs(m.midi - n.midi)),)):
@@ -380,14 +521,91 @@ def clean_notes(notes: list[HeardNote], times: np.ndarray, midi: np.ndarray, rms
             merge(k, k + 1)
         else:
             k += 1
-    # The words fix the count: fold the likeliest leftovers (short, near in pitch) while there are
-    # many more notes than syllables, leaving real melismas (a run of distinct pitches) alone.
+    while (not target or len(kept) > target) and fold_best(
+            is_rearticulation, lambda n, m: (min(length(n), length(m)),), gap=0.25):
+        pass
     if target:
-        while len(kept) > target * 1.25 and fold_best(
+        # Mild overshoot (≤ +2 or ~8%) may stay for the grid fold — Amazing Grace's
+        # F1 dips if we force the count here. Beyond that, fold short neighbours.
+        while len(kept) > max(target + 2, int(target * 1.08)) and fold_best(
                 lambda n, m: length(n) < 0.45 and abs(m.midi - n.midi) <= 2.5,
-                lambda n, m: (length(n) * (1 + abs(m.midi - n.midi)),)):
+                lambda n, m: (0 if abs(m.midi - n.midi) < 0.5 else 1, length(n) * (1 + abs(m.midi - n.midi))),
+                gap=0.35):
             pass
+        # Saints: two short D-before-E scoops left at exactly target+2. Fold only
+        # brief approach tones, and only when overshoot is ≥2 — a single extra
+        # (Tyger) is often a real syllable the grid fold should keep.
+        if len(kept) >= target + 2:
+            while len(kept) > target and fold_best(
+                    lambda n, m: length(n) < 0.28 and abs(m.midi - n.midi) <= 2.5 and (
+                        n.spread >= 0.15 or length(n) < 0.20),
+                    lambda n, m: (length(n), abs(m.midi - n.midi)),
+                    gap=0.35):
+                pass
     return kept
+
+
+def split_toward_target(notes: list[HeardNote], target: int | None, onsets: np.ndarray,
+                        bpm: float) -> list[HeardNote]:
+    """When lyrics say there are more syllables than notes heard, cut long same-pitch holds.
+
+    YuE2 patter (Major-General) often sings many eighths as one continuous pitch with weak
+    onsets; follow still matches the score, but the open engine under-counts. Prefer inner
+    onsets; otherwise bisect by the tracked eighth length until we near `target`.
+    """
+    if not target or not notes or len(notes) >= target:
+        return notes
+    eighth = max(0.12, 60.0 / max(bpm, 40.0) / 2.0)
+    kept = list(notes)
+    guard = 0
+    # Blind bisection only when badly under (Major-General patter). Mild shortfalls
+    # (Silent Night) only split on real onsets — inventing cuts hurt note F1.
+    # Mild shortfalls stop at ~92%: forcing Silent Night to 46/46 with weak onset
+    # cuts matched the count but dropped note F1 (0.77→0.74); the missing pitches
+    # were folded away earlier, not hiding inside long same-pitch holds.
+    allow_bisect = len(notes) < target * 0.85
+    goal = target if allow_bisect else max(len(notes), int(target * 0.92))
+    while len(kept) < goal and guard < target * 2:
+        guard += 1
+        best_i, best_score, best_cut = -1, (-1.0, -1.0), None
+        for i, n in enumerate(kept):
+            dur = n.end - n.start
+            if dur < 1.45 * eighth:
+                continue
+            inner = [float(t) for t in onsets if n.start + 0.06 < t < n.end - 0.06]
+            if inner:
+                cut = float(np.median(inner))
+            elif allow_bisect:
+                cut = n.start + dur / 2
+            else:
+                continue
+            if not (n.start + 0.06 < cut < n.end - 0.06):
+                continue
+            score = (1.0 if inner else 0.0, dur)
+            if score > best_score:
+                best_i, best_score, best_cut = i, score, cut
+        if best_i < 0 or best_cut is None:
+            break
+        n = kept[best_i]
+        left = HeardNote(n.start, best_cut, n.midi, attack=n.attack, spread=n.spread)
+        right = HeardNote(best_cut, n.end, n.midi, attack=True, spread=n.spread)
+        if (left.end - left.start) < 0.07 or (right.end - right.start) < 0.07:
+            break
+        kept[best_i:best_i + 1] = [left, right]
+    return kept
+
+
+def pull_onset_start(start: float, onsets: np.ndarray, *, window: float = 0.15,
+                     cap: float = 0.08) -> float:
+    """Move a note start back to a nearby onset (consonant), but not more than `cap` seconds.
+
+    Uncapped pulls on YuE2 lullabies walked onsets ~0.12 s early and lost written matches
+    (Silent Night draft F1 0.80→0.77). Cap keeps a short lead-in for lyric feel.
+    """
+    before = onsets[(onsets >= start - window) & (onsets <= start + 0.03)]
+    if not len(before):
+        return start
+    return max(float(before[0]), start - cap)
 
 
 def syllable_hints(notes: list[HeardNote], times: np.ndarray, rms: np.ndarray) -> list[float]:
@@ -492,12 +710,16 @@ def grid_shift(positions: list[float], lengths: list[float], per_beat: int = 2) 
 # Rhythms within one beat, with what each costs to read: plain ones are likelier.
 F = Fraction
 BEAT_PATTERNS = [
-    ((F(0),), 0.0), ((F(1, 2),), 0.05), ((F(0), F(1, 2)), 0.05),
+    # A lone onset around 0.3–0.4 of the beat is usually a late downbeat, not an intentional
+    # eighth: with solo (1/2,) cost 0.05 those snapped half a beat late (Saints YuE2 take
+    # note F1 0.74→0.79 at cost 0.25; Silent Night unchanged). Two-onset (0, 1/2) stays cheap.
+    ((F(0),), 0.0), ((F(1, 2),), 0.25), ((F(0), F(1, 2)), 0.05),
     ((F(1, 4),), 0.25), ((F(3, 4),), 0.2),
     ((F(0), F(3, 4)), 0.15), ((F(0), F(1, 4)), 0.25), ((F(1, 2), F(3, 4)), 0.2), ((F(1, 4), F(1, 2)), 0.3),
     ((F(0), F(1, 4), F(1, 2)), 0.25), ((F(0), F(1, 2), F(3, 4)), 0.2), ((F(0), F(1, 4), F(3, 4)), 0.3),
     ((F(1, 4), F(1, 2), F(3, 4)), 0.35), ((F(0), F(1, 4), F(1, 2), F(3, 4)), 0.3),
-    ((F(0), F(1, 3), F(2, 3)), 0.3), ((F(0), F(2, 3)), 0.25),
+    # No 1/3 patterns here: YuE2 can't write tuplets, and spurious triplets on Broadway takes
+    # made awkward syncopations. Compound meters use COMPOUND_PATTERNS instead.
 ]
 
 
@@ -570,15 +792,25 @@ class Meter:
 
 def eighth_grid(beats: np.ndarray) -> np.ndarray:
     """Each tracked beat split in two (the tracker counts quarters, or eighth pairs in 6/8)."""
-    mids = (beats[:-1] + beats[1:]) / 2
-    grid = np.empty(len(beats) + len(mids))
-    grid[0::2], grid[1::2] = beats, mids
-    return grid
+    return subdivide_beats(beats, 2)
 
 
-def choose_meter_eighths(acc: np.ndarray, bass: np.ndarray, heard: list[HeardNote], eighths: np.ndarray) -> Meter:
+def double_tempo(tracked_bpm: float, peak_bpm: float | None, tol: float = 0.12) -> bool:
+    """True when the beat tracker locked onto twice the song's strongest pulse (common on soft 6/8
+    takes: it halves each dotted-quarter beat)."""
+    if peak_bpm is None or peak_bpm < 1 or tracked_bpm < 1:
+        return False
+    return abs(tracked_bpm / peak_bpm - 2.0) <= tol
+
+
+def choose_meter_eighths(acc: np.ndarray, bass: np.ndarray, heard: list[HeardNote], eighths: np.ndarray,
+                         compound_duple: bool = False) -> Meter:
     """Which eighths start beats and bars: the grouping (3/4, 4/4, 6/8 or 12/8, any phase) that puts
-    the most harmonic change, bass notes, accents and long sung notes on bar and beat starts."""
+    the most harmonic change, bass notes, accents and long sung notes on bar and beat starts.
+
+    `compound_duple`: only consider 6/8 (after a double-tempo correction that already put the grid
+    on true eighths from dotted-quarter beats).
+    """
     import librosa
     frames = np.clip(librosa.time_to_frames(eighths, sr=SR, hop_length=HOP), 0, None)
     env = librosa.onset.onset_strength(y=acc, sr=SR, hop_length=HOP)
@@ -604,17 +836,23 @@ def choose_meter_eighths(acc: np.ndarray, bass: np.ndarray, heard: list[HeardNot
     #    the eighths between them don't.
     pulse = unit(accent) + unit(low) + unit(melody)
     beat_scores = []
-    for per_beat in (2, 3):
+    for per_beat in ((3,) if compound_duple else (2, 3)):
         for off in range(per_beat):
             on = (idx - off) % per_beat == 0
             beat_scores.append((pulse[on].mean() - pulse[~on].mean() + (0.02 if per_beat == 2 else 0), per_beat, off))
     beat_scores.sort(reverse=True)
     _, per_beat, off = beat_scores[0]
-    beat_conf = beat_scores[0][0] - next(b[0] for b in beat_scores if b[1] != per_beat)
+    rival_beat = next((b for b in beat_scores if b[1] != per_beat), beat_scores[0])
+    beat_conf = beat_scores[0][0] - rival_beat[0]
     # 2. The bar: which beats start bars? Harmony changes, long sung notes and the bass say so.
     bar_feat = 2.0 * unit(novelty) + 1.5 * unit(melody) + unit(low) + 0.5 * unit(accent)
     beat_idx = idx[(idx - off) % per_beat == 0]
-    options = [(3, 0.0), (4, 0.02)] if per_beat == 2 else [(2, 0.06), (4, -0.06)]
+    if compound_duple:
+        options = [(2, 0.0)]
+    elif per_beat == 2:
+        options = [(3, 0.0), (4, 0.02)]
+    else:
+        options = [(2, 0.06), (4, -0.06)]
     bar_scores = []
     for per_bar, prior in options:
         for ph in range(per_bar):
@@ -630,9 +868,40 @@ def choose_meter_eighths(acc: np.ndarray, bass: np.ndarray, heard: list[HeardNot
     return Meter(per_beat, best[1], phase, float(min(beat_conf, best[0] - rival[0] if rival is not best else 1.0)))
 
 
-def draft(stems: Stems, syllables: int | None = None) -> Draft:
+def eighths_for_meter(tracked: np.ndarray, tracked_bpm: float, peak_bpm: float | None) -> tuple[np.ndarray, bool]:
+    """Eighth grid for meter choice, and whether we corrected a double-tempo lock (use 6/8 only)."""
+    if double_tempo(tracked_bpm, peak_bpm) and len(tracked) >= 16:
+        return subdivide_beats(tracked[::2], 3), True
+    return eighth_grid(tracked), False
+
+
+# When the tracker is at 2× the autocorr peak, we usually rebuild a 6/8 grid (Silent Night).
+# Waltzes often look the same in the tempo domain (3/4 @ 80 ≈ 4 pulses/bar @ ~107) while the
+# uncorrected grid still clearly prefers simple meter — don't force compound then (Tyger take).
+SIMPLE_OVER_COMPOUND = 0.35
+
+
+def meter_eighths(tracked: np.ndarray, tracked_bpm: float, peak_bpm: float | None,
+                  acc: np.ndarray, bass: np.ndarray, heard: list[HeardNote]
+                  ) -> tuple[np.ndarray, bool]:
+    """Eighth grid and whether it is a forced compound-duple correction, with a waltz guard."""
+    eighths, compound = eighths_for_meter(tracked, tracked_bpm, peak_bpm)
+    if not compound:
+        return eighths, False
+    plain = eighth_grid(tracked)
+    probe = choose_meter_eighths(acc, bass, heard, plain, compound_duple=False)
+    if probe.per_beat == 2 and probe.confidence >= SIMPLE_OVER_COMPOUND:
+        return plain, False
+    return eighths, True
+
+
+def draft(stems: Stems, syllables: int | None = None, heard: list[HeardNote] | None = None) -> Draft:
     """The open engine: the recording's lead sheet as planner-dialect ABC. `syllables`, when the
-    lyrics are known, is how many sung syllables to expect."""
+    lyrics are known, is how many sung syllables to expect.
+
+    Pass `heard` to supply melody notes from another detector (open-transcriber Basic Pitch);
+    beats, meter, key and chords still come from the accompaniment.
+    """
     import librosa
     acc = stems.accompaniment
     tracked, tracked_tempo = beat_times(acc, stems.vocals)
@@ -641,14 +910,18 @@ def draft(stems: Stems, syllables: int | None = None) -> Draft:
     # The melody first: it also says where the beats and bars really are.
     times, midi, rms = vocal_track(stems.vocals)
     v_on = librosa.onset.onset_detect(y=stems.vocals, sr=SR, hop_length=PITCH_HOP, units="time", backtrack=True)
-    heard = clean_notes(vocal_notes(times, midi, rms, v_on), times, midi, rms, target=syllables)
+    if heard is None:
+        heard = clean_notes(vocal_notes(times, midi, rms, v_on), times, midi, rms, target=syllables)
+        heard = split_toward_target(heard, syllables, v_on, tracked_tempo)
     for nt in heard:                  # a syllable starts with its consonant, before the pitch settles
-        before = v_on[(v_on >= nt.start - 0.15) & (v_on <= nt.start + 0.03)]
-        if len(before):
-            nt.start = float(before[0])
+        nt.start = pull_onset_start(nt.start, v_on)
     bass_src = stems.bass if stems.bass is not None else acc
-    eighths = eighth_grid(tracked)
-    meter = choose_meter_eighths(acc, bass_src, heard, eighths)
+    # Soft 6/8 takes often lock the tracker onto twice the true pulse; rebuild eighths from the
+    # slow peak so meter can be 6/8 instead of a peppy wrong 4/4. Skip that when the plain grid
+    # already prefers simple meter (waltz takes: Tyger was forced to 6/8 ~54).
+    peak = tempo_peak_bpm(onset_envelope(acc, stems.vocals))
+    eighths, compound_duple = meter_eighths(tracked, tracked_tempo, peak, acc, bass_src, heard)
+    meter = choose_meter_eighths(acc, bass_src, heard, eighths, compound_duple=compound_duple)
     g, per_bar = meter.per_beat, meter.beats_per_bar
     first = meter.phase % g
     beats = eighths[first::g]
@@ -656,13 +929,27 @@ def draft(stems: Stems, syllables: int | None = None) -> Draft:
     tempo = 60.0 / float(np.median(np.diff(beats)))
     chroma = beat_chroma(acc, beats)
     bass_chroma = beat_chroma(bass_src, beats, low=True)
-    tonic, minor, key_conf = key_of(chroma.sum(axis=0))
+    chroma_mix = beat_chroma(stems.mix, beats)
+    chroma_voc = beat_chroma(stems.vocals, beats)
+    tonic, minor, key_conf = choose_key(
+        chroma.sum(axis=0), chroma_mix.sum(axis=0), chroma_voc.sum(axis=0), melody_chroma(heard))
+    # When the band stem's own key is weak or disagrees, read harmony from the mix —
+    # Demucs accompaniment alone can sound like the wrong tonic (Major-General).
+    acc_tonic, acc_minor, acc_conf = key_of(chroma.sum(axis=0))
+    chord_chroma = chroma
+    if (acc_tonic, acc_minor) != (tonic, minor) or acc_conf + 0.04 < key_conf:
+        chord_chroma = chroma_mix
 
     def cost_at(k):
         pos = (k - downbeat_index) % per_bar
+        if meter.compound:
+            # 6/8 lullabies change on the dotted-quarter; mid-bar renames were Silent Night's Dm/Em.
+            return 0.05 if pos == 0 else 0.40
         return 0.08 if pos == 0 else 0.2 if per_bar == 4 and pos == 2 else 0.45
-    reading = read_chords(chroma, bass_chroma, (tonic, minor), [cost_at(k) for k in range(len(beats))],
-                          downbeats=[(k - downbeat_index) % per_bar == 0 for k in range(len(beats))])
+    reading = read_chords(
+        chord_chroma, bass_chroma, (tonic, minor), [cost_at(k) for k in range(len(beats))],
+        downbeats=[(k - downbeat_index) % per_bar == 0 for k in range(len(beats))],
+        smooth_radius=3 if meter.compound else 2)
     grid = Grid(beats, per_bar, downbeat_index, tempo)
 
     raw = [grid.position(n.start) for n in heard]
@@ -690,6 +977,7 @@ def draft(stems: Stems, syllables: int | None = None) -> Draft:
         if end > p:
             events.append((p, end, m))
             hints.append(hint_of[i])
+    events, hints = fold_grid_rearticulations(events, hints, floor=syllables)
     if not events:
         raise ValueError("Couldn't hear a sung melody in the vocal.")
 
@@ -709,6 +997,45 @@ def draft(stems: Stems, syllables: int | None = None) -> Draft:
 
 def pitch_name(m: int) -> str:
     return f"{NOTE_NAMES[m % 12]}{m // 12 - 1}"
+
+
+def fold_grid_rearticulations(events: list, hints: list | None = None,
+                              floor: int | None = None) -> tuple[list, list | None]:
+    """Merge short same-pitch echoes left after rhythm snap (articulation, not two syllables).
+
+    `floor` is the lyric syllable count when known: never merge below it (patter on one pitch).
+    Ratio is tighter than 0.55 so equal eighths on a Bb pedal don't cascade into one note.
+    """
+    if len(events) < 2:
+        return events, hints
+    out = list(events)
+    hs = list(hints) if hints is not None else None
+    changed = True
+    while changed:
+        changed = False
+        if floor is not None and len(out) <= floor:
+            break
+        i = 0
+        while i + 1 < len(out):
+            if floor is not None and len(out) <= floor:
+                break
+            p0, e0, m0 = out[i]
+            p1, e1, m1 = out[i + 1]
+            if m0 == m1:
+                d0, d1 = e0 - p0, e1 - p1
+                gap = p1 - e0
+                short_d, long_d = min(d0, d1), max(d0, d1)
+                # Grace / echo into a longer note (ratio ≤ 0.4). Equal eighths on a
+                # pedal (short ≈ long) stay — Major-General's patter.
+                if gap < Fraction(1, 2) and short_d <= Fraction(1, 2) and short_d * 5 <= long_d * 2:
+                    out[i] = (p0, e1, m0)
+                    del out[i + 1]
+                    if hs is not None:
+                        del hs[i + 1]
+                    changed = True
+                    continue
+            i += 1
+    return out, hs
 
 
 def to_abc(events, reading: ChordReading, per_bar: int, downbeat_index: int, tempo: str, key: str,
@@ -763,8 +1090,6 @@ def to_abc(events, reading: ChordReading, per_bar: int, downbeat_index: int, tem
 
 # ---------------------------------------------------------------- SheetSage2 (optional)
 
-SHEETSAGE_LICENCE = ("SheetSage2's weights are licensed CC BY-NC 4.0: non-commercial use only, with no added "
-                     "permission for creators to sell what they make. Use the open engine for anything you'll sell.")
 SHEETSAGE_OCTAVE_ABOVE = 1           # it writes YuE2's way, an octave above the singing
 
 
@@ -773,14 +1098,19 @@ def sheetsage_draft(recording: Path, folder: Path, binary: str | None = None, mo
     """SheetSage2 through yue2.cpp's `yue-transcribe`: the whole mix in, a lead sheet out."""
     import os
     import subprocess
-    from . import paths
+    from . import models, paths
     binary = binary or (str(p) if (p := paths.find_program("yue-transcribe", "COPYIST_YUE_TRANSCRIBE")) else None)
     model = model or os.environ.get("COPYIST_SHEETSAGE") or \
         (str(p) if (p := paths.find_model("SheetSage2-Q8_0.gguf", "COPYIST_SHEETSAGE")) else None)
+    mert = Path(model).parent / "MERT-v2-FullSong-Q8_0.gguf" if model else None
     if not binary:
         raise ValueError("SheetSage2's runner (yue-transcribe) isn't installed: run scripts/setup-yue.sh.")
     if not model:
-        raise ValueError("SheetSage2 isn't downloaded. " + SHEETSAGE_LICENCE)
+        raise ValueError("SheetSage2 isn't downloaded: run `copyist models download sheetsage --accept-licence` "
+                         "(or Install extras on the page). " + models.SHEETSAGE_LICENCE)
+    if not mert or not mert.is_file():
+        raise ValueError("SheetSage2 needs MERT beside it in the same folder: run "
+                         "`copyist models download sheetsage --accept-licence` (or Install extras).")
     out = folder / "draft.abc"
     cmd = [binary, "--model", model, "--audio", str(recording), "--out", str(out)]
     if device or os.environ.get("COPYIST_YUE_DEVICE"):
@@ -790,27 +1120,121 @@ def sheetsage_draft(recording: Path, folder: Path, binary: str | None = None, mo
     if r.returncode != 0 or not out.is_file():
         raise ValueError(f"yue-transcribe failed (exit {r.returncode}); see {folder / 'sheetsage.log'}.")
     text = out.read_text(encoding="utf-8")
+    text, notes = sheetsage_lead_sheet(text)
     from . import abcplan
-    try:
-        plan = abcplan.parse(text)
-    except abcplan.PlanError:
-        # An instrumental lead goes in the Ins voice; take it, with the Vocal voice's chords.
-        text = lead_from_ins(text)
-        plan = abcplan.parse(text)
+    plan = abcplan.parse(text)
     return Draft(text, plan.key, plan.meter, int(abcplan.tempo_field(plan.tempo)) if
                  isinstance(abcplan.tempo_field(plan.tempo), int) else 90, [],
-                 ["Transcribed by SheetSage2 (non-commercial licence)."], octave_above=SHEETSAGE_OCTAVE_ABOVE)
+                 ["Transcribed by SheetSage2 (non-commercial licence)."] + notes,
+                 octave_above=SHEETSAGE_OCTAVE_ABOVE)
+
+
+def voice_note_count(text: str, voice: str) -> int:
+    """How many pitched notes a V: block carries (SheetSage sometimes puts the tune on Ins)."""
+    from . import abcplan
+    n, current = 0, None
+    for raw in text.splitlines():
+        line = raw.strip()
+        if line.startswith("V:"):
+            current = line[2:].split()[0].strip()
+            continue
+        if current != voice or not line or line.startswith("%") or re.match(r"^[A-Za-z]:", line):
+            continue
+        for chunk in line.split("|"):
+            if not chunk.strip():
+                continue
+            toks, _ = abcplan.tokenize_bar(chunk)
+            n += sum(1 for t in toks if t.kind == "note")
+    return n
 
 
 def lead_from_ins(text: str) -> str:
-    """Swap the Vocal and Ins voices, keeping the chord symbols where they were written (in Vocal)."""
+    """Swap the Vocal and Ins voices (SheetSage often labels the sung line as Ins)."""
     return text.replace("V: Vocal", "V: _tmp").replace("V: Ins", "V: Vocal").replace("V: _tmp", "V: Ins")
+
+
+def sheetsage_lead_sheet(text: str) -> tuple[str, list[str]]:
+    """Vocal melody + one meter: take Ins when it has the tune, then re-bar short meter changes."""
+    from . import abcplan
+    notes: list[str] = []
+    if voice_note_count(text, "Ins") > voice_note_count(text, "Vocal"):
+        text = lead_from_ins(text)
+        notes.append("SheetSage put the melody on the Ins voice; using that as the vocal line.")
+    try:
+        abcplan.parse(text)            # pickup-only meter change is fine; leave the ABC alone
+        return text, notes
+    except abcplan.PlanError:
+        pass
+    try:
+        plan = abcplan.parse(text, allow_meter_changes=True)
+    except abcplan.PlanError:
+        text = lead_from_ins(text)
+        notes.append("SheetSage put the melody on the Ins voice; using that as the vocal line.")
+        plan = abcplan.parse(text, allow_meter_changes=True)
+    bars = abcplan.consolidate_meters(abcplan.trim(plan), plan.bar_units)
+    notes.append("Joined SheetSage's short mid-song bars into the song's meter.")
+    text = _abc_from_bars(plan.meter, plan.unit, plan.tempo, plan.key, bars)
+    abcplan.parse(text)
+    return text, notes
+
+
+def _abc_from_bars(meter: str, unit, tempo: str, key: str, bars: list) -> str:
+    """Minimal planner-dialect ABC from bars, with % section comments."""
+    from . import abcplan
+    lines = ["X:1", "T:", f"M:{meter}", f"L:{unit.numerator}/{unit.denominator}",
+             f"Q:{tempo}", "V: Vocal clef=treble", f"K:{key}"]
+    section = None
+    chunk: list = []
+    for bar in bars:
+        if bar.section != section:
+            if chunk:
+                lines += ["V: Vocal", abcplan.write(chunk, unit, unit).replace("|]", "|")]
+                chunk = []
+            section = bar.section
+            lines.append(f"% {section}")
+        chunk.append(bar)
+    if chunk:
+        lines += ["V: Vocal", abcplan.write(chunk, unit, unit).replace("|]", "|")]
+    return "\n".join(lines) + "\n"
 
 
 # ---------------------------------------------------------------- the command
 
 INDEX = "transcription.json"
-ENGINES = ("open", "sheetsage")
+ENGINES = ("open", "sheetsage", "neural")
+
+
+def draft_neural(stems: Stems, vocals: Path, syllables: int | None = None) -> Draft:
+    """Melody from open-transcriber (Basic Pitch + tidy); harmony from the open engine.
+
+    Falls back to the open pitch track on allegro under-detection (Major-General), where
+    BP-through-draft loses to open on the round-trip table.
+    """
+    import sys
+    root = Path(__file__).resolve().parents[1]
+    ot = root / "open-transcriber"
+    if ot.is_dir() and str(ot) not in sys.path:
+        sys.path.insert(0, str(ot))
+    try:
+        from open_transcriber.pipeline import UNDERDETECT, melody_from_audio
+    except ImportError as e:
+        raise ValueError(
+            "The neural engine needs the open-transcriber submodule and Basic Pitch. "
+            "Run: git submodule update --init open-transcriber && "
+            "bash open-transcriber/scripts/setup_baseline.sh"
+        ) from e
+    events = melody_from_audio(Path(vocals), syllables)
+    if syllables and len(events) < syllables * UNDERDETECT:
+        return draft(stems, syllables=syllables)
+    heard = [
+        HeardNote(e.start, e.start + e.duration, float(e.midi), attack=True, spread=0.05)
+        for e in events
+    ]
+    if not heard:
+        return draft(stems, syllables=syllables)
+    d = draft(stems, syllables=syllables, heard=heard)
+    d.notes = [f"Melody from open-transcriber (Basic Pitch); {n}" for n in d.notes[:1]] + d.notes[1:]
+    return d
 
 
 def heard_lyrics(vocals: Path) -> str:
@@ -848,7 +1272,10 @@ def transcribe(recording: Path, title: str, out_root: Path = Path("out"), lyrics
     folder.mkdir(parents=True, exist_ok=True)
     source = folder / f"source{recording.suffix.lower()}"
     if recording.resolve() != source.resolve():
-        shutil.copy(recording, source)
+        # Keep mtime when the bytes are unchanged so Demucs can reuse stems/ on retry.
+        same = source.is_file() and source.stat().st_size == recording.stat().st_size
+        if not same:
+            shutil.copy(recording, source)
     if lyrics:
         (folder / "lyrics.txt").write_text(lyrics.strip() + "\n", encoding="utf-8")
     if vocals is None or accompaniment is None:
@@ -856,13 +1283,21 @@ def transcribe(recording: Path, title: str, out_root: Path = Path("out"), lyrics
     if lyrics is None:
         lyrics = heard_lyrics(vocals)
         (folder / "lyrics-heard.txt").write_text(lyrics, encoding="utf-8")
-    count = len(syllables.all_syllables(syllables.parse_lyrics(lyrics)))
+    from . import lyrics as lyr
+    # First verse only for the note target (takes are one verse); include `_` holds.
+    first_verse = lyrics.strip().split("\n\n")[0] if lyrics.strip() else lyrics
+    # Drop section tags like [Verse] if present.
+    first_lines = [ln for ln in first_verse.splitlines()
+                   if ln.strip() and not re.match(r"\s*\[", ln)]
+    count = lyr.note_target(" ".join(first_lines)) if first_lines else None
+    stems = stems_from_files(source, vocals, accompaniment)
     if engine == "open":
-        d = draft(stems_from_files(source, vocals, accompaniment), syllables=count)
+        d = draft(stems, syllables=count)
+    elif engine == "neural":
+        d = draft_neural(stems, vocals, syllables=count)
     else:
         d = sheetsage_draft(source, folder, device=device)
     (folder / "draft.abc").write_text(d.abc, encoding="utf-8")
-    import re
     shown = re.sub(r"^\d{8}-\d{6}-", "", recording.name)          # the page's upload stamp
     written_with = {"transcriber": f"copyist-{engine}", "recording": shown}
     cand = write.song_from_plan(d.abc, lyrics, title, voice, None, written_with, None, as_sung=d.octave_above,
@@ -877,7 +1312,8 @@ def transcribe(recording: Path, title: str, out_root: Path = Path("out"), lyrics
         report += ["", "## Doubts", "", "Decided by the music around them; listen to these first.", ""] + \
             [f"- {x}" for x in d.doubts]
     if engine == "sheetsage":
-        report += ["", SHEETSAGE_LICENCE]
+        from . import models
+        report += ["", models.SHEETSAGE_LICENCE]
     report += ["", validate.report_markdown(song, findings)]
     (folder / "report.md").write_text("\n".join(report), encoding="utf-8")
     index = {"title": title, "slug": name, "engine": engine, "recording": shown,

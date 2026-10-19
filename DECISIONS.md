@@ -2,6 +2,14 @@
 
 Newest first. One entry per decision: what, why, and what we gave up.
 
+## 2026-10-19 (neural engine wired; MT3 deferred; Omnizart blocked on arm64)
+
+- **`--engine neural` uses open-transcriber Basic Pitch + Copyist `clean_notes` for melody, open draft for harmony.** Default stays `open` until every round-trip row wins. Magenta MT3 skipped for sung takes (upstream: not trained on singing). Omnizart chords wrapped but fail on Apple Silicon (x86 `nnls-chroma` Vamp). T1 training deferred while −0.01/−0.02 note gaps remain. Gave up: shipping Magenta MT3 as the melody engine; treating Omnizart chords as ready on M-series Macs.
+
+## 2026-10-19 (adaptive Basic Pitch ≈ open engine)
+
+- **open-transcriber's default path is adaptive BP + tidy / clean_notes, not raw BP.** Raised defaults; loose re-run when notes < 75% of lyric target (Major-General, no same-pitch merge); strict presets when flooded only if they hit the count or clean up substantially; Copyist `clean_notes` on lyrical takes. Table (with clean_notes): SN 0.85 (+0.05), Tyger 0.97 (+0.19), Saints/AG/MG within 0.02. Mean ~0.87 vs open 0.83. Gave up: always preferring the closer note count (hurt Tyger); forcing the lyric count (hurt AG); Magenta MT3 for vocals.
+
 ## 2026-10-18 (T0 Basic Pitch loses on lyrical takes)
 
 - **Spotify Basic Pitch (Apache-2.0, CoreML) is the first T0 baseline.** Raw note F1: Saints 0.46, Silent Night 0.58, Amazing Grace 0.37, Tyger 0.64, Major-General 0.82 — vs open engine 0.85 / 0.80 / 0.88 / 0.78 / 0.84. High recall, severe over-segmentation except on allegro patter. On Python 3.12 macOS, install with `open-transcriber/scripts/setup_baseline.sh` (pip's tensorflow-macos pin is unavailable). Gave up: treating off-the-shelf BP as a product engine without Copyist's tidy path or training.

@@ -7,6 +7,7 @@
     copyist rewrite songs/hope.yaml --section verse --how higher
     copyist refit songs/hope.yaml --lyrics new.txt   # new words under the same melody
     copyist transcribe song.mp3 --title Hope  # a lead sheet from a recording
+    copyist import score.musicxml -o songs/foo.yaml   # MusicXML → song file
 """
 from __future__ import annotations
 
@@ -19,6 +20,7 @@ from pathlib import Path
 from music21 import stream
 
 from . import arrange, engrave, render
+from .musicxml_in import MusicxmlImportError, import_musicxml
 from .song import SongError, load_song
 from .validate import is_finished, report_markdown, validate
 
@@ -255,7 +257,8 @@ def cmd_models(args) -> int:
             print(f"No download called {args.group!r}. These exist: {names}.", file=sys.stderr)
             return 2
         if not args.accept_licence:
-            print(models.LICENCE, "\n\nRun again with --accept-licence to download.", file=sys.stderr)
+            text, url = models.group_licence(args.group)
+            print(f"{text}\n\n{url}\n\nRun again with --accept-licence to download.", file=sys.stderr)
             return 2
         for p in models.download_group(args.group, progress):
             print(f"\nReady: {p}")
@@ -413,6 +416,28 @@ def cmd_rewrite(args) -> int:
     return 0
 
 
+def cmd_import(args) -> int:
+    """MusicXML lead sheet (or vocal line) → a Copyist song file."""
+    out = Path(args.out) if args.out else Path("songs") / (Path(args.musicxml).stem + ".yaml")
+    credits = {}
+    if args.words:
+        credits["words"] = args.words
+    if args.music:
+        credits["music"] = args.music
+    path = import_musicxml(
+        args.musicxml, out,
+        title=args.title, credits=credits or None, style=args.style, tempo=args.tempo,
+    )
+    song = load_song(path)
+    findings = validate(song)
+    print(f"Wrote {path} ({song.title}, {song.key} {song.meter}, {len(song.melody_abc.split('|'))} bars).")
+    if not is_finished(findings):
+        print(report_markdown(song, findings))
+        print("The song file is written; fix the report before treating it as finished.", file=sys.stderr)
+        return 1
+    return 0
+
+
 def cmd_transcribe(args) -> int:
     """A lead sheet from a recording (docs/transcribing.md)."""
     from . import transcribe as tr
@@ -434,7 +459,8 @@ def cmd_transcribe(args) -> int:
             return 2
         lyrics = Path(args.lyrics).read_text(encoding="utf-8") if args.lyrics else None
         if args.engine == "sheetsage":
-            print(tr.SHEETSAGE_LICENCE, file=sys.stderr)
+            from . import models
+            print(models.SHEETSAGE_LICENCE, file=sys.stderr)
         index = tr.transcribe(Path(args.recording), title, Path(args.out), lyrics, args.engine, args.voice,
                               Path(args.vocals) if args.vocals else None,
                               Path(args.accompaniment) if args.accompaniment else None,
@@ -640,12 +666,23 @@ def main(argv: list[str] | None = None) -> int:
     rw.add_argument("--device", help="yue2.cpp device when planning more donors (default COPYIST_YUE_DEVICE)")
     rw.set_defaults(func=cmd_rewrite)
 
+    im = sub.add_parser("import", help="a song file from MusicXML (lead sheet or vocal line)")
+    im.add_argument("musicxml", help="a MusicXML (.musicxml / .xml / .mxl) lead sheet or piano-vocal score")
+    im.add_argument("-o", "--out", help="song file to write (default: songs/<name>.yaml)")
+    im.add_argument("--title", help="override the title from the MusicXML")
+    im.add_argument("--words", help="words credit")
+    im.add_argument("--music", help="music credit")
+    im.add_argument("--style", help="a style id (see `copyist styles`)")
+    im.add_argument("--tempo", type=int, help="tempo in quarter notes a minute")
+    im.set_defaults(func=cmd_import)
+
     tx = sub.add_parser("transcribe", help="a lead sheet from a recording (docs/transcribing.md)")
     tx.add_argument("recording", nargs="?", help="the recording (WAV, MP3, FLAC...), one you have the rights to")
     tx.add_argument("--title", help="the song's title (default: from the file name)")
     tx.add_argument("--lyrics", help="a text file of the lyrics; without it, Whisper listens for the words")
-    tx.add_argument("--engine", default="open", choices=["open", "sheetsage"],
-                    help="open (default, MIT) or sheetsage (more accurate, non-commercial licence)")
+    tx.add_argument("--engine", default="open", choices=["open", "sheetsage", "neural"],
+                    help="open (default, MIT), neural (Basic Pitch via open-transcriber), "
+                         "or sheetsage (more accurate, non-commercial licence)")
     tx.add_argument("--voice", choices=["soprano", "alto", "tenor", "baritone"],
                     help="the voice preset (default: the one that fits what was sung)")
     tx.add_argument("--vocals", help="the vocal already separated (skips Demucs); needs --accompaniment")
@@ -675,7 +712,7 @@ def main(argv: list[str] | None = None) -> int:
     md = sub.add_parser("models", help="list the downloadable models, or download some (docs/desktop-app.md)")
     md.add_argument("what", nargs="?", choices=("list", "download"), default="list")
     md.add_argument("group", nargs="?", default="singer",
-                    help="singer (needed for takes), voices, or band (the sampled instruments)")
+                    help="singer, voices, sheetsage, or an instrument pack (band, keys, …)")
     md.add_argument("--accept-licence", action="store_true", help="accept the models' licence (it's printed first)")
     md.set_defaults(func=cmd_models)
 
@@ -691,7 +728,7 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     try:
         return args.func(args)
-    except SongError as e:
+    except (SongError, MusicxmlImportError) as e:
         print(f"error: {e}", file=sys.stderr)
         return 2
 

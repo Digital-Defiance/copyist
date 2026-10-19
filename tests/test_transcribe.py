@@ -125,6 +125,12 @@ class SyntheticTests(unittest.TestCase):
         self.assertTrue((songs / "mountain.yaml").is_file())
 
 
+class EngineListTests(unittest.TestCase):
+    def test_neural_is_a_known_engine(self):
+        self.assertIn("neural", tr.ENGINES)
+        self.assertIn("open", tr.ENGINES)
+
+
 class CleaningTests(unittest.TestCase):
     def setUp(self):
         self.times = np.arange(0, 10, 0.01)
@@ -138,6 +144,39 @@ class CleaningTests(unittest.TestCase):
         self.rms[:100] = 0.01
         kept = tr.clean_notes([self.note(0.2, 0.8, 62), self.note(1.2, 2.0, 60)], self.times, self.midi, self.rms)
         self.assertEqual([n.midi for n in kept], [60])
+
+    def test_a_stray_partial_far_from_the_line_is_dropped(self):
+        # A bass bleed more than a seventh below the sung line.
+        kept = tr.clean_notes(
+            [self.note(1.0, 1.5, 60), self.note(1.5, 1.7, 48), self.note(1.7, 2.2, 64)],
+            self.times, self.midi, self.rms)
+        self.assertEqual([n.midi for n in kept], [60, 64])
+
+    def test_a_high_note_a_seventh_above_the_median_is_kept(self):
+        # Silent Night's F5 sits ~8 semitones above a G4 median — not a partial.
+        kept = tr.clean_notes(
+            [self.note(1.0, 1.5, 67), self.note(1.5, 2.0, 69), self.note(2.0, 2.5, 67),
+             self.note(2.5, 3.2, 77), self.note(3.2, 3.8, 72)],
+            self.times, self.midi, self.rms)
+        self.assertIn(77, [round(n.midi) for n in kept])
+        # A true stray more than a major sixth below still drops.
+        kept = tr.clean_notes(
+            [self.note(1.0, 1.5, 67), self.note(1.5, 1.7, 48), self.note(1.7, 2.2, 69)],
+            self.times, self.midi, self.rms)
+        self.assertNotIn(48, [round(n.midi) for n in kept])
+
+    def test_grid_rearticulations_merge_short_echoes(self):
+        events = [(Fraction(0), Fraction(2), 67), (Fraction(2), Fraction(2) + Fraction(1, 4), 67),
+                  (Fraction(3), Fraction(4), 60)]
+        folded, _ = tr.fold_grid_rearticulations(events)
+        self.assertEqual(folded, [(Fraction(0), Fraction(2) + Fraction(1, 4), 67), (Fraction(3), Fraction(4), 60)])
+
+    def test_grid_rearticulations_keep_equal_eighth_patter(self):
+        # Eight same-pitch eighths (Major-General) must not cascade-merge.
+        eighth = Fraction(1, 2)
+        events = [(i * eighth, (i + 1) * eighth, 70) for i in range(8)]
+        folded, _ = tr.fold_grid_rearticulations(events, floor=8)
+        self.assertEqual(len(folded), 8)
 
     def test_fragments_fold_into_the_nearest_pitch(self):
         kept = tr.clean_notes([self.note(1.0, 1.5, 60), self.note(1.5, 1.58, 61), self.note(1.58, 2.2, 64)],
@@ -153,8 +192,33 @@ class CleaningTests(unittest.TestCase):
     def test_a_split_on_one_pitch_joins_unless_a_syllable_starts_it(self):
         split = [self.note(1.0, 1.5, 60), self.note(1.5, 2.0, 60.2)]
         self.assertEqual(len(tr.clean_notes(split, self.times, self.midi, self.rms)), 1)
+        # Two equal-weight syllables on one pitch stay (real repeated notes in the tune).
         sung = [self.note(1.0, 1.5, 60), self.note(1.5, 2.0, 60.2, attack=True)]
         self.assertEqual(len(tr.clean_notes(sung, self.times, self.midi, self.rms)), 2)
+
+    def test_a_short_same_pitch_rearticulation_folds_even_with_an_onset(self):
+        # YuE2 / Broadway: "G, G" for one written G — short echo after a long note.
+        long_short = [self.note(1.0, 2.5, 67), self.note(2.5, 2.7, 67.1, attack=True)]
+        self.assertEqual(len(tr.clean_notes(long_short, self.times, self.midi, self.rms)), 1)
+        # Same across a brief rest; two equal-weight syllables on one pitch still stay (below).
+        with_rest = [self.note(1.0, 1.8, 65), self.note(1.95, 2.15, 65, attack=True)]
+        self.assertEqual(len(tr.clean_notes(with_rest, self.times, self.midi, self.rms)), 1)
+
+    def test_two_syllable_length_notes_on_one_pitch_are_kept(self):
+        # Tyger "Ty-ger Ty-ger": both notes syllable-length — not a grace-note re-hit.
+        pair = [self.note(1.0, 1.38, 69), self.note(1.38, 2.13, 69.1, attack=True)]
+        self.assertEqual(len(tr.clean_notes(pair, self.times, self.midi, self.rms)), 2)
+
+    def test_undershoot_keeps_short_steady_passing_tones(self):
+        # Silent Night pattern: G A G with a short steady A. Aggressive fold drops A and
+        # undershoots the lyric count; the retry with gentler fragments keeps it.
+        notes = [
+            self.note(1.0, 1.5, 67), self.note(1.5, 1.62, 69, spread=0.05), self.note(1.62, 2.2, 67),
+            self.note(2.2, 2.7, 64), self.note(2.7, 2.82, 65, spread=0.05), self.note(2.82, 3.4, 64),
+        ]
+        kept = tr.clean_notes(notes, self.times, self.midi, self.rms, target=6)
+        self.assertGreaterEqual(len(kept), 5)
+        self.assertIn(69, [round(n.midi) for n in kept])
 
     def test_the_lyrics_fix_the_count(self):
         notes = []
@@ -164,7 +228,86 @@ class CleaningTests(unittest.TestCase):
             t += 0.2 if k % 2 == 0 else 0.6
             notes[-1].end = t
         kept = tr.clean_notes(notes, self.times, self.midi, self.rms, target=6)
-        self.assertLessEqual(len(kept), int(6 * 1.25))
+        self.assertLessEqual(len(kept), max(6 + 2, int(6 * 1.08)))
+
+    def test_overshoot_folds_short_scoops_to_target(self):
+        # Saints: E, short D scoop, C — lyrics want two notes, not three.
+        notes = [
+            self.note(1.0, 1.8, 64), self.note(1.8, 2.0, 62, spread=0.25), self.note(2.0, 3.0, 60),
+            self.note(3.0, 3.8, 64), self.note(3.8, 3.95, 62, spread=0.14), self.note(3.95, 5.0, 60),
+        ]
+        kept = tr.clean_notes(notes, self.times, self.midi, self.rms, target=4)
+        self.assertEqual(len(kept), 4)
+
+    def test_split_toward_target_cuts_long_patter_holds(self):
+        # Continuous Bb patter heard as one long note; lyrics want eight syllables.
+        long = [self.note(1.0, 3.0, 70)]               # ~2 s at allegro ≈ eight eighths
+        onsets = np.array([1.25, 1.5, 1.75, 2.0, 2.25, 2.5, 2.75])
+        split = tr.split_toward_target(long, target=8, onsets=onsets, bpm=132)
+        self.assertGreaterEqual(len(split), 6)
+        self.assertLessEqual(len(split), 9)
+        self.assertTrue(all(abs(n.midi - 70) < 0.1 for n in split))
+
+
+class KeyChoiceTests(unittest.TestCase):
+    def test_choose_key_prefers_the_confident_source(self):
+        # Flat noise (no key) vs a clear Eb-major profile — take the clear one.
+        flat = np.ones(12)
+        strong_eb = np.roll(tr.MAJOR_PROFILE, 3).astype(float)
+        tonic, minor, conf = tr.choose_key(flat, strong_eb)
+        self.assertEqual((tonic, minor), (3, False))
+        self.assertGreater(conf, 0.05)
+
+    def test_melody_chroma_weights_by_duration(self):
+        notes = [tr.HeardNote(0, 1.0, 63), tr.HeardNote(1.0, 1.2, 70)]  # Eb4 long, Bb4 short
+        h = tr.melody_chroma(notes)
+        self.assertGreater(h[3], h[10])
+
+
+class ChordReadingTests(unittest.TestCase):
+    def test_smooth_chroma_averages_similar_neighbours_only(self):
+        chroma = np.zeros((5, 12))
+        chroma[:, 0] = 1.0                         # same C harmony
+        chroma[2, 0] = 2.0
+        sm = tr.smooth_chroma(chroma, radius=1, min_cos=0.55)
+        self.assertGreater(float(sm[1, 0]), 1.0)   # pulled toward the peak
+        # A sudden F chord must not bleed into the C before it.
+        jump = np.zeros((4, 12))
+        jump[:2, 0] = 1.0                          # C
+        jump[2:, 5] = 1.0                          # F
+        sm = tr.smooth_chroma(jump, radius=2, min_cos=0.55)
+        self.assertGreater(float(sm[1, 0]), float(sm[1, 5]))
+        self.assertGreater(float(sm[2, 5]), float(sm[2, 0]))
+
+    def test_tonal_boost_favours_I_IV_V_in_major(self):
+        boost = tr.tonal_boost(0, False)  # C major
+        by_name = {c.name(0, False): float(boost[i]) for i, c in enumerate(tr.CHORDS)}
+        self.assertGreater(by_name["C"], by_name["Dm"])
+        self.assertGreater(by_name["F"], by_name["Em"])
+        self.assertGreater(by_name["G7"], by_name["Bdim"])
+
+    def test_read_chords_holds_I_through_passing_tones_in_compound(self):
+        # C triad with a little E/G wobble — Silent Night's band was renaming every bar.
+        chroma = np.zeros((6, 12))
+        chroma[:, [0, 4, 7]] = 1.0
+        chroma[1, 2] = 0.4   # D passing
+        chroma[3, 4] = 1.3   # E louder briefly
+        bass = np.zeros((6, 12))
+        bass[:, 0] = 1.0
+        reading = tr.read_chords(chroma, bass, (0, False),
+                                 beat_cost=[0.05, 0.40, 0.40, 0.05, 0.40, 0.40],
+                                 smooth_radius=3)
+        names = [c.name(0, False) for c in reading.chords]
+        self.assertGreaterEqual(names.count("C"), 4)
+
+
+class OnsetPullTests(unittest.TestCase):
+    def test_pull_onset_start_caps_how_far_back(self):
+        onsets = np.array([1.00, 2.00])
+        # 0.12 s before pitch settle — uncapped would take 1.00; cap keeps 1.04.
+        self.assertAlmostEqual(tr.pull_onset_start(1.12, onsets, cap=0.08), 1.04)
+        self.assertAlmostEqual(tr.pull_onset_start(1.05, onsets, cap=0.08), 1.00)
+        self.assertAlmostEqual(tr.pull_onset_start(1.50, onsets, cap=0.08), 1.50)
 
 
 class RhythmTests(unittest.TestCase):
@@ -172,6 +315,39 @@ class RhythmTests(unittest.TestCase):
         self.assertEqual(tr.snap_rhythm([0.02, 0.47, 1.05]), [Fraction(0), Fraction(1, 2), Fraction(1)])
         self.assertEqual(tr.snap_rhythm([0.0, 0.70]), [Fraction(0), Fraction(3, 4)])
         self.assertEqual(tr.snap_rhythm([0.0, 0.35, 0.68], tr.COMPOUND_PATTERNS), [Fraction(0), Fraction(1, 3), Fraction(2, 3)])
+
+    def test_a_late_lone_onset_snaps_to_the_downbeat(self):
+        # Sung ~0.35 into the beat: a late downbeat, not an intentional eighth (Saints take).
+        self.assertEqual(tr.snap_rhythm([0.35]), [Fraction(0)])
+        self.assertEqual(tr.snap_rhythm([1.32]), [Fraction(1)])
+        # A real off-beat still lands on the half when it's clearly there.
+        self.assertEqual(tr.snap_rhythm([0.52]), [Fraction(1, 2)])
+
+    def test_double_tempo_rebuilds_a_compound_eighth_grid(self):
+        # Tracker at 108 BPM, true pulse 54 (half): every other beat, trisected → true eighths.
+        tracked = np.arange(0.0, 10.0, 60.0 / 108.0)
+        self.assertTrue(tr.double_tempo(108.0, 54.0))
+        self.assertFalse(tr.double_tempo(112.0, 112.0))
+        self.assertFalse(tr.double_tempo(83.0, 56.0))          # eighth-pair 6/8, not a double lock
+        eighths, compound = tr.eighths_for_meter(tracked, 108.0, 54.0)
+        self.assertTrue(compound)
+        step = float(np.median(np.diff(eighths)))
+        self.assertAlmostEqual(60.0 / step, 162.0, delta=2)   # three eighths per 54 BPM beat
+        plain, compound = tr.eighths_for_meter(tracked, 112.0, 112.0)
+        self.assertFalse(compound)
+        self.assertEqual(len(plain), len(tr.eighth_grid(tracked)))
+
+    def test_waltz_guard_skips_compound_when_simple_meter_is_sure(self):
+        # Double-tempo shape: skip 6/8 rebuild only when the plain grid is sure it's simple.
+        tracked = np.arange(0.0, 10.0, 60.0 / 108.0)
+        acc = np.zeros(8)
+        with mock.patch.object(tr, "choose_meter_eighths") as choose:
+            choose.return_value = tr.Meter(2, 4, 0, 0.50)          # Tyger-like
+            _, compound = tr.meter_eighths(tracked, 108.0, 54.0, acc, acc, [])
+            self.assertFalse(compound)
+            choose.return_value = tr.Meter(2, 4, 0, 0.21)          # Silent Night-like
+            _, compound = tr.meter_eighths(tracked, 108.0, 54.0, acc, acc, [])
+            self.assertTrue(compound)
 
 
 class DraftReadingTests(unittest.TestCase):
@@ -209,6 +385,46 @@ Z2|
         with self.assertRaises(abcplan.PlanError):              # a meter change mid-song isn't a pickup
             abcplan.parse(self.SHEETSAGE.replace('"G"G16B8|"D"A24|', '"G"G16B8|\nM:2/4\n"D"A16|'))
 
+    # SheetSage sometimes puts the sung line on Ins (with chords) and leaves Vocal as Z rests.
+    SHEETSAGE_INS_LEAD = """X:1
+T:
+M:4/4
+L:1/32
+Q:1/4=100
+V: Ins clef=treble name="Vocal Melody" snm="Vocal"
+V: Vocal clef=treble name="Ins Melody" snm="Inst."
+K:C
+% verse
+V: Ins
+"C"C8D8E8F8|"G"G8A8B8c8|
+V: Vocal
+Z2|
+V: Ins
+M:1/4
+"C"C8|
+V: Vocal
+M:1/4
+Z|
+V: Ins
+M:4/4
+"C"E8E8E8E8|
+V: Vocal
+M:4/4
+Z|
+"""
+
+    def test_sheetsage_ins_lead_is_taken_and_short_bars_join(self):
+        text, notes = tr.sheetsage_lead_sheet(self.SHEETSAGE_INS_LEAD)
+        self.assertTrue(any("Ins voice" in n for n in notes))
+        self.assertTrue(any("short mid-song" in n for n in notes))
+        plan = abcplan.parse(text)
+        self.assertEqual(plan.meter, "4/4")
+        bars = abcplan.trim(plan)
+        self.assertTrue(all(b.units is None for b in bars))
+        from copyist import fit as fitting
+        slots = fitting.slots(bars, plan.unit, plan.meter)
+        self.assertGreaterEqual(len(slots), 9)   # the Ins tune, not the empty Vocal Zs
+
     @NEEDS_AUDIO
     def test_sheetsage_through_a_fake_runner_is_moved_down_an_octave(self):
         tmp = Path(tempfile.mkdtemp(prefix="copyist-sheetsage-"))
@@ -217,6 +433,7 @@ Z2|
                           f"Path(a[a.index('--out') + 1]).write_text({self.SHEETSAGE!r})\n")
         runner.chmod(runner.stat().st_mode | stat.S_IEXEC)
         (tmp / "ss.gguf").write_bytes(b"x")
+        (tmp / "MERT-v2-FullSong-Q8_0.gguf").write_bytes(b"x")  # yue-transcribe loads MERT beside the head
         sf.write(tmp / "song.wav", np.zeros(SR), SR)
         with mock.patch.dict(os.environ, {"COPYIST_YUE_TRANSCRIBE": str(runner), "COPYIST_SHEETSAGE": str(tmp / "ss.gguf")}):
             index = tr.transcribe(tmp / "song.wav", "Pickup", tmp / "out", lyrics="A-maz-ing grace",

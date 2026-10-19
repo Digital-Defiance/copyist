@@ -409,6 +409,18 @@ def parse_training(path: Path) -> dict:
 
 # ---------------------------------------------------------------------- jobs
 
+def engine_argv(args: list[str]) -> list[str]:
+    """How to re-invoke Copyist for a background job.
+
+    In a checkout: `python -m copyist …`. In the frozen desktop sidecar, `sys.executable`
+    *is* Copyist — passing `-m copyist` makes argparse treat `copyist` as the subcommand
+    and every job fails with "invalid choice: 'copyist'".
+    """
+    if getattr(sys, "frozen", False) or hasattr(sys, "_MEIPASS"):
+        return [sys.executable, *args]
+    return [sys.executable, "-m", "copyist", *args]
+
+
 class Jobs:
     """Runs one copyist command at a time and keeps its output."""
 
@@ -463,11 +475,14 @@ class Jobs:
         return job
 
     def _run(self, job: dict, args: list[str]) -> None:
+        import shlex
         with open(job["log"], "w", encoding="utf-8") as log:
-            log.write("$ copyist " + " ".join(args) + "\n")
+            # Quote so a title with spaces can be pasted into a shell as-is.
+            # Do not paste this after `python -m copyist` — that would run copyist twice.
+            log.write("$ copyist " + " ".join(shlex.quote(a) for a in args) + "\n")
             log.flush()
             try:
-                p = subprocess.run([sys.executable, "-m", "copyist", *args], cwd=self.project.root,
+                p = subprocess.run(engine_argv(args), cwd=self.project.root,
                                    stdout=log, stderr=subprocess.STDOUT)
                 job["code"] = p.returncode
             except OSError as e:
@@ -654,9 +669,13 @@ def write_args(project: Project, body: dict) -> tuple[str, str | None, list[str]
 
 
 def sheetsage_ready() -> bool:
+    """Runner + SheetSage2 with MERT in the same folder (yue-transcribe loads it from beside the head)."""
     from .. import paths
-    return bool(paths.find_program("yue-transcribe", "COPYIST_YUE_TRANSCRIBE")
-                and (os.environ.get("COPYIST_SHEETSAGE") or paths.find_model("SheetSage2-Q8_0.gguf", "COPYIST_SHEETSAGE")))
+    if not paths.find_program("yue-transcribe", "COPYIST_YUE_TRANSCRIBE"):
+        return False
+    model = Path(os.environ["COPYIST_SHEETSAGE"]).expanduser() if os.environ.get("COPYIST_SHEETSAGE") else \
+        paths.find_model("SheetSage2-Q8_0.gguf", "COPYIST_SHEETSAGE")
+    return bool(model and (Path(model).parent / "MERT-v2-FullSong-Q8_0.gguf").is_file())
 
 
 def transcribe_args(project: Project, body: dict) -> tuple[str, str | None, list[str]]:
@@ -683,7 +702,7 @@ def transcribe_args(project: Project, body: dict) -> tuple[str, str | None, list
     if not upload.is_file():
         raise ValueError("The recording didn't arrive; choose it again.")
     engine = body.get("engine") or "open"
-    if engine not in ("open", "sheetsage"):
+    if engine not in ("open", "sheetsage", "neural"):
         raise ValueError("No such engine.")
     if engine == "sheetsage" and not sheetsage_ready():
         raise ValueError("SheetSage2 isn't installed here.")
@@ -881,17 +900,19 @@ class Handler(BaseHTTPRequestHandler):
             pages = p.pages(q)
             return self._json({"pages": pages}) if pages is not None else self._error(404, "No such sheet.")
         if path == "/api/health":
-            from .. import __version__, instruments, models
+            from .. import __version__, instruments, models, paths as pathmod
             from ..render import sfizz_program
             return self._json({"ok": True, "version": __version__, "root": str(p.root),
+                               "desktop": pathmod.desktop_app(),
                                "models": {g: models.group_status(g)["ready"] for g in models.GROUPS},
                                "instruments": {k: instruments.pack_status(k)["ready"] for k in instruments.PACKS},
                                "sfizz": sfizz_program() is not None})
         if path == "/api/models":
-            from .. import instruments, models
+            from .. import instruments, models, paths as pathmod
             from ..render import sfizz_program
             return self._json({"licence": models.LICENCE, "licence_url": models.LICENCE_URL,
                                "folder": str(models.paths.models_dir()),
+                               "desktop": pathmod.desktop_app(),
                                "groups": [models.group_status(g) for g in models.GROUPS],
                                "instruments": [instruments.pack_status(k) for k in instruments.PACKS],
                                "instruments_folder": str(instruments.install_dir()),

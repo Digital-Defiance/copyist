@@ -2,6 +2,7 @@ import http.client
 import json
 import os
 import shutil
+import sys
 import tempfile
 import threading
 import time
@@ -82,8 +83,11 @@ class WebTests(unittest.TestCase):
         r, data = self.request("GET", "/")
         self.assertEqual(r.status, 200)
         self.assertIn(b"<title>Copyist</title>", data)
-        r, data = self.request("GET", "/static/fonts/shantell-sans.woff2")
+        r, data = self.request("GET", "/static/fonts/instrument-serif.woff2")
         self.assertEqual((r.status, r.getheader("Content-Type")), (200, "font/woff2"))
+        r, data = self.request("GET", "/static/fonts/instrument-sans.woff2")
+        self.assertEqual((r.status, r.getheader("Content-Type")), (200, "font/woff2"))
+        self.assertEqual(self.request("GET", "/static/fonts/shantell-sans.woff2")[0].status, 404)
         r, data = self.request("GET", "/api/songs")
         self.assertEqual([s["title"] for s in json.loads(data)], ["Amazing Grace"])
 
@@ -151,11 +155,14 @@ class WebTests(unittest.TestCase):
     def test_health_and_models(self):
         health = json.loads(self.request("GET", "/api/health")[1])
         self.assertTrue(health["ok"])
-        self.assertEqual(set(health["models"]), {"singer", "voices"})
+        self.assertEqual(set(health["models"]), {"singer", "voices", "sheetsage"})
         listing = json.loads(self.request("GET", "/api/models")[1])
         self.assertIn("CC BY-NC 4.0", listing["licence"])
         singer = next(g for g in listing["groups"] if g["id"] == "singer")
         self.assertEqual([m["id"] for m in singer["models"]], ["yue2", "yue2-vae"])
+        sheetsage = next(g for g in listing["groups"] if g["id"] == "sheetsage")
+        self.assertEqual([m["id"] for m in sheetsage["models"]], ["sheetsage", "mert"])
+        self.assertIn("no added permission", sheetsage["licence"])
 
     def test_instruments_are_listed_in_packs(self):
         health = json.loads(self.request("GET", "/api/health")[1])
@@ -352,6 +359,20 @@ class WebTests(unittest.TestCase):
         self.assertEqual((r.status, json.loads(data)["error"]), (400, "Accept the licence first."))
         r, data = self.post({"action": "download", "group": "everything", "accept_licence": True})
         self.assertEqual(r.status, 400)
+
+    def test_frozen_engine_argv_omits_module_flag(self):
+        """The desktop sidecar is already Copyist; `python -m copyist` would break every job."""
+        from copyist.web import server
+        args = ["transcribe", "song.wav", "--title", "June Snow"]
+        with mock.patch.object(server.sys, "frozen", True, create=True), \
+             mock.patch.object(server.sys, "executable", "/App/copyist-engine"):
+            self.assertEqual(server.engine_argv(args), ["/App/copyist-engine", *args])
+        # Dev / `python -m copyist serve`: re-invoke through the module.
+        self.assertFalse(getattr(sys, "frozen", False))
+        self.assertFalse(hasattr(sys, "_MEIPASS"))
+        with mock.patch.object(server.sys, "executable", "/venv/bin/python"):
+            self.assertEqual(server.engine_argv(args),
+                             ["/venv/bin/python", "-m", "copyist", *args])
 
     def test_a_download_job_reports_progress(self):
         from copyist import models

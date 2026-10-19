@@ -8,7 +8,7 @@
 git submodule update --init open-transcriber
 ```
 
-Status, 18 October 2026: submodule in place; **T0 Basic Pitch run** (see `open-transcriber/docs/t0-results.md`). Raw BP loses to the open engine on lyrical takes (over-segmentation); Major-General ≈ open (0.82 vs 0.84). The open DSP engine stays the default. SheetSage2 remains optional and non-commercial.
+Status, 19 October 2026: submodule in place; **adaptive BP + `clean_notes`** (see `open-transcriber/docs/t0-results.md`) mean note F1 ~0.87 vs open 0.83; `copyist transcribe --engine neural` wired (default still `open`). Magenta MT3 skipped for singing; Omnizart chords blocked on Apple Silicon Vamp. SheetSage2 remains optional and non-commercial.
 
 ## Why
 
@@ -56,12 +56,13 @@ A candidate ships as `--engine neural` (name TBD) only when every row is ≥ ope
 
 ## Phases
 
-### T0 — Feasibility (no training) — done for Basic Pitch
+### T0 — Feasibility (no training) — mostly done
 
 - [x] Spotify Basic Pitch (Apache-2.0, CoreML) on the five truth takes via `scripts/transcribe/neural_baseline.py`.
-- [x] Note F1 in `open-transcriber/docs/t0-results.md` and below: BP ≪ open on Saints/SN/AG/Tyger; ≈ open on Major-General.
-- [ ] Optional: Omnizart chords / MT3; BP notes through Copyist `clean_notes` before calling T0 "closed".
-- Verdict so far: **must tidy and/or train (T1)** — raw off-the-shelf melody AMT is not enough.
+- [x] Adaptive path + Copyist `clean_notes`: mean ~0.87; SN/Tyger win; Saints/AG/MG within 0.02.
+- [x] Magenta MT3 evaluated and skipped for sung melody; Omnizart chord wrapper (arm64 chroma blocked).
+- [x] `--engine neural` wired; default remains `open` until full-table + round-trip win.
+- Verdict: **T1 deferred** — finish the three small gaps first.
 
 ### T1 — Supervised lead-sheet head
 

@@ -1,13 +1,18 @@
-"""Compare a transcription (ABC, in the yue-plan / SheetSage dialect or Copyist's) with the true score.
+"""Compare a transcription with the true score, or with what was sung in a recording.
 
-Usage: python scripts/transcribe/evaluate.py SONG.yaml TRANSCRIPTION.abc [--octave-free]
+Usage:
+  python scripts/transcribe/evaluate.py SONG.yaml TRANSCRIPTION.abc [--octave-free]
+  python scripts/transcribe/evaluate.py --sung VOCAL.wav SONG.yaml [--octave-free]
+  python scripts/transcribe/evaluate.py --sung VOCAL.wav DRAFT.abc [--tempo 106] [--octave-free]
 
-Truth: the song's melody and chords in seconds (its tempo). Transcription: the ABC's Vocal voice
-(or Ins, when SheetSage put an instrumental lead there) in seconds (its Q:). The best global time
-shift and tempo ratio are found first (the transcriber may start the clock elsewhere), then notes
-are matched one to one: onset within a quarter beat, pitch equal (or equal mod 12 with
---octave-free, for a take sung in another octave). Chords: root and major/minor, compared every
-0.1 s. docs/transcribing.md has the numbers measured so far.
+Truth (score mode): the song's melody and chords in seconds (its tempo).
+Truth (--sung): notes heard on the vocal stem (pYIN + the same tidy rules as the open engine,
+without a lyric count), for songs that only exist as a recording (e.g. the owner's musical).
+
+Hypothesis: the ABC's Vocal voice (or Ins, when SheetSage put the lead there), or a song file.
+The best global time shift and tempo ratio are found first, then notes are matched one to one:
+onset within a quarter beat, pitch equal (or equal mod 12 with --octave-free). Chords (score mode
+only): root and major/minor, every 0.1 s. docs/transcribing.md has the numbers measured so far.
 """
 from __future__ import annotations
 
@@ -40,6 +45,24 @@ def truth(song_path):
                 continue
             notes.append([off * spq, el.quarterLength * spq, el.pitch.midi])
     return notes, chords, spq
+
+
+def sung_truth(vocals: Path, target: int | None = None):
+    """Notes heard on a vocal stem: truth when there is no written score to compare against."""
+    import librosa
+    from copyist import transcribe as tr
+    y, _ = librosa.load(str(vocals), sr=tr.SR, mono=True)
+    times, midi, rms = tr.vocal_track(y)
+    onsets = librosa.onset.onset_detect(y=y, sr=tr.SR, hop_length=tr.PITCH_HOP, units="time",
+                                        backtrack=True)
+    heard = tr.clean_notes(tr.vocal_notes(times, midi, rms, onsets), times, midi, rms, target=target)
+    notes = [[n.start, max(0.05, n.end - n.start), int(round(n.midi))] for n in heard]
+    if len(notes) >= 2:
+        iois = sorted(notes[i + 1][0] - notes[i][0] for i in range(len(notes) - 1))
+        spq = float(iois[len(iois) // 2])          # median onset gap ≈ a beat for matching tolerance
+    else:
+        spq = 0.5
+    return notes, [], spq
 
 
 def transcribed(abc_text):
@@ -88,9 +111,25 @@ def transcribed(abc_text):
     return notes, chords, plan
 
 
+def hypothesis(path: Path):
+    """Notes (and chords, seconds-per-quarter) from a song file or a draft ABC."""
+    if path.suffix.lower() in (".yaml", ".yml"):
+        notes, chords, spq = truth(path)
+        song = load_song(path)
+        return notes, chords, spq, f"{song.meter} {song.key} Q:{song.tempo}"
+    notes, chords, plan = transcribed(path.read_text())
+    label = f"{plan.meter} {plan.key} Q:{plan.tempo}"
+    tf = abcplan.tempo_field(plan.tempo)
+    if isinstance(tf, int):
+        spq = 60.0 / tf
+    else:
+        unit_txt, bpm = tf.split("=")
+        spq = 60.0 / (float(bpm) * float(Fraction(unit_txt)) * 4)
+    return notes, chords, spq, label
+
+
 def parse_any(abc_text):
     """The Vocal voice even with no notes in it (its chords)."""
-    import re
     header, voice, plan = {}, None, None
     for raw in abc_text.splitlines():
         line = raw.strip()
@@ -178,20 +217,55 @@ def chord_accuracy(truth_chords, chords, shift, ratio, end):
     return ok / max(1, n)
 
 
-def main():
-    song_path, abc_path = sys.argv[1], sys.argv[2]
-    octave_free = "--octave-free" in sys.argv
-    tn, tc, spq = truth(song_path)
-    notes, chords, plan = transcribed(Path(abc_path).read_text())
+def main(argv=None):
+    argv = list(sys.argv[1:] if argv is None else argv)
+    octave_free = "--octave-free" in argv
+    argv = [a for a in argv if a != "--octave-free"]
+    tempo = None
+    if "--tempo" in argv:
+        i = argv.index("--tempo")
+        tempo = float(argv[i + 1])
+        del argv[i:i + 2]
+    if not argv:
+        print(__doc__.strip(), file=sys.stderr)
+        return 2
+    if argv[0] == "--sung":
+        if len(argv) < 3:
+            print("Usage: evaluate.py --sung VOCAL.wav SONG.yaml|DRAFT.abc [--octave-free]", file=sys.stderr)
+            return 2
+        vocals, hyp_path = Path(argv[1]), Path(argv[2])
+        tn, tc, sung_spq = sung_truth(vocals)
+        notes, chords, hyp_spq, label = hypothesis(hyp_path)
+        # Matching window from the transcription's tempo when we have one; else sung IOI.
+        if hyp_path.suffix.lower() in (".yaml", ".yml"):
+            spq = hyp_spq
+        elif tempo is not None:
+            spq = 60.0 / tempo
+        else:
+            spq = sung_spq
+        source = f"sung({vocals.name}, {len(tn)} notes)"
+        shown = hyp_path.name
+    else:
+        if len(argv) < 2:
+            print("Usage: evaluate.py SONG.yaml TRANSCRIPTION.abc [--octave-free]", file=sys.stderr)
+            return 2
+        tn, tc, spq = truth(argv[0])
+        notes, chords, _, label = hypothesis(Path(argv[1]))
+        source = f"{Path(argv[0]).name} ({len(tn)} true)"
+        shown = Path(argv[1]).name
     f, shift, ratio = best_alignment(tn, notes, spq, octave_free)
     f, p, r, hits, offs = match(tn, notes, spq, octave_free, shift, ratio)
     from collections import Counter
-    end = tn[-1][0] + tn[-1][1]
-    print(f"{Path(abc_path).name}: {plan.meter} {plan.key} Q:{plan.tempo}; {len(notes)} notes vs {len(tn)} true")
+    end = tn[-1][0] + tn[-1][1] if tn else 0.0
+    print(f"{shown}: {label}; {len(notes)} notes vs {source}")
     print(f"  alignment: shift {shift:+.2f} s, time ratio {ratio:.3f}")
     print(f"  notes F1 {f:.2f} (precision {p:.2f}, recall {r:.2f}); octave of matches: {dict(Counter(o // 12 for o in offs))}")
-    print(f"  chords (root and maj/min, by time): {chord_accuracy(tc, chords, shift, ratio, end):.2f}")
+    if tc and chords:
+        print(f"  chords (root and maj/min, by time): {chord_accuracy(tc, chords, shift, ratio, end):.2f}")
+    else:
+        print("  chords: (no written chord truth in --sung mode)")
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

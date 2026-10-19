@@ -240,10 +240,12 @@ Spec: docs/transcribing.md. The owner asked for this on 18 October 2026; her mus
 - [x] Cap consonant onset pull at 0.08 s: Silent Night note F1 0.77→0.80; Tyger 0.76→0.78 (still 42 vs 46 — missing pitches aren't in long same-pitch holds)
 - [x] Scoop fold when lyric overshoot ≥ 2: Saints 0.79→0.85 (33 vs 33); AG/Tyger flat (single extras stay)
 - [x] Open-transcriber home repo as submodule: [Digital-Defiance/open-transcriber](https://github.com/Digital-Defiance/open-transcriber) → `open-transcriber/`
-- [x] T0 Basic Pitch baseline (`scripts/transcribe/neural_baseline.py`): loses to open engine on lyrical takes; ≈ open on Major-General — see `open-transcriber/docs/t0-results.md`
-- [ ] **NEXT:** T0b — Basic Pitch (or MT3) notes through Copyist `clean_notes` / lyric target; optional Omnizart chords; then T1 only if still behind
-- [ ] Open neural lead-sheet (docs/open-transcriber.md): train (T1) if tidy path isn't enough; never SheetSage weights; wire `--engine neural` when it wins
-- [ ] Silent Night open-engine chords past 0.69 (parallel; not blocked by T0)
+- [x] T0 Basic Pitch + T0b adaptive / `clean_notes`: mean ~0.87 vs open 0.83; SN +0.05, Tyger +0.19; Saints/AG/MG within 0.02 — `open-transcriber/docs/t0-results.md`
+- [x] Magenta MT3 skipped for sung melody (not trained on singing); YourMT3 licence unclear
+- [x] Omnizart chord wrapper + setup script (blocked on Apple Silicon: x86 Vamp chroma)
+- [x] `copyist transcribe --engine neural` wired (BP melody + open harmony); default stays `open`
+- [ ] **NEXT:** close remaining note gaps (Saints −0.01, AG −0.02, MG −0.01) and win full `roundtrip.py` before making neural the default; T1 train only if that stalls
+- [ ] Silent Night open-engine chords past 0.69 (parallel; Omnizart arm64 chroma later)
 - [ ] SheetSage ABC through the same fold/tidy path
 - [ ] Owner listen check on June Snow / other songs only after a table win. Never commit them
 - [ ] Repeats vote (SPEC 12.2a step 3): the same section sung again settles doubtful notes

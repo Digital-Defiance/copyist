@@ -24,7 +24,7 @@ The work moved fast and may change hands at any moment. Here is where things sta
 
 **Next, in this order:**
 1. **Ship the Mac app:** TASKS.md §3d — `freeze-engine` + `bundle-mac`, sign/notarize, tag `v0.0.1` so `brew install --cask copyist` works.
-2. **Transcribing recordings:** TASKS.md section 7 — open table Saints 0.85 / SN 0.80; T0 Basic Pitch loses on lyrical takes (next: tidy path / T1); owner songs only after a table win.
+2. **Transcribing recordings:** TASKS.md section 7 — open table Saints 0.85 / SN 0.80; open-transcriber + `--engine neural` (BP/`clean_notes`) mean ~0.87 (next: close Saints/AG/MG −0.01/−0.02/−0.01); owner songs only after a table win.
 3. **Less-cheesy exact previews (rest of 3f):** crank/comb music box when a CC0 set can be hosted (celesta is in).
 4. **The open singer (plan B):** TASKS.md section 3h, spec in [docs/open-singer.md](docs/open-singer.md). Start with phase B0 (feasibility).
 
