@@ -78,8 +78,8 @@ class SiteContent(unittest.TestCase):
 
     def test_install_commands(self) -> None:
         for needle in (
-            "brew install --cask copyist",
-            "brew tap digital-defiance/copyist",
+            "brew install --cask digital-defiance/tap/copyist",
+            "releases/latest",
             "git clone https://github.com/Digital-Defiance/copyist.git",
             "pip install -e .",
             "scripts/package/run-app.sh",

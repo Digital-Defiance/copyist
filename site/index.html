@@ -193,10 +193,9 @@
     <p class="section-lede">The usual way is the Mac app via Homebrew. Everything runs on your computer; optional downloads (band, singer) happen inside Copyist when you choose them.</p>
 
     <h3>Homebrew (Mac)</h3>
-    <pre><code>brew tap digital-defiance/copyist https://github.com/Digital-Defiance/copyist
-brew install --cask copyist
+    <pre><code>brew install --cask digital-defiance/tap/copyist
 open -a Copyist</code></pre>
-    <p>Needs a published GitHub Release DMG (see <a href="https://github.com/Digital-Defiance/copyist/blob/main/docs/desktop-app.md">desktop app docs</a>). Until then, run from source (below).</p>
+    <p>For Macs with Apple Silicon (macOS 13 or later). Homebrew installs the signed, notarized app from the <a href="https://github.com/Digital-Defiance/copyist/releases/latest">GitHub release</a>, where you can also download the DMG yourself. On an Intel Mac, run from source (below) for now.</p>
 
     <h3>From source (Mac or Linux)</h3>
     <pre><code>git clone https://github.com/Digital-Defiance/copyist.git

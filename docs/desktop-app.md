@@ -6,17 +6,16 @@ Tagline path: **Homebrew → Copyist.app → write a song → download extras as
 
 ## Install (the default path)
 
-When a release is published:
+On a Mac with Apple Silicon (macOS 13 or later):
 
 ```
-brew tap digital-defiance/copyist https://github.com/Digital-Defiance/copyist
-brew install --cask copyist
+brew install --cask digital-defiance/tap/copyist
 open -a Copyist
 ```
 
-That installs `Copyist.app` from the GitHub Release DMG (`Casks/copyist.rb`). Songs live in `~/Music/Copyist/`; models and instruments in `~/Library/Application Support/Copyist/`.
+That installs `Copyist.app` from the signed, notarized DMG on the [GitHub release](https://github.com/Digital-Defiance/copyist/releases/latest). The cask is `Casks/copyist.rb` in [Digital-Defiance/homebrew-tap](https://github.com/Digital-Defiance/homebrew-tap) (`brew tap digital-defiance/tap` adds the tap on its own; the command above does it for you). Songs live in `~/Music/Copyist/`; models and instruments in `~/Library/Application Support/org.digitaldefiance.copyist/`.
 
-Until the first notarized release is up, use the development app (below) or `copyist serve` from a checkout.
+Intel Macs aren't built yet: use the development app (below) or `copyist serve` from a checkout.
 
 ## What you do in the app
 
@@ -53,20 +52,18 @@ Environment the shell sets: `COPYIST_DESKTOP=1`, `COPYIST_HOME` (app data), `COP
 Jessica has **Developer ID Application** certs in the keychain, including **Digital Defiance (`J6887N729S`)** — that identity is the default for shipping. Full steps and env vars: [scripts/package/README.md](../scripts/package/README.md).
 
 ```
-# One-time: app-specific password + env (never commit):
-#   export APPLE_SIGNING_IDENTITY="Developer ID Application: Digital Defiance (J6887N729S)"
-#   export APPLE_TEAM_ID=J6887N729S
-#   export APPLE_ID=…  APPLE_PASSWORD=…   # app-specific password
+# In the shell environment (never commit): APPLE_SIGNING_IDENTITY, APPLE_TEAM_ID and an
+# App Store Connect API key (APPLE_API_KEY, APPLE_API_ISSUER, APPLE_API_KEY_PATH).
 
-scripts/package/freeze-engine.sh          # PyInstaller → binaries/copyist-engine-<triple>
+scripts/package/freeze-engine.sh          # PyInstaller → dist/copyist-engine-<triple> (~1 min)
 scripts/setup-sfizz.sh                    # recommended: stage sfizz_render
 scripts/setup-yue.sh                      # recommended: stage yue-synth / yue-plan
-scripts/package/bundle-mac.sh --sign      # signs, notarizes, staples, writes DMG
+scripts/package/bundle-mac.sh --sign      # signs, notarizes and staples the app and the DMG (~3 min)
 ```
 
-Hardened runtime + entitlements are in `app/src-tauri/entitlements.plist` (sidecars need `disable-library-validation`). After a good DMG: `spctl -a -vv --type install …`, paste SHA-256 into `Casks/copyist.rb`, tag `v0.0.1`.
+Packaging leaves `git status` empty: the frozen engine sits in `dist/` and is staged over the tracked placeholder only during the build. Hardened runtime + entitlements are in `app/src-tauri/entitlements.plist` (sidecars need `disable-library-validation`). The engine runs in its own process group, so quitting the app stops all of it. Then: tag `vX.Y.Z` on the build commit, `gh release create` with the DMG, and put its SHA-256 in the tap's `Casks/copyist.rb` (scripts/package/README.md).
 
-CI: `.github/workflows/release-mac.yml` builds DMGs on `v*` tags (unsigned until cert secrets are added; signed builds can also be done on this Mac and attached to the release).
+CI: `.github/workflows/release-mac.yml` builds unsigned DMGs as workflow artifacts on `v*` tags (arm64 and Intel, a smoke test). It never touches the GitHub release, so the notarized DMG from this Mac stays the release asset.
 
 ## Development (contributors)
 
@@ -84,7 +81,7 @@ CLI-only path remains supported: `pip install -e .` and `copyist serve` (README)
 
 1. ~~Engine as sidecar API~~ (`--machine`, `/api/models`, downloads)
 2. ~~Tauri shell~~
-3. **Packaging** — freeze-engine + bundle-mac + Homebrew cask (this doc); notarized first release still open
+3. ~~**Packaging**~~ — v0.0.1 shipped 2026-10-19: notarized arm64 DMG, Homebrew cask in the tap; Intel build still to come
 4. **First run** — Install extras page; desktop flag; write works without the singer
 5. Best of several takes / re-render one section
 6. Windows and Linux builds; Tauri updater
@@ -92,4 +89,4 @@ CLI-only path remains supported: `pip install -e .` and `copyist serve` (README)
 ## Open questions
 
 - Whether to ship a default voice (never `lightson`; SPEC §6).
-- Submitting the cask to `homebrew/homebrew-cask` vs keeping the tap only.
+- Submitting the cask to `homebrew/homebrew-cask` vs keeping it in Digital Defiance's tap only.

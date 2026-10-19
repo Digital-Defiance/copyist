@@ -2,6 +2,12 @@
 
 Newest first. One entry per decision: what, why, and what we gave up.
 
+## 2026-10-19 (v0.0.1 release and where the cask lives)
+
+- **The cask lives in Digital Defiance's existing tap, `Digital-Defiance/homebrew-tap` (`Casks/copyist.rb`), and people install with `brew install --cask digital-defiance/tap/copyist`.** The copy in this repo is gone so the two can't drift. This replaces the earlier choice to keep a tap in this repo (2026-10-18, below): a repo not named `homebrew-…` needs a full tap URL, and the owner already has a tap. The tap's cask is updated only after the release asset downloads with a matching SHA-256. Its `zap` leaves `~/Music/Copyist` alone, because those are the person's songs. Gave up: one repo holding both the app and its cask.
+- **The release DMG is built, signed, notarized and stapled on the owner's Mac and attached with `gh release create`; `release-mac.yml` only uploads unsigned workflow artifacts.** Before, the workflow would have uploaded an unsigned DMG with the same name to the tagged release, which could replace the notarized one. Gave up: releases built in CI, until CI has the signing certificate.
+- **v0.0.1 ships for Apple Silicon only (`depends_on arch: :arm64`).** An Intel DMG can't be built and smoke-tested on this Mac; CI's unsigned Intel build stays a compile check. Gave up: an Intel Mac build in the first release (follow-up in TASKS §3d).
+
 ## 2026-10-19 (Mac packaging leaves git clean)
 
 - **`freeze-engine.sh` writes `dist/copyist-engine-<triple>` (ignored); `bundle-mac.sh` copies it over the tracked placeholder in `app/src-tauri/binaries/` only for the build and puts the placeholder back on exit (a trap), and hands Tauri the extra sidecars through a temporary `--config` file (Tauri merges it over `tauri.conf.json`; the array replaces the engine-only list).** A full freeze and signed bundle now leave `git status` empty, and a fresh checkout still compiles against the placeholder. CI calls the same script. Gave up: freezing straight into `binaries/` (one stray `git add` puts 200 MB in history) and rewriting `tauri.conf.json`.
@@ -93,7 +99,7 @@ Newest first. One entry per decision: what, why, and what we gave up.
 ## 2026-10-18 (desktop app is the default install)
 
 - **People install `Copyist.app` (Homebrew cask), not a bare `pip` + `copyist serve`.** The Tauri shell is the product; the CLI and `copyist serve` stay for contributors. Optional packs (band, singer, voices) download from **Install extras** when chosen — writing with the rules engine needs no download. Gave up: treating the browser UI as the primary story on the README and site.
-- **Homebrew tap lives in this repo** (`Casks/copyist.rb` + `brew tap digital-defiance/copyist`). Releases attach DMGs from CI; SHA-256 is filled in after the first notarized build. Gave up: waiting to submit to homebrew-cask before anyone can `brew install --cask`.
+- (Replaced 2026-10-19: the cask moved to Digital-Defiance/homebrew-tap.) **Homebrew tap lives in this repo** (`Casks/copyist.rb` + `brew tap digital-defiance/copyist`). Releases attach DMGs from CI; SHA-256 is filled in after the first notarized build. Gave up: waiting to submit to homebrew-cask before anyone can `brew install --cask`.
 - **Ship with Digital Defiance's Developer ID Application (`J6887N729S`),** not the personal Developer ID. Same keychain has both; `bundle-mac.sh --sign` prefers the Defiance identity. Notarization uses an app-specific password (or ASC API key) kept outside the repo.
 - **Freeze via `scripts/package/engine_entry.py` (absolute import of `copyist.cli`), not `copyist/__main__.py`.** PyInstaller runs the entry as a bare `__main__` script, so relative imports die. Also `--copy-metadata` / `--collect-all` for `cmudict` and `pronouncing` — they call `importlib.metadata.version` at import. Gave up: freezing `__main__.py` directly.
 - **SheetSage2 is a downloadable Install-extras pack** (`sheetsage` + MERT, ~1 GB), offered on Transcribe when missing, with its stricter NC licence (no creator sell-through). `yue-transcribe` ships with the desktop app; weights stay opt-in. Gave up: leaving SheetSage as a disabled menu item with no install path.

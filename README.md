@@ -10,19 +10,20 @@ Tools like Suno and Mozart AI generate audio first. Their notes don't exist as d
 
 ## Install the app (recommended)
 
-On a Mac, when a release is published:
+On a Mac with Apple Silicon (macOS 13 or later):
 
 ```
-brew tap digital-defiance/copyist https://github.com/Digital-Defiance/copyist
-brew install --cask copyist
+brew install --cask digital-defiance/tap/copyist
 open -a Copyist
 ```
 
+The cask lives in [Digital Defiance's tap](https://github.com/Digital-Defiance/homebrew-tap) and installs the signed, notarized DMG from the [GitHub release](https://github.com/Digital-Defiance/copyist/releases/latest); you can also download that DMG and drag Copyist to Applications. Intel Macs: run from this repository (below) for now.
+
 That opens the desktop app. **Write a song** from lyrics immediately (Copyist's own writer needs no download). Under **Install extras**, download only what you want: the sampled band for exact previews, the YuE2 singer for finished takes, or SheetSage2 for optional transcription (licences shown first). Songs live in `~/Music/Copyist/`. Details: [docs/desktop-app.md](docs/desktop-app.md).
 
-### Run the app from this repository (today)
+### Run the app from this repository
 
-While the first Homebrew release is being notarized:
+For contributors, and on Intel Macs and Linux:
 
 ```
 git clone --recurse-submodules https://github.com/Digital-Defiance/copyist.git

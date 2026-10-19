@@ -5,12 +5,11 @@ The Tauri 2 shell around Copyist ([docs/desktop-app.md](../docs/desktop-app.md))
 ## People installing Copyist
 
 ```
-brew tap digital-defiance/copyist https://github.com/Digital-Defiance/copyist
-brew install --cask copyist
+brew install --cask digital-defiance/tap/copyist
 open -a Copyist
 ```
 
-See the main [README](../README.md) and [docs/desktop-app.md](../docs/desktop-app.md).
+Apple Silicon, macOS 13 or later; the cask is in [Digital-Defiance/homebrew-tap](https://github.com/Digital-Defiance/homebrew-tap). See the main [README](../README.md) and [docs/desktop-app.md](../docs/desktop-app.md).
 
 ## Run it from a checkout (development)
 
@@ -32,15 +31,14 @@ The engine uses this checkout (`COPYIST_REPO`), your `songs/` and `.cache/`. The
 
 ## Package a release
 
-Signing uses **Developer ID Application: Digital Defiance (J6887N729S)** (already in the keychain). See [scripts/package/README.md](../scripts/package/README.md) for the app-specific password.
+Signing uses **Developer ID Application: Digital Defiance (J6887N729S)** (already in the keychain) and notarization an App Store Connect API key in the environment. See [scripts/package/README.md](../scripts/package/README.md).
 
 ```
-source ~/.config/copyist/notarize.env     # APPLE_ID, APPLE_PASSWORD, TEAM_ID, …
-scripts/package/freeze-engine.sh
-scripts/package/bundle-mac.sh --sign      # notarized DMG
+scripts/package/freeze-engine.sh          # → dist/copyist-engine-<triple>
+scripts/package/bundle-mac.sh --sign      # signed, notarized, stapled app and DMG
 ```
 
-CI builds DMGs on `v*` tags (`.github/workflows/release-mac.yml`). Update SHA-256 in `Casks/copyist.rb` after each release.
+The release DMG is built on the Mac and attached with `gh release create`; CI (`.github/workflows/release-mac.yml`) only builds unsigned artifacts. After each release, update the SHA-256 in the tap's `Casks/copyist.rb` (Digital-Defiance/homebrew-tap).
 
 ## Layout
 
@@ -49,6 +47,6 @@ shell/             start page ("Starting…", or why the engine stopped)
 src-tauri/
   src/main.rs      window, sidecar, links, quitting; sets COPYIST_DESKTOP=1
   tauri.conf.json  name, identifier (org.digitaldefiance.copyist), icons, externalBin
-  binaries/        copyist-engine-<triple> (dev script or frozen binary)
+  binaries/        copyist-engine-<triple> (the tracked dev script; bundle-mac.sh swaps in the frozen engine during a build)
   icons/
 ```
