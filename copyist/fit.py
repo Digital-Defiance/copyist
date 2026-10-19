@@ -14,11 +14,43 @@ from dataclasses import dataclass
 from fractions import Fraction
 
 from .abcplan import Bar, Tok
-from .syllables import Syllable
+from .syllables import Section, Syllable
 
 MAX_HOLD = 5                    # extra notes one syllable may hold
 HINT_WEIGHT = 1.0               # what the recording says outweighs a weak beat
 SPLIT_LIMIT = 0.10              # split at most this share of the notes
+
+
+def syllables_for_transcription(sections: list[Section], n_notes: int) -> tuple[list[Syllable], list[str]]:
+    """Syllables that can sit under a transcribed melody, plus notes for the report.
+
+    A full libretto (repeats, spoken word) often has far more syllables than notes heard.
+    For transcription the melody is the source of truth: drop spoken sections, then take
+    whole lines from the start until the fit's split budget would be exceeded.
+    """
+    from .syllables import all_syllables
+    max_sylls = n_notes + int(SPLIT_LIMIT * n_notes)
+    notes: list[str] = []
+    sung = [s for s in sections if s.name != "spoken"]
+    if sum(1 for s in sections if s.name == "spoken"):
+        notes.append("Left spoken words off the lead sheet (they're not sung under the melody).")
+    total = len(all_syllables(sections))
+    kept: list[Syllable] = []
+    for sec in sung:
+        for line in sec.lines:
+            if len(kept) + len(line.syllables) > max_sylls:
+                notes.append(f"The lyrics have {total} syllables and the melody has {n_notes} notes; "
+                             f"fitted the opening {len(kept)} syllables and left the rest off. Check by ear.")
+                return kept, notes
+            kept.extend(line.syllables)
+    if not kept and sections:
+        # Only spoken (or empty) lyrics: fall back to everything, still capped.
+        for sec in sections:
+            for line in sec.lines:
+                if len(kept) + len(line.syllables) > max_sylls:
+                    break
+                kept.extend(line.syllables)
+    return kept, notes
 
 
 @dataclass

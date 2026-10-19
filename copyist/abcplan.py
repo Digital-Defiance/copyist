@@ -92,8 +92,13 @@ def tokenize_bar(text: str) -> tuple[list[Tok], int]:
     return toks, z_bars
 
 
-def parse(text: str) -> Plan:
-    """The vocal line of a yue-plan score, bar by bar, each bar tagged with its section."""
+def parse(text: str, allow_meter_changes: bool = False) -> Plan:
+    """The vocal line of a yue-plan score, bar by bar, each bar tagged with its section.
+
+    `allow_meter_changes`: SheetSage often inserts short 1/4 or 2/4 bars mid-song; keep them
+    so a later `consolidate_meters` can re-bar into the header meter. Melody writing still
+    refuses mid-song meter changes (default).
+    """
     header: dict[str, str] = {}
     section, voice = "intro", None
     plan: Plan | None = None
@@ -131,6 +136,8 @@ def parse(text: str) -> Plan:
                     plan.vocal.append(Bar([Tok("rest", length=inline_units or plan.bar_units)], section,
                                           inline_units))
                 continue
+            if not toks:          # a trailing "|]" or empty chunk after split
+                continue
             plan.vocal.append(Bar(toks, section, inline_units))
     if plan is None:
         raise PlanError("That isn't a plan: there's no K: line.")
@@ -141,10 +148,60 @@ def parse(text: str) -> Plan:
         expected = bar.units or plan.bar_units
         if bar.length != expected:
             raise PlanError(f"Bar {k + 1} of the plan's vocal line holds {bar.length} units, not {expected}.")
-        if bar.units and bar.sung and not (k == first_sung and bar.units < plan.bar_units):
+        if (not allow_meter_changes and bar.units and bar.sung
+                and not (k == first_sung and bar.units < plan.bar_units)):
             raise PlanError(f"The plan changes meter at bar {k + 1}; Copyist songs keep one meter "
                             "(a short first bar, a pickup, is fine).")
     return plan
+
+
+def consolidate_meters(bars: list[Bar], bar_units: Fraction) -> list[Bar]:
+    """Re-bar a stream of tokens into bars of `bar_units`, preserving durations and chords.
+
+    SheetSage writes occasional 1/4 or 2/4 bars mid-song; Copyist songs keep one meter.
+    """
+    stream: list[tuple[Tok, str]] = [(t, bar.section) for bar in bars for t in bar.toks]
+    out: list[Bar] = []
+    cur: list[Tok] = []
+    cur_len = Fraction(0)
+    cur_section = bars[0].section if bars else "verse"
+
+    def flush():
+        nonlocal cur, cur_len
+        if not cur:
+            return
+        if cur_len < bar_units:
+            cur.append(Tok("rest", length=bar_units - cur_len))
+        out.append(Bar(cur, cur_section))
+        cur, cur_len = [], Fraction(0)
+
+    for tok, section in stream:
+        if cur_len == 0:
+            cur_section = section
+        if tok.kind == "chord":
+            cur.append(tok)
+            continue
+        left = tok.length
+        while left > 0:
+            room = bar_units - cur_len
+            if room == 0:
+                flush()
+                cur_section = section
+                room = bar_units
+            take = min(left, room)
+            piece = Tok(tok.kind, text=tok.text, acc=tok.acc, step=tok.step, octave=tok.octave,
+                        length=take, tie=tok.tie if take == left and tok.kind == "note" else
+                        (True if tok.kind == "note" and take < left else False))
+            # If we split a note across the barline, tie the first half.
+            if tok.kind == "note" and take < left:
+                piece.tie = True
+            cur.append(piece)
+            cur_len += take
+            left -= take
+            if cur_len >= bar_units:
+                flush()
+    flush()
+    return out
 
 
 def trim(plan: Plan) -> list[Bar]:

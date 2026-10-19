@@ -33,6 +33,19 @@ VOICES = {
 DEFAULT_VOICE = "alto"
 
 
+def check_preview_style(meter: str) -> str:
+    """Piano-led style for judging a melody by ear (transcriptions with no style chosen).
+
+    The default full band (clarinet, guitar, drums) buries the tune; waltz/ballad/lullaby
+    keep piano + soft bass so the lead sheet can be compared with a recording.
+    """
+    if meter in ("3/4", "3/8"):
+        return "waltz"
+    if meter in ("6/8", "12/8"):
+        return "lullaby"
+    return "ballad"
+
+
 class WriteError(ValueError):
     """A candidate Copyist can't turn into a song file, with the reason for the report."""
 
@@ -86,6 +99,13 @@ def song_from_plan(plan_text: str, lyrics: str, title: str, voice: str | None = 
     sylls = syllables.all_syllables(sections)
     if not sylls:
         raise WriteError("The lyrics have no words to sing.")
+    n_notes = len(fitting.slots(bars, plan.unit, meter))
+    lyric_notes: list[str] = []
+    if as_sung is not None:
+        # Melody came from the recording; a full libretto may be longer than what was heard.
+        sylls, lyric_notes = fitting.syllables_for_transcription(sections, n_notes)
+        if not sylls:
+            raise WriteError("The lyrics have no words to sing.")
     try:
         fitted = fitting.fit(bars, plan.unit, meter, sylls, hints)
     except ValueError as e:
@@ -107,6 +127,7 @@ def song_from_plan(plan_text: str, lyrics: str, title: str, voice: str | None = 
                      f"{'down' if octaves < 0 else 'up'} from the plan." if octaves else "Kept the plan's octave.")
     if placement.outside:
         notes.append(f"{placement.outside} note(s) still outside the {voice} range ({low}–{high}).")
+    notes.extend(lyric_notes)
     holds = sum(b - a for a, b in fitted.spans)
     notes.append(f"Lyrics: {len(sylls)} syllables on {len(fitted.spans) + holds} notes; {holds} held, "
                  f"{fitted.splits} note(s) split; fit cost {fitted.cost / len(sylls):.2f} a syllable.")
@@ -121,6 +142,9 @@ def song_from_plan(plan_text: str, lyrics: str, title: str, voice: str | None = 
         "tempo": abcplan.tempo_field(plan.tempo),
         "voice": {"name": "Voice", "range": [low, high], "clef": clef},
     })
+    if as_sung is not None and not style:
+        style = check_preview_style(meter)
+        notes.append(f"Check preview uses the {style} style (piano-led) so you can hear the tune.")
     if style:
         data["style"] = style
     data["sections"] = abcplan.sections_of(bars)
