@@ -51,7 +51,7 @@ Take the first unchecked item in the current milestone. Tick items when they're 
 - [x] T0 Basic Pitch baseline scored (loses to open engine except Major-General ≈)
 - [ ] Open neural lead-sheet: T0b tidy path, then T1 if needed (docs/open-transcriber.md)
 - [ ] Two big public-domain songs in the round-trip set, covering a minor key, a key change, syncopation, richer harmony, 12/8, a wide range and a repeated chorus (TASKS.md §7)
-- [ ] T1: train the neural transcriber. The owner wants this soon, as soon as the non-training passes run out (two attempts in a row that don't move either benchmark table). Plan written 2026-10-19: a small lead-sheet model on Basic Pitch, trained on SoulX-sung Copyist melodies with exact labels; owner decisions pending (TASKS.md §7)
+- [ ] T1: train the neural transcriber. The owner wants this soon, as soon as the non-training passes run out (two attempts in a row that don't move either benchmark table). Plan written 2026-10-19: a small lead-sheet model on Basic Pitch, trained on SoulX-sung Copyist melodies with exact labels. Owner decisions made 2026-10-19 (Mac only, MIT weights; TASKS.md §7); the data foundation (held-out guard, score sampler) landed. New goal: the best open transcriber available, beating SheetSage2 objectively; a design audit comes before training
 - [ ] Repeats vote, per-doubt A/B by ear (SPEC 12.2a)
 - [ ] The owner transcribes her own songs on the Mac and listens
 

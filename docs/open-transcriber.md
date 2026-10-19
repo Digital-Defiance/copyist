@@ -1,6 +1,6 @@
 # Open lead-sheet transcriber (a better SheetSage we can ship)
 
-**Goal:** a commercially usable lead-sheet AMT that beats Copyist's open engine on `scripts/transcribe/roundtrip.py`, and approaches SheetSage2 on sung YuE2 takes — without CC BY-NC weights.
+**Goal (owner, 2026-10-19):** the best open transcriber available. It must beat SheetSage2 objectively — on SheetSage2's own benchmarks and metric, and on full lead-sheet measures — for songs, musicals and beyond, with MIT code and MIT weights and no CC BY-NC anything, trained on the owner's M4 Max only. A design audit is under way before anything is trained (local report: `.agents/tasks/open-transcriber-audit-2026-10-19/`). First milestone, unchanged: beat Copyist's open engine on `scripts/transcribe/roundtrip.py`.
 
 **Code:** first-party repo [Digital-Defiance/open-transcriber](https://github.com/Digital-Defiance/open-transcriber) (MIT), vendored here as the git submodule `open-transcriber/`.
 
@@ -12,7 +12,7 @@ Status, 19 October 2026: submodule in place; **adaptive BP + `clean_notes`** (se
 
 ## Why
 
-SheetSage2 is the accuracy ceiling we measured (≈0.94–0.98 note F1 on takes), but its weights are CC BY-NC 4.0 with no creator-sell permission. Shipping it as the product default is a licence dead end. Closing the gap with more chroma heuristics helps (Silent Night chords 0.40→0.69 with tonal priors; Saints notes 0.85), but a trained model is the honest long-term path for Broadway-dense singing and band voicings that disagree with lead-sheet labels.
+SheetSage2 is the strongest system we've measured: ≈0.94–0.98 note F1, but on Amazing Grace only and with our lenient metric (onsets within a quarter of a beat, octave-free, best shift and tempo searched). Its own model card uses a strict one (pitch class, 50 ms onsets, no offsets) and reports 82.5% vocal note F1 on RWC-Pop and 67.1% on Rock Corpus, so it is far from perfect on real recordings. Its weights are CC BY-NC 4.0 with no creator-sell permission. Shipping it as the product default is a licence dead end. Closing the gap with more chroma heuristics helps (Silent Night chords 0.40→0.69 with tonal priors; Saints notes 0.85), but a trained model is the honest long-term path for Broadway-dense singing and band voicings that disagree with lead-sheet labels.
 
 ## What we will not do
 
@@ -69,10 +69,11 @@ A candidate ships as `--engine neural` (name TBD) only when every row is ≥ ope
 
 ### T1 — Supervised lead-sheet head
 
-- Dataset builder in open-transcriber: song YAML + render/take → aligned melody events + chord symbols on the beat grid (reuse Copyist beat tracker for alignment labels).
-- Train a small melody+chord model (start from MT3 checkpoint or a custom encoder) on PD renders; fine-tune lightly on YuE2 takes with melody-only loss if chords are noisy.
+- Landed 2026-10-19: the held-out guard (`open_transcriber/data/heldout.py`) and a seeded, data-only score sampler (`open_transcriber/data/scores.py`) with a public-domain lyric pool.
+- Dataset builder: sampler lead sheets sung by SoulX over the band → exact melody events and chord symbols on the beat grid (labels come from the score, not from audio).
+- Train the lead-sheet head (see the licence stack) on that data. Never on the YuE2 truth takes, which are held out; YuE2 renders of sampler scores only if the owner approves YuE2 as training material.
 - Wire `copyist transcribe --engine neural` behind the same tidy path (`clean_notes`, lyric `note_target`, `fold_grid_rearticulations`).
-- Done when round-trip note F1 ≥ open on all five and Silent Night chords ≥ 0.75.
+- Done when the trained model is at or above open on every row of the round-trip table (all seven songs) for notes, with no row worse on chords. Silent Night's chords are their own item: melody training doesn't move them.
 
 ### T2 — Product slot
 

@@ -2,6 +2,15 @@
 
 Newest first. One entry per decision: what, why, and what we gave up.
 
+## 2026-10-19 (the open transcriber: what it builds on, and how it's judged)
+
+- **The trained transcriber builds on Basic Pitch and SoulX-Singer (both Apache-2.0), though their own training data can't be audited.** Owner's call. Basic Pitch is only a frozen input under our own head; SoulX sings the training data. Newer options were checked and set aside: VocalParse (Mandarin, 1.7B, crawled data), T3MS, the phoneme-informed model, VOCANO and ROSVOT (weights trained on non-commercial singing sets), and VocalRender (Apache-2.0 score-native singer, but its checkpoints are Mandarin-only; watched for an English one). Gave up: a fully auditable data chain, which only an open singer trained on our own data would give (plan B).
+- **Compute is the owner's M4 Max (64 GB) only; no rented GPU.** Owner's call. Gave up: the one-to-two-day rented path; making data takes nights instead.
+- **The trained weights will be MIT, like the code.** Owner's call; the plan had suggested Apache-2.0, like Basic Pitch. Gave up: Apache's explicit patent grant.
+- **The benchmark is held out by code, not by convention.** `open_transcriber/data/heldout.py` reads every `songs/*.yaml` and the round-trip cases at runtime and rejects a training score that matches one by title, lyrics or a transposition- and tempo-invariant melodic fingerprint; the sampler re-rolls on a hit. Gave up: nothing; without it the scores would mean nothing.
+- **SheetSage2 is a yardstick only:** run once on all seven test songs to measure the gap, never used to teach or to tune. Owner's call.
+- **Goal raised: the best open transcriber available, beating SheetSage2 objectively,** for songs, musicals and orchestral music (owner). A design audit comes before T1 trains anything. Gave up: starting the GPU data work today.
+
 ## 2026-10-19 (v0.0.1 release and where the cask lives)
 
 - **The cask lives in Digital Defiance's existing tap, `Digital-Defiance/homebrew-tap` (`Casks/copyist.rb`), and people install with `brew install --cask digital-defiance/tap/copyist`.** The copy in this repo is gone so the two can't drift. This replaces the earlier choice to keep a tap in this repo (2026-10-18, below): a repo not named `homebrew-…` needs a full tap URL, and the owner already has a tap. The tap's cask is updated only after the release asset downloads with a matching SHA-256. Its `zap` leaves `~/Music/Copyist` alone, because those are the person's songs. Gave up: one repo holding both the app and its cask.
