@@ -32,7 +32,7 @@ Last updated: 2026-10-19.
 ## 1b. Open source
 
 - [x] MIT licence (LICENSE), CONTRIBUTING.md, CODE_OF_CONDUCT.md, issue templates, tests on GitHub Actions (Linux and macOS, Python 3.11 and 3.12), `copyist --version`
-- [x] Push, then check the first GitHub Actions run passes (2026-10-19: `tests` green on Linux and macOS, Python 3.11 and 3.12, run 39286523203; `pages` deployed)
+- [ ] Push, then check the first GitHub Actions run passes. Not tracked for now (owner, 2026-10-19): the gate is the full local suite plus open-transcriber's own tests
 - [ ] Dependabot's Cargo security update for `glib` (< 0.20, pulled in by Tauri's Linux GTK stack) fails: no patched version fits Tauri 2's gtk-rs 0.18. Revisit when Tauri moves to gtk-rs ≥ 0.20; the Mac app doesn't link glib
 - [x] Public site on GitHub Pages (`site/`): advertises Copyist, explains score-first features, install and setup; deployed by `.github/workflows/pages.yml` to https://copyist.digitaldefiance.org/ (`site/CNAME`). After the next push to `main`: Pages → Source: GitHub Actions, and a DNS CNAME for `copyist` → `digital-defiance.github.io` (plus enforce HTTPS in Pages settings)
 - [ ] A short demo (video or audio) linked from the README and the site — still open; the Pages site covers the written pitch
@@ -249,6 +249,7 @@ Spec: docs/transcribing.md. The owner asked for this on 18 October 2026; her mus
 - [x] Close note gaps on truth takes: adaptive candidate selection tuned; Saints 0.85 (tied), AG 0.89 (+0.01), SN 0.85 (+0.05), Tyger 0.97 (+0.19), MG 0.83; mean 0.88 vs 0.83
 - [x] Full `roundtrip.py --engine neural` lead-sheet draft benchmark: mean 0.87 vs 0.83 (Saints 0.91 vs 0.85, Tyger 0.93 vs 0.78, AG 0.89 vs 0.88, MG 0.84 tied)
 - [ ] **NEXT:** Silent Night draft 6/8 compound rhythm snapping (0.78 vs 0.80) to make neural an across-the-board win; T1 domain training on synthetic stems
+- [ ] T1: train the neural transcriber. The owner wants this soon, as soon as the non-training passes run out (two attempts in a row that don't move either benchmark table). A planning pass is under way: training data with clean rights and exact labels, model choice, held-out evaluation, time on the M4 Max.
 - [ ] SheetSage ABC through the same fold/tidy path
 - [ ] Owner listen check on June Snow / other songs only after a table win. Never commit them
 - [ ] Repeats vote (SPEC 12.2a step 3): the same section sung again settles doubtful notes

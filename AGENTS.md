@@ -25,6 +25,7 @@ The work moved fast and may change hands at any moment. Here is where things sta
 **Next, in this order:**
 1. **Ship the Mac app:** TASKS.md §3d — `freeze-engine` + `bundle-mac`, sign/notarize, tag `v0.0.1` so `brew install --cask copyist` works.
 2. **Transcribing recordings:** TASKS.md section 7 — open-transcriber + `--engine neural` (BP/`clean_notes`): note table mean ~0.88 vs open 0.83, Saints/AG gaps closed (0.85 tied, 0.89 vs 0.88); Major-General 0.83 vs open 0.84 (121 of 128 notes). Full `roundtrip.py --engine neural` mean 0.87 vs 0.83, losing only Silent Night (0.78 vs 0.80): next is its 6/8 rhythm snapping. Owner songs only after a table win.
+   - T1: train the neural transcriber. The owner wants this soon, as soon as the non-training passes run out (two attempts in a row that don't move either benchmark table). A planning pass is under way: training data with clean rights and exact labels, model choice, held-out evaluation, time on the M4 Max.
 3. **Less-cheesy exact previews (rest of 3f):** crank/comb music box when a CC0 set can be hosted (celesta is in).
 4. **The open singer (plan B):** TASKS.md section 3h, spec in [docs/open-singer.md](docs/open-singer.md). Start with phase B0 (feasibility).
 

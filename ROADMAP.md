@@ -50,6 +50,7 @@ Take the first unchecked item in the current milestone. Tick items when they're 
 - [x] Open-transcriber submodule ([Digital-Defiance/open-transcriber](https://github.com/Digital-Defiance/open-transcriber))
 - [x] T0 Basic Pitch baseline scored (loses to open engine except Major-General ≈)
 - [ ] Open neural lead-sheet: T0b tidy path, then T1 if needed (docs/open-transcriber.md)
+- [ ] T1: train the neural transcriber. The owner wants this soon, as soon as the non-training passes run out (two attempts in a row that don't move either benchmark table). A planning pass is under way: training data with clean rights and exact labels, model choice, held-out evaluation, time on the M4 Max.
 - [ ] Repeats vote, per-doubt A/B by ear (SPEC 12.2a)
 - [ ] The owner transcribes her own songs on the Mac and listens
 
