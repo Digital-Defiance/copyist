@@ -129,27 +129,9 @@ def hypothesis(path: Path):
 
 
 def parse_any(abc_text):
-    """The Vocal voice even with no notes in it (its chords)."""
-    header, voice, plan = {}, None, None
-    for raw in abc_text.splitlines():
-        line = raw.strip()
-        if not line or line.startswith("%"):
-            continue
-        m = re.match(r"^([A-Za-z]):\s*(.*)$", line)
-        if m and not line.startswith("V:"):
-            header[m.group(1)] = m.group(2).strip()
-            if m.group(1) == "K":
-                plan = abcplan.Plan(header.get("M"), Fraction(header.get("L")), header.get("Q", ""), m.group(2).strip())
-            continue
-        if line.startswith("V:"):
-            voice = line[2:].split()[0]
-            continue
-        if voice == "Vocal":
-            for chunk in line.split("|"):
-                if chunk.strip():
-                    toks, z = abcplan.tokenize_bar(chunk)
-                    plan.vocal.append(abcplan.Bar(toks or [abcplan.Tok("rest", length=plan.bar_units)], "x"))
-    return plan
+    """The Vocal voice's bars, chords included, even with no notes in it: Copyist's own reader
+    (`abcplan.read_vocal`), so every bar is kept across key changes and `Zn` is n bars."""
+    return abcplan.read_vocal(abc_text)
 
 
 def match(truth_notes, notes, spq, octave_free, shift, ratio=1.0, tol_beats=0.25):

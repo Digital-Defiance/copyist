@@ -1,0 +1,9 @@
+format: copyist-song/0
+title: Key Change Test
+key: C
+meter: 4/4
+unit: 1/4
+tempo: 100
+melody: |
+  "C"c e g ^f | "F"f a c' a | "D"d ^f a d' | "G"g f f "A7"^c |
+  "E7"^g a "Gm"=g _b | "Eb"_e2 "Bb"_b2 |]
