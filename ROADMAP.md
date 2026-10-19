@@ -51,9 +51,18 @@ Take the first unchecked item in the current milestone. Tick items when they're 
 - [x] T0 Basic Pitch baseline scored (loses to open engine except Major-General ≈)
 - [ ] Open neural lead-sheet: T0b tidy path, then T1 if needed (docs/open-transcriber.md)
 - [ ] Two big public-domain songs in the round-trip set, covering a minor key, a key change, syncopation, richer harmony, 12/8, a wide range and a repeated chorus (TASKS.md §7)
-- [ ] T1: train the neural transcriber. The owner wants this soon, as soon as the non-training passes run out (two attempts in a row that don't move either benchmark table). Plan written 2026-10-19: a small lead-sheet model on Basic Pitch, trained on SoulX-sung Copyist melodies with exact labels. Owner decisions made 2026-10-19 (Mac only, MIT weights; TASKS.md §7); the data foundation (held-out guard, score sampler) landed. New goal: the best open transcriber available, beating SheetSage2 objectively; a design audit comes before training
+- [ ] T1: train the neural transcriber. The owner wants this soon, as soon as the non-training passes run out (two attempts in a row that don't move either benchmark table). Plan written 2026-10-19: a small lead-sheet model on Basic Pitch, trained on SoulX-sung Copyist melodies with exact labels. Owner decisions made 2026-10-19 (Mac only, MIT weights; TASKS.md §7); the data foundation (held-out guard, score sampler) landed. New goal: the best open transcriber available, beating SheetSage2 objectively.
+- [x] Design audit (2026-10-19; TASKS.md §7):
+  - **The judge:** real, licence-clean recordings, not YuE2 takes.
+  - **T1, re-scoped:** an encoder bake-off with multi-task heads and structured decoding.
+  - **The song format:** `copyist-song/1` (tuplets, key, meter and tempo changes, repeats, a second vocal line).
+  - **Budget:** $0.
+  - **The owner's time:** nothing waits on it.
+- [ ] Stage 0, the judge: 0a, the first honest scoreboard against SheetSage2 on RWC and Creative Commons karaoke songs (under way), then 0b, the frozen public-domain set COTB-v1 and strict notation metrics
+- [ ] Stage 1, rhythm and notation: global tempo and meter, a tuplet-aware note grid, key changes, and `copyist-song/1` with a converter
+- [ ] Stages 2–4: the encoder bake-off and trained heads; real data, a symbolic prior and the repeats vote; then the one-time test. About 2.5–3 months to the test if GPU jobs may run whenever the Mac is idle (the owner's open decision)
 - [ ] Repeats vote, per-doubt A/B by ear (SPEC 12.2a)
-- [ ] The owner transcribes her own songs on the Mac and listens
+- [ ] Optional: the owner transcribes her own songs on the Mac and listens, if she wants to (never blocking)
 
 ## M2: Song planning and following directions
 

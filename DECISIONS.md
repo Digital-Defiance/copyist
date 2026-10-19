@@ -32,6 +32,12 @@ Newest first. One entry per decision: what, why, and what we gave up.
   - **Correction effort:** measured with a simulated listener, a script that picks the alternative closer to the truth.
   - **GPU jobs:** agents on the Mac start and watch them. Running them whenever the Mac is idle, by day as well as at night, is still her decision.
   - **Gave up:** human listening as an endpoint. An automatic sound check can't be validated without people, so it backs up the claims rather than deciding them.
+- **The transcriber may build on a ready-made "ear":** a pre-trained audio model with an open licence whose own training data can't be audited. Owner's call, on the same standard as Basic Pitch and SoulX. A fair bake-off on dev sets picks which one, with Whisper's encoder as a partner for lyrics. The candidates are MusicFM, Dasheng and HeartCodec's encoder. Gave up: an auditable data chain under the encoder. Training our own from scratch would take weeks of GPU and would very likely hear worse.
+- **The song format moves to `copyist-song/1`.** Owner's call.
+  - **What it adds:** tuplets, inline key, meter and tempo changes, repeats and voltas, and an optional second vocal line. Higher tiers (piano-vocal and short scores) live in MusicXML parts beside the song file.
+  - **Versioning:** a version bump in SPEC §4 and a converter, so every `copyist-song/0` file keeps working (the AGENTS rule).
+  - **The catch:** music21 10.5 drops inline `[K:]` (probed 2026-10-19), so Copyist must handle inline changes itself rather than trust music21's ABC reader.
+  - **Gave up:** the simplicity of one key, meter and tempo per song.
 
 ## 2026-10-19 (v0.0.1 release and where the cask lives)
 

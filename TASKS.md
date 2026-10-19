@@ -298,12 +298,17 @@ Spec: docs/transcribing.md. The owner asked for this on 18 October 2026; her mus
       - a playback check (each transcription rendered by Copyist's band and compared with the original) instead of listening tests;
       - a simulated listener, a script that picks the alternative closer to the truth, for correction effort.
     - **Agents start and watch the GPU jobs.** Listening is no longer an endpoint.
-  - [ ] Owner decisions still open on the revised audit (plain words at the end of its report):
-    - decision 6: pre-trained "ears" with open licences whose training recordings can't all be checked;
-    - decision 10: song format `copyist-song/1` (triplets, key, meter and tempo changes, repeats, a second voice);
-    - decision 14: GPU jobs whenever the Mac is idle, day or night. They pause while she's using it; without this, it's nights only.
+  - [x] A ready-made "ear" and the song-file upgrade (owner, 2026-10-19; DECISIONS):
+    - **The ear:** building on a pre-trained audio model with an open licence is fine, even though its training data can't be audited. That's the same standard as Basic Pitch and SoulX. A fair bake-off on dev sets picks which one.
+    - **The song file:** `copyist-song/1` is approved, as described in the next item.
+  - [ ] Owner decision still open: decision 14, GPU jobs whenever the Mac is idle, day or night. They'd pause while she's using it. Until she answers, long GPU jobs run at night only.
 
     Planned unless she objects: self-labelled CC0/CC BY music; claiming "best" only after the one-time test; switching the default engine once that test passes.
+  - [ ] Song format `copyist-song/1` (owner approved, 2026-10-19), part of stage 1:
+    - **What it adds:** tuplets `(3`; inline key, meter and tempo changes; repeats and voltas; an optional second vocal line.
+    - **Versioning:** a version bump in SPEC §4, plus a converter so every `copyist-song/0` file keeps working.
+    - **Caveat:** music21 10.5 drops inline `[K:]` (probed 2026-10-19 while planning the key-change fix). So Copyist has to handle inline changes itself, for example by splitting the tune at each change. Probe meter and tempo changes and tuplets the same way before relying on music21.
+    - **Today:** until v1 lands, a key change in a song file is written with one key signature and explicit accidentals.
   - [ ] Stage 6, give the disk back: once the test is published and the model ships, shrink the project from about 300 GB to about 15 GB. Check first that the manifests can rebuild everything that's deleted (recipes for renders; source links and checksums for downloads)
   - [ ] Stage 0, the judge (after the owner's decisions and the key-change fix, which touches the same scorer). It needs:
     - timed-event outputs from every engine;
