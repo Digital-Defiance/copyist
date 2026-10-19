@@ -1,18 +1,15 @@
-# Build Mac DMGs for GitHub Releases (docs/desktop-app.md, scripts/package/README.md).
-# Tag v0.0.1 (etc.) to run. Default: unsigned CI artifacts.
-# Signed releases: prefer scripts/package/bundle-mac.sh --sign on the Mac with the
-# Digital Defiance Developer ID, then attach the DMG — or add APPLE_CERTIFICATE*
-# secrets here later.
-name: Release Mac app
-
+# Unsigned Mac builds, as workflow artifacts (docs/desktop-app.md, scripts/package/README.md).
+# Runs on v* tags and by hand. It never touches the GitHub Release: the release DMG is
+# built, signed, notarized and stapled on the owner's Mac (scripts/package/bundle-mac.sh
+# --sign) and uploaded with `gh release create`, so an unsigned CI build can't replace it
+# (DECISIONS.md, 2026-10-19). The Intel build is a smoke test until Intel ships.
+name: Mac build (unsigned)
 on:
   push:
     tags: ["v*"]
   workflow_dispatch:
-
 permissions:
-  contents: write
-
+  contents: read
 jobs:
   mac:
     strategy:
@@ -28,45 +25,36 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-
       - name: Python engine
         run: |
           python -m venv .venv
           .venv/bin/pip install -U pip
           .venv/bin/pip install -e .
           .venv/bin/pip install --no-deps tinysoundfont
-          chmod +x scripts/package/freeze-engine.sh
           scripts/package/freeze-engine.sh ${{ matrix.triple }}
-
       - uses: dtolnay/rust-toolchain@stable
-
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
           cache: npm
           cache-dependency-path: app/package-lock.json
-
       - name: Tauri build
-        working-directory: app
         run: |
-          npm ci
-          npm run build
-
+          (cd app && npm ci)
+          scripts/package/bundle-mac.sh
+          test -z "$(git status --short)"
       - name: Stage DMG
         run: |
-          mkdir -p dist/release
+          mkdir -p dist/unsigned
           dmg=$(find app/src-tauri/target/release/bundle/dmg -name '*.dmg' | head -1)
           test -n "$dmg"
-          cp "$dmg" "dist/release/Copyist_${GITHUB_REF_NAME#v}_${{ matrix.arch }}.dmg"
-          shasum -a 256 "dist/release/Copyist_${GITHUB_REF_NAME#v}_${{ matrix.arch }}.dmg" | tee "dist/release/Copyist_${GITHUB_REF_NAME#v}_${{ matrix.arch }}.sha256"
-
-      - uses: softprops/action-gh-release@v2
-        if: startsWith(github.ref, 'refs/tags/')
+          name="Copyist_${GITHUB_REF_NAME#v}_${{ matrix.arch }}-unsigned.dmg"
+          cp "$dmg" "dist/unsigned/$name"
+          shasum -a 256 "dist/unsigned/$name" | tee "dist/unsigned/$name.sha256"
+      - uses: actions/upload-artifact@v4
         with:
-          files: dist/release/*
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          name: copyist-mac-${{ matrix.arch }}-unsigned
+          path: dist/unsigned/*

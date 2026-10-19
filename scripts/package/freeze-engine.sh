@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # Freeze the Copyist engine with PyInstaller for the Tauri sidecar (docs/desktop-app.md).
-# Writes app/src-tauri/binaries/copyist-engine-<rust-triple> as a single executable.
+# Writes dist/copyist-engine-<rust-triple> (ignored) as a single executable.
+# bundle-mac.sh copies it into app/src-tauri/binaries/ for the build only, so the
+# tracked placeholder there stays untouched and git stays clean.
 set -euo pipefail
 root="$(cd "$(dirname "$0")/../.." && pwd)"
 cd "$root"
@@ -43,13 +45,16 @@ fi
 
 out="$root/dist/engine"
 rm -rf "$out"
-mkdir -p "$out" "$root/app/src-tauri/binaries"
+mkdir -p "$out"
 
 echo "Freezing copyist-engine for $triple (onefile; a few minutes)…"
 # Use engine_entry.py (absolute imports). Freezing copyist/__main__.py breaks
 # relative imports: PyInstaller runs it as a bare __main__ script.
 # cmudict (via pronouncing) calls importlib.metadata.version at import — need
 # its dist-info in the bundle or the sidecar dies before serve starts.
+# The neural transcriber (open-transcriber → Basic Pitch → TensorFlow) stays out:
+# the page doesn't offer it yet, its models aren't bundled, and TensorFlow alone
+# doubles the app to ~400 MB (DECISIONS.md, 2026-10-19).
 "$py" -m PyInstaller \
   --noconfirm --clean --onefile --name copyist-engine \
   --distpath "$out" --workpath "$out/build" --specpath "$out" \
@@ -63,6 +68,14 @@ echo "Freezing copyist-engine for $triple (onefile; a few minutes)…"
   --copy-metadata pronouncing \
   --hidden-import copyist \
   --hidden-import copyist.cli \
+  --exclude-module open_transcriber \
+  --exclude-module basic_pitch \
+  --exclude-module tensorflow \
+  --exclude-module tensorboard \
+  --exclude-module keras \
+  --exclude-module tf_keras \
+  --exclude-module coremltools \
+  --exclude-module tflite_runtime \
   --console \
   "$root/scripts/package/engine_entry.py"
 
@@ -70,7 +83,7 @@ bin="$out/copyist-engine"
 [[ -f "$bin" ]] || bin="$out/copyist-engine.exe"
 [[ -f "$bin" ]] || { echo "PyInstaller did not write $out/copyist-engine" >&2; exit 1; }
 
-dest="$root/app/src-tauri/binaries/copyist-engine-$triple"
+dest="$root/dist/copyist-engine-$triple"
 cp "$bin" "$dest"
 chmod +x "$dest"
 echo "Wrote $dest ($(du -h "$dest" | awk '{print $1}'))"

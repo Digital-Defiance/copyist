@@ -2,6 +2,12 @@
 
 Newest first. One entry per decision: what, why, and what we gave up.
 
+## 2026-10-19 (Mac packaging leaves git clean)
+
+- **`freeze-engine.sh` writes `dist/copyist-engine-<triple>` (ignored); `bundle-mac.sh` copies it over the tracked placeholder in `app/src-tauri/binaries/` only for the build and puts the placeholder back on exit (a trap), and hands Tauri the extra sidecars through a temporary `--config` file (Tauri merges it over `tauri.conf.json`; the array replaces the engine-only list).** A full freeze and signed bundle now leave `git status` empty, and a fresh checkout still compiles against the placeholder. CI calls the same script. Gave up: freezing straight into `binaries/` (one stray `git add` puts 200 MB in history) and rewriting `tauri.conf.json`.
+- **The app's engine leaves out the neural transcriber (open-transcriber, Basic Pitch, TensorFlow).** PyInstaller followed `--engine neural`'s import into TensorFlow and the engine grew from ~200 MB to ~410 MB, yet the page doesn't offer the neural engine and its models aren't bundled. In the app, `--engine neural` stops with its "needs the open-transcriber submodule" message; the open engine and SheetSage2 work as before. Gave up: neural transcription in the app until it's the default (bundle its models then).
+- **The engine sidecar runs in its own process group.** The frozen engine is PyInstaller's launcher plus the Python it starts; Tauri's quit sends SIGKILL to the launcher alone, which left the Python serving after the app quit (eleven stale engines were found on 2026-10-19). With `set_process_group(true)` the kill takes the whole group, including any job the engine started. Gave up: nothing; a force-quit of the app itself still can't clean up.
+
 ## 2026-10-19 (desktop packaging in git)
 
 - **The committed `tauri.conf.json` lists only the engine sidecar; `bundle-mac.sh` adds the yue/sfizz sidecars it stages.** Those binaries come from `.cache/` and are gitignored, so listing them in the committed config would break `npm run dev` on a fresh checkout and the unsigned `release-mac.yml` build. The engine placeholders stay tracked; the frozen ~200 MB engine never goes in git (GitHub refuses files over 100 MB). Lock files (`Cargo.lock`, `package-lock.json`) are committed for reproducible app builds. Gave up: a config that matches a full local bundle without the script's rewrite.
