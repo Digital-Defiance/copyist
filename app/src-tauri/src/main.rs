@@ -105,6 +105,10 @@ fn start_engine(app: &AppHandle, window: WebviewWindow) -> Result<(), Box<dyn st
         .shell()
         .sidecar("copyist-engine")?
         .current_dir(workdir)
+        // Its own process group, so quitting stops all of it: the frozen engine is
+        // PyInstaller's launcher plus the Python it starts (and any jobs that starts),
+        // and killing only the launcher left the Python serving after the app quit.
+        .set_process_group(true)
         .args(["serve", "--root", root.as_str(), "--port", "0", "--machine", "--demo"]);
     for (k, v) in env {
         cmd = cmd.env(k, v);
