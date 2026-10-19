@@ -244,3 +244,13 @@ progress { accent-color: var(--blue); width: min(100%, 24rem); height: 0.9rem; v
 .drawer-action { display: flex; flex-direction: column; align-items: flex-start; }
 .drawer-gap { height: 1.25rem; }
 [hidden] { display: none !important; }
+
+/* ------------------------------------------------------- install extras */
+.setup-packs { display: grid; gap: 1rem; max-width: 40rem; margin: 1.5rem 0; }
+.setup-packs .pack {
+  background: var(--wash); border-radius: 10px; padding: 1.1rem 1.35rem 1.25rem;
+}
+.setup-packs .pack.ready { opacity: 0.85; }
+.setup-packs .pack h3 { margin: 0 0 0.35rem; font-family: var(--display); font-size: 1.35rem; }
+.setup-packs .pack p { margin: 0.35rem 0; max-width: 52ch; }
+.setup-packs .pack .actions { margin-top: 0.75rem; }

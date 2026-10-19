@@ -113,10 +113,14 @@ async function route() {
   if (rw) return routeRewrite(decodeURIComponent(rw[1]), rw[2]);
   const t = location.hash.match(/^#\/transcribe(?:\/([^/]+))?$/);
   if (t) return t[1] ? routeTranscription(decodeURIComponent(t[1])) : routeTranscribeForm();
+  if (location.hash === "#/setup" || location.hash === "#/install") return routeSetup();
   const m = location.hash.match(/^#\/song\/([^/]+)\/(song|score|sound)$/);
   if (!m) {
     if (songs.length) location.replace(`#/song/${encodeURIComponent(songs[0].slug)}/song`);
-    else page.innerHTML = `<div class="empty"><h1>Copyist</h1><p>Add a song file to the songs folder to begin.</p></div>`;
+    else page.innerHTML = `<div class="empty"><h1>Copyist</h1>
+      <p>Write a song from lyrics, or open a demo once the Amazing Grace song is in your library.</p>
+      <p class="drawer-action"><a class="button" href="#/write">Write a song</a>
+        <a class="button" href="#/setup">Install the band or singer</a></p></div>`;
     return;
   }
   const slug = decodeURIComponent(m[1]);
@@ -431,6 +435,76 @@ function wireSound(song) {
 const VOICE_LABELS = { soprano: "Soprano (high female)", alto: "Alto (low female)", tenor: "Tenor (high male)",
   baritone: "Baritone (low male)" };
 
+function gb(n) {
+  return (n / (1024 ** 3)).toFixed(n >= 1024 ** 3 ? 1 : 2);
+}
+
+function packCard(id, title, why, size, have, ready, licenceText, licenceUrl) {
+  if (ready) {
+    return `<div class="pack ready"><h3>${esc(title)}</h3><p class="hint">${esc(why)}. Installed.</p></div>`;
+  }
+  const licence = licenceText
+    ? `<p class="hint">${esc(licenceText)} <a href="${esc(licenceUrl)}" rel="noopener">Read the licence</a>.</p>
+       <p><label class="check"><input type="checkbox" data-accept="${esc(id)}"> I accept the licence</label></p>`
+    : "";
+  return `<div class="pack" data-pack="${esc(id)}">
+    <h3>${esc(title)}</h3>
+    <p>${esc(why)}. About ${gb(size)} GB${have ? `; ${gb(have)} GB already downloaded` : ""}.</p>
+    ${licence}
+    <div class="actions"><button class="go" data-get="${esc(id)}" ${licenceText ? "disabled" : ""}>Download</button></div>
+    <div class="job" data-job-panel="setup-${esc(id)}"></div>
+  </div>`;
+}
+
+function wirePackDownloads() {
+  for (const box of document.querySelectorAll("[data-accept]")) {
+    box.addEventListener("change", () => {
+      const btn = document.querySelector(`[data-get="${box.dataset.accept}"]`);
+      if (btn) btn.disabled = !box.checked;
+    });
+  }
+  for (const btn of document.querySelectorAll("[data-get]")) {
+    btn.addEventListener("click", () => {
+      const id = btn.dataset.get;
+      const accept = document.querySelector(`[data-accept="${id}"]`);
+      const body = { action: "download", group: id };
+      if (accept) body.accept_licence = accept.checked;
+      start(body, `setup-${id}`);
+    });
+  }
+}
+
+async function routeSetup() {
+  markCurrent(null);
+  current = null;
+  try { models = await api("/api/models"); } catch { /* keep */ }
+  const band = bandPack();
+  const singer = models && models.groups.find((g) => g.id === "singer");
+  const voices = models && models.groups.find((g) => g.id === "voices");
+  const sheetsage = models && models.groups.find((g) => g.id === "sheetsage");
+  page.innerHTML = `<div class="staff-title"><h1>Install extras</h1></div>
+    <p class="facts">Copyist writes and plays songs with what's on this computer. Download only what you want —
+      the band for exact previews, the singer for finished takes, SheetSage2 for an optional more accurate
+      transcription. Nothing is required to start writing with Copyist's own melody writer.</p>
+    <section class="setup-packs">
+      ${band ? packCard("instruments-band", "The sampled band", "Piano, bass, drums and melody winds for exact score previews",
+        band.size, band.have, band.ready) : ""}
+      ${singer ? packCard("singer", singer.label, singer.why, singer.size, singer.have, singer.ready,
+        singer.licence || models.licence, singer.licence_url || models.licence_url) : ""}
+      ${voices ? packCard("voices", voices.label, voices.why, voices.size, voices.have, voices.ready,
+        voices.licence || models.licence, voices.licence_url || models.licence_url) : ""}
+      ${sheetsage ? packCard("sheetsage", sheetsage.label, sheetsage.why, sheetsage.size, sheetsage.have, sheetsage.ready,
+        sheetsage.licence, sheetsage.licence_url) : ""}
+      ${models && !models.sfizz ? `<p class="hint">The instrument player (sfizz) isn't on this machine yet.
+        The desktop app bundles it; from a source checkout run <code>scripts/setup-sfizz.sh</code>.</p>` : ""}
+    </section>
+    <p class="hint">Files go in ${esc(models && models.folder)} (models) and
+      ${esc(models && models.instruments_folder)} (instruments).</p>
+    <p class="drawer-action"><a class="button" href="#/write">Write a song</a>
+      <a class="button" href="#/transcribe">Transcribe a recording</a></p>`;
+  wirePackDownloads();
+}
+
 async function routeWriteForm() {
   markCurrent(null);
   current = null;
@@ -441,7 +515,8 @@ async function routeWriteForm() {
   const styleOptions = `<option value="">No particular style</option>` + families.map((f) =>
     `<optgroup label="${esc(f)}">${allStyles.filter((s) => s.family === f).map((s) =>
       `<option value="${esc(s.id)}">${esc(s.name)}</option>`).join("")}</optgroup>`).join("");
-  const form = singerReady() ? `
+  const defaultEngine = singerReady() ? "auto" : "rules";
+  const form = `
     <section class="make">
       <div class="fields">
         <div class="field"><label for="w-title">Title</label><input id="w-title" type="text" maxlength="120"></div>
@@ -451,9 +526,9 @@ async function routeWriteForm() {
         <div class="field"><label for="w-count">How many to write</label><select id="w-count">${[2, 3, 4, 6, 8].map((n) =>
           `<option ${n === 4 ? "selected" : ""}>${n}</option>`).join("")}</select></div>
         <div class="field"><label for="w-engine">Writer</label><select id="w-engine">
-          <option value="auto" selected>Auto (YuE2 when installed)</option>
-          <option value="plan">YuE2 planner</option>
-          <option value="rules">Copyist's own (no GPU)</option>
+          <option value="auto" ${defaultEngine === "auto" ? "selected" : ""}>Auto (YuE2 when installed)</option>
+          <option value="plan" ${singerReady() ? "" : "disabled"}>YuE2 planner${singerReady() ? "" : " (install the singer first)"}</option>
+          <option value="rules" ${defaultEngine === "rules" ? "selected" : ""}>Copyist's own (no download)</option>
         </select></div>
         <div class="field wide"><label for="w-lyrics">Lyrics</label>
           <textarea id="w-lyrics" class="lyrics-box" placeholder="[Verse]&#10;Hope is the thing with feathers&#10;That perches in the soul&#10;&#10;[Chorus]&#10;..."></textarea>
@@ -463,27 +538,21 @@ async function routeWriteForm() {
           <p class="hint">They steer the melody writer along with the style.</p></div>
       </div>
       <div class="actions"><button class="go" id="w-go">Write the songs</button>
-        <span class="hint">Each melody comes with the band playing it, so you can choose by ear. Copyist's own writer
-          needs no download.</span></div>
+        <span class="hint">Each melody comes with the band playing it, so you can choose by ear.
+          ${singerReady() ? "" : ' <a href="#/setup">Install the singer</a> later for YuE2 takes.'}</span></div>
       <div class="job" data-job-panel></div>
-    </section>` : installPanel();
+    </section>`;
   page.innerHTML = `<div class="staff-title"><h1>Write a song</h1></div>
     <p class="facts">Give Copyist your lyrics and it writes several melodies for them, with chords, the lyrics placed
       under the notes, and the band playing each one. Keep the one you like, and it becomes a song with a lead
       sheet, a score and parts.</p>${form}`;
-  if (!singerReady()) {
-    const accept = $("#accept"), install = $("#install");
-    accept.addEventListener("change", () => { install.disabled = !accept.checked; });
-    install.addEventListener("click", () => start({ action: "download", group: "singer", accept_licence: accept.checked }));
-  } else {
-    $("#w-go").addEventListener("click", async () => {
-      const body = { action: "write", title: $("#w-title").value.trim(), lyrics: $("#w-lyrics").value,
-        style: $("#w-style").value || null, voice: $("#w-voice").value, words: $("#w-words").value.trim() || null,
-        candidates: Number($("#w-count").value), engine: $("#w-engine").value };
-      await start(body);
-      if (watching && watching.song) location.hash = `#/write/${encodeURIComponent(watching.song)}`;
-    });
-  }
+  $("#w-go").addEventListener("click", async () => {
+    const body = { action: "write", title: $("#w-title").value.trim(), lyrics: $("#w-lyrics").value,
+      style: $("#w-style").value || null, voice: $("#w-voice").value, words: $("#w-words").value.trim() || null,
+      candidates: Number($("#w-count").value), engine: $("#w-engine").value };
+    await start(body);
+    if (watching && watching.song) location.hash = `#/write/${encodeURIComponent(watching.song)}`;
+  });
   if (watching) showJob(watching);
 }
 
@@ -618,10 +687,15 @@ async function refreshWriting() {
 
 // ------------------------------------------------- transcribing a recording
 
-function routeTranscribeForm() {
+async function routeTranscribeForm() {
   markCurrent(null);
   current = null;
+  if (!models) {
+    try { models = await api("/api/models"); } catch { /* keep */ }
+  }
   const ss = transcriptions.sheetsage;
+  const pack = models && models.groups.find((g) => g.id === "sheetsage");
+  const needDownload = !ss && pack && !pack.ready;
   page.innerHTML = `<div class="staff-title"><h1>Transcribe a recording</h1></div>
     <p class="facts">Give Copyist a recording of a song, one you made or have the rights to, and it writes the
       lead sheet: the melody as sung, the chords, and the words under the notes. Then the band plays it back so
@@ -633,26 +707,45 @@ function routeTranscribeForm() {
         <div class="field"><label for="t-title">Title</label><input id="t-title" type="text" maxlength="120"></div>
         <div class="field"><label for="t-engine">Transcriber</label><select id="t-engine" title="SheetSage2 is often more accurate, but its licence forbids commercial use.">
           <option value="open">Copyist's own: free for any use</option>
-          <option value="sheetsage" ${ss ? "" : "disabled"}>SheetSage2: non-commercial${ss ? "" : " (not installed)"}</option>
+          <option value="sheetsage">SheetSage2: non-commercial${ss ? "" : " (install first)"}</option>
         </select></div>
         <div class="field wide" id="t-licence" hidden><label class="check"><input type="checkbox" id="t-accept">
           I understand SheetSage2's licence is non-commercial: I won't use this transcription in anything I sell.</label></div>
+        <div class="field wide" id="t-install" hidden>
+          ${needDownload && pack ? packCard("sheetsage", pack.label, pack.why, pack.size, pack.have, false,
+            pack.licence, pack.licence_url) : `<p class="hint">SheetSage2 isn't ready yet.
+            ${pack && pack.ready ? "Its runner (yue-transcribe) isn't on this machine — the desktop app bundles it; from a checkout run <code>scripts/setup-yue.sh</code>."
+              : '<a href="#/setup">Install extras</a> has the download.'}</p>`}
+        </div>
         <div class="field wide"><label for="t-lyrics">Lyrics (optional, but they help a lot)</label>
           <textarea id="t-lyrics" class="lyrics-box" placeholder="[Verse]&#10;The words as they're sung, one line per line"></textarea>
           <p class="hint">The words tell Copyist how many notes the singer sings. Without them, it listens for the words itself.</p></div>
       </div>
       <div class="actions"><button class="go" id="t-go">Transcribe it</button>
-        <span class="hint" id="t-status">The recording stays on this computer.</span></div>
+        <span class="hint" id="t-status">The recording stays on this computer.
+          ${ss ? "" : ' <a href="#/setup">Install SheetSage2</a> for the optional more accurate (non-commercial) engine.'}</span></div>
       <div class="job" data-job-panel></div>
     </section>`;
   const file = $("#t-file"), title = $("#t-title"), engine = $("#t-engine");
+  const syncEngine = () => {
+    const sheetsage = engine.value === "sheetsage";
+    $("#t-licence").hidden = !sheetsage || !ss;
+    $("#t-install").hidden = !sheetsage || ss;
+    $("#t-go").disabled = sheetsage && !ss;
+  };
   file.addEventListener("change", () => {
     if (file.files[0] && !title.value) title.value = file.files[0].name.replace(/\.[^.]+$/, "").replace(/[-_]+/g, " ");
   });
-  engine.addEventListener("change", () => { $("#t-licence").hidden = engine.value !== "sheetsage"; });
+  engine.addEventListener("change", syncEngine);
+  syncEngine();
+  wirePackDownloads();
   $("#t-go").addEventListener("click", async () => {
     const f = file.files[0];
     if (!f) { showMessage("Choose the recording first."); return; }
+    if (engine.value === "sheetsage" && !transcriptions.sheetsage) {
+      showMessage("Install SheetSage2 first (accept its licence and download), or pick Copyist's own transcriber.");
+      return;
+    }
     $("#t-go").disabled = true;
     $("#t-status").textContent = "Copying the recording into your library…";
     try {
@@ -663,11 +756,13 @@ function routeTranscribeForm() {
       $("#t-status").textContent = "The recording stays on this computer.";
       await start({ action: "transcribe", upload: up.upload, title: title.value.trim(), lyrics: $("#t-lyrics").value,
         engine: engine.value, accept_licence: $("#t-accept").checked });
-      if (watching && watching.song) location.hash = `#/transcribe/${encodeURIComponent(watching.song)}`;
+      // Stay on the form until the job finishes (poll navigates on success). A failed
+      // job used to leave #/transcribe/<slug> stuck on "listening…".
     } catch (e) {
       showMessage(e.message);
     } finally {
       $("#t-go") && ($("#t-go").disabled = false);
+      syncEngine();
     }
   });
   if (watching) showJob(watching);
@@ -682,9 +777,14 @@ async function routeTranscription(slug) {
     return;
   }
   if (d.pending) {
+    const failed = watching && watching.status === "failed";
+    const idle = !watching || (watching.status !== "running" && watching.song !== slug);
     page.innerHTML = `<div class="staff-title"><h1>${esc(d.title)}</h1></div>
-      <p class="facts">Copyist is listening: separating the voice from the band, then finding the beat, the key,
-        the chords and every sung note. It takes a minute or two.</p><div class="job" data-job-panel></div>`;
+      <p class="facts">${failed || idle
+        ? "That transcription didn't finish."
+        : "Copyist is listening: separating the voice from the band, then finding the beat, the key, the chords and every sung note. It takes a minute or two."}</p>
+      <div class="job" data-job-panel></div>
+      ${failed || idle ? `<p class="drawer-action"><a class="button" href="#/transcribe">Try again</a></p>` : ""}`;
     if (watching) showJob(watching);
     return;
   }
@@ -765,7 +865,7 @@ function showJob(job) {
     ? `<p><progress max="${pr[1]}" value="${pr[0]}"></progress> ${(pr[0] / 1e9).toFixed(2)} of ${(pr[1] / 1e9).toFixed(1)} GB</p>` : "";
   panel.innerHTML = `<p class="status ${job.status}">${esc(job.label)}: ${words[job.status] || job.status}</p>${bar}
     <details ${job.status === "failed" ? "open" : ""}><summary>Output</summary><pre>${esc(job.output || "")}</pre></details>`;
-  for (const b of document.querySelectorAll("button[data-job], button[data-use], button[data-keep], button[data-keep-rewrite], button[data-rewrite], [data-write-more], [data-keep-transcription], #make, #install, #get-band, #w-go, #t-go, #refit-go")) b.disabled = job.status === "running";
+  for (const b of document.querySelectorAll("button[data-job], button[data-use], button[data-keep], button[data-keep-rewrite], button[data-rewrite], [data-write-more], [data-keep-transcription], [data-get], #make, #install, #get-band, #w-go, #t-go, #refit-go")) b.disabled = job.status === "running";
 }
 
 // The "Make a take" choices survive the page redrawing after a job.
@@ -797,6 +897,10 @@ async function poll() {
   if (watching.status === "done" && watching.label.startsWith("Keep") && watching.song) {
     location.hash = `#/song/${encodeURIComponent(watching.song)}/song`;
     return;                       // the hash change draws the kept song
+  }
+  if (watching.status === "done" && watching.label.startsWith("Transcribing") && watching.song) {
+    location.hash = `#/transcribe/${encodeURIComponent(watching.song)}`;
+    return;
   }
   const rewritten = watching.status === "done" && watching.label.match(/^Rewriting the \w+ \((again|higher|simpler)\)$/);
   if (rewritten && watching.song) {
@@ -892,6 +996,17 @@ async function main() {
   const jobs = await api("/api/jobs");
   watching = jobs.find((j) => j.status === "running") || null;
   window.addEventListener("hashchange", route);
+  // First open of the desktop app: offer optional downloads before composing.
+  if (!location.hash || location.hash === "#/" || location.hash === "#") {
+    try {
+      const health = await api("/api/health");
+      const bandReady = health.instruments && health.instruments.band;
+      if (health.desktop && !bandReady && !sessionStorage.getItem("copyist-setup-skip")) {
+        location.replace("#/setup");
+        sessionStorage.setItem("copyist-setup-skip", "1");
+      }
+    } catch { /* ignore */ }
+  }
   await route();
   setTimeout(refreshTraining, 15000);
   poll();
