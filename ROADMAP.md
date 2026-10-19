@@ -60,7 +60,7 @@ Take the first unchecked item in the current milestone. Tick items when they're 
   - **The owner's time:** nothing waits on it.
 - [ ] Stage 0, the judge: 0a, the first honest scoreboard against SheetSage2 on RWC and Creative Commons karaoke songs (under way), then 0b, the frozen public-domain set COTB-v1 and strict notation metrics
 - [ ] Stage 1, rhythm and notation: global tempo and meter, a tuplet-aware note grid, key changes, and `copyist-song/1` with a converter
-- [ ] Stages 2–4: the encoder bake-off and trained heads; real data, a symbolic prior and the repeats vote; then the one-time test. About 2.5–3 months to the test if GPU jobs may run whenever the Mac is idle (the owner's open decision)
+- [ ] Stages 2–4: the encoder bake-off and trained heads; real data, a symbolic prior and the repeats vote; then the one-time test. About 2.5–4 months to the test, depending on the GPU windows the owner's laptop can give (200–350 GPU hours)
 - [ ] Repeats vote, per-doubt A/B by ear (SPEC 12.2a)
 - [ ] The Lights On loop (the owner's goal, part 1; AGENTS.md):
   - **Steps:** transcribe each demo with Copyist's own engine; reproduce it with YuE2; measure how close the take is, automatically; refine; then make lead sheets and arrangements.

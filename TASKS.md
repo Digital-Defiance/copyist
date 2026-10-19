@@ -283,7 +283,7 @@ Spec: docs/transcribing.md. The owner asked for this on 18 October 2026; her mus
     - **Roadmap:** stage 0, the judge (3–4 weeks); stage 1, rhythm and notation decoding (3–4 weeks, overlapping); stage 2, the encoder bake-off and heads (5–7 weeks); stage 3, real data and priors (4–6 weeks); stage 4, the one-time test; stage 5, the product; stage 6, giving the disk back. The stages overlap. Estimates, revised 2026-10-19:
       - a first honest scoreboard against SheetSage2 on real recordings in about 2 weeks;
       - the rhythm and notation fixes in about 5–6 weeks;
-      - the trained model and the one-time test in about 2.5–3 months if GPU jobs run whenever the Mac is idle, or about 4 months at night only (200–350 GPU hours).
+      - the trained model and the one-time test in about 2.5–4 months, depending on how many GPU windows the owner's laptop can give (200–350 GPU hours in all).
 
       Full orchestral scores stay a research goal; orchestral lead sheets and short scores are the promise.
   - [x] Budget: $0 (owner, 2026-10-19; DECISIONS). Nothing is bought: no Rock Corpus recordings, no external drive. Every dataset, model and tool is a free download, and jobs stop by themselves below 150 GB free.
@@ -301,7 +301,10 @@ Spec: docs/transcribing.md. The owner asked for this on 18 October 2026; her mus
   - [x] A ready-made "ear" and the song-file upgrade (owner, 2026-10-19; DECISIONS):
     - **The ear:** building on a pre-trained audio model with an open licence is fine, even though its training data can't be audited. That's the same standard as Basic Pitch and SoulX. A fair bake-off on dev sets picks which one.
     - **The song file:** `copyist-song/1` is approved, as described in the next item.
-  - [ ] Owner decision still open: decision 14, GPU jobs whenever the Mac is idle, day or night. They'd pause while she's using it. Until she answers, long GPU jobs run at night only.
+  - [x] GPU time (decision 14; owner, 2026-10-19). The Mac is her laptop, so GPU jobs run in windows she agrees to:
+    - Agents say what they need and for how long, and she keeps it plugged in with the lid open for that window.
+    - Jobs resume from checkpoints, pause on battery and keep the Mac awake while they run.
+    - The whole plan needs roughly 200–350 GPU hours in chunks, so the timeline depends on how many windows the laptop can give.
 
     Planned unless she objects: self-labelled CC0/CC BY music; claiming "best" only after the one-time test; switching the default engine once that test passes.
   - [ ] Song format `copyist-song/1` (owner approved, 2026-10-19), part of stage 1:

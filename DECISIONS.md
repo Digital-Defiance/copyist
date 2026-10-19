@@ -41,7 +41,7 @@ Newest first. One entry per decision: what, why, and what we gave up.
   - **Test truth:** checked automatically by two independent aligners and torchcrepe pitch checks.
   - **Listening tests:** replaced by a playback check, which renders each transcription with Copyist's band and compares it with the original by pitch track and chroma.
   - **Correction effort:** measured with a simulated listener, a script that picks the alternative closer to the truth.
-  - **GPU jobs:** agents on the Mac start and watch them. Running them whenever the Mac is idle, by day as well as at night, is still her decision.
+  - **GPU jobs:** agents on the Mac start and watch them. The Mac is her laptop, so they run in windows she agrees to. Agents ask ahead, saying how many hours they need, and she keeps it plugged in with the lid open. Jobs resume from checkpoints, pause on battery and keep the Mac awake while they run. Gave up: unattended "whenever it's idle" scheduling, which a laptop that travels can't promise.
   - **Gave up:** human listening as an endpoint. An automatic sound check can't be validated without people, so it backs up the claims rather than deciding them.
 - **The transcriber may build on a ready-made "ear":** a pre-trained audio model with an open licence whose own training data can't be audited. Owner's call, on the same standard as Basic Pitch and SoulX. A fair bake-off on dev sets picks which one, with Whisper's encoder as a partner for lyrics. The candidates are MusicFM, Dasheng and HeartCodec's encoder. Gave up: an auditable data chain under the encoder. Training our own from scratch would take weeks of GPU and would very likely hear worse.
 - **The song format moves to `copyist-song/1`.** Owner's call.
