@@ -135,7 +135,7 @@ Output: `out/<slug>/rewrite/<how>/candidate-*/` with song file, report and band 
    - **Accidentals:** YuE2's plans carry an accidental through the bar for that letter in every octave; music21, which reads Copyist's song files, carries none (measured: `^F f F` reads F#4 F5 F4). So the song file writes every accidental explicitly, and repeats it after another accidental on the same letter in the bar (`abcplan.respell`).
 4. **Meter:** the planner sometimes writes 2/4 even when asked for 4/4. No style plays 2/4, and it doubles the bars to read, so two bars become one 4/4 bar, paired so chord changes and section starts fall on the downbeats (`abcplan.pair_bars`).
 5. **Units:** pick the largest unit (1/4, 1/8 or 1/16) that makes every length a whole number, and rescale. Readable files matter, because people open them.
-6. **Tempo, key and meter** come from `Q:`, `K:` and `M:`. A `Q:1/4=n` becomes `tempo: n`; anything else stays a string (as in songs/silent-night.yaml).
+6. **Tempo, key and meter** come from `Q:`, `K:` and `M:`. A `Q:1/4=n` becomes `tempo: n`; anything else stays a string (as in songs/silent-night.yaml). The key is the one in force at the first sung note. A song file keeps one key signature, so after a key change the notes carry their accidentals and the report says where (SPEC section 4).
 7. **Sections:** record `sections: [{name: verse, bar: 1}, {name: chorus, bar: 17}]` in the song file.
    - This is a new optional field: add it to SPEC section 4 and to `song.py`.
    - `yue.lyrics_text` uses it so a later take sings `[chorus]` where the planner wrote a chorus, and the lead sheet and score print rehearsal marks ("Verse", "Chorus").

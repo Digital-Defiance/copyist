@@ -5,11 +5,12 @@ import unittest
 from fractions import Fraction
 from pathlib import Path
 
+import mido
 from music21 import pitch
 
-from copyist import abcplan, fit, lyrics, syllables, write, yue
+from copyist import abcplan, arrange, engrave, fit, lyrics, syllables, validate, write, yue
 from copyist.song import SongError, load_song
-from helpers import KEY_CHANGE_VOCAL, song_from
+from helpers import KEY_CHANGE_VOCAL, la, song_from
 
 PLANS = Path(__file__).resolve().parent / "data" / "plans"
 
@@ -324,6 +325,28 @@ class SongFromPlanTests(unittest.TestCase):
             write.song_from_plan(plan_text("tuplet"), "la la la", "Test")
         with self.assertRaises(write.WriteError):
             write.song_from_plan(plan_text("alto-waltz"), "la", "Test", voice="mezzo")
+
+    def test_a_key_change_is_written_in_one_key_with_its_accidentals(self):
+        cand = write.song_from_plan(plan_text("key-change"), la(22), "Key change", "alto")
+        self.assertEqual(cand.data["key"], "C")
+        self.assertNotIn("K:", cand.data["melody"])
+        song = load_data(cand.data)
+        self.assertEqual([n.pitch.midi for n in song.melody.recurse().notes if hasattr(n, "pitch")],
+                         [m - 12 for m in KEY_CHANGE_VOCAL])
+        self.assertTrue(validate.is_finished(validate.validate(song)))
+        self.assertTrue(song.lyric_fits[0].fits)
+        self.assertTrue(any("bar 3 (C to D)" in n and "bar 5 (D to Bb)" in n for n in cand.notes), cand.notes)
+
+    def test_a_key_change_song_exports_the_same_notes_to_yue2_and_midi(self):
+        song = load_data(write.song_from_plan(plan_text("key-change"), la(22), "Key change", "alto").data)
+        abc, _ = yue.score_abc(song, 1, intro_bars=0)
+        p = abcplan.parse(abc)
+        self.assertEqual(abcplan.pitches(abcplan.trim(p), p.key), KEY_CHANGE_VOCAL)    # YuE2 is written an octave up
+        with tempfile.TemporaryDirectory() as tmp:
+            path = engrave.write_midi(arrange.performance(song.score), Path(tmp) / "lead.mid")
+            played = [msg.note for track in mido.MidiFile(str(path)).tracks for msg in track
+                      if msg.type == "note_on" and msg.velocity > 0]
+        self.assertEqual(played, [m - 12 for m in KEY_CHANGE_VOCAL])
 
 
 class SectionTests(unittest.TestCase):

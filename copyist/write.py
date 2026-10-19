@@ -87,6 +87,9 @@ def song_from_plan(plan_text: str, lyrics: str, title: str, voice: str | None = 
     except abcplan.PlanError as e:
         raise WriteError(str(e)) from e
     bars, meter = abcplan.pair_bars(abcplan.trim(plan), plan.meter)
+    changes = abcplan.key_changes(bars, plan.key)
+    num, den = (int(x) for x in meter.split("/"))
+    first_bar = 0 if bars and bars[0].length < Fraction(num, den) / plan.unit else 1    # a pickup is bar 0
     if as_sung is not None:
         placement = abcplan.place_as_sung(bars, plan.key, as_sung)
         voice = voice or voice_for(abcplan.pitches(bars, placement.key))
@@ -125,6 +128,8 @@ def song_from_plan(plan_text: str, lyrics: str, title: str, voice: str | None = 
     else:
         notes.append(f"Moved {abs(octaves)} octave{'s' if abs(octaves) != 1 else ''} "
                      f"{'down' if octaves < 0 else 'up'} from the plan." if octaves else "Kept the plan's octave.")
+    if changes:
+        notes.append(_key_change_note(changes, first_bar, placement))
     if placement.outside:
         notes.append(f"{placement.outside} note(s) still outside the {voice} range ({low}–{high}).")
     notes.extend(lyric_notes)
@@ -153,6 +158,17 @@ def song_from_plan(plan_text: str, lyrics: str, title: str, voice: str | None = 
     data["melody"] = melody
     data["lyrics"] = [fitted.lyrics]
     return Candidate(data, placement, fitted, len(sylls), notes)
+
+
+def _key_change_note(changes: list[tuple[int, str, str]], first_bar: int, placement: abcplan.Placement) -> str:
+    """The report's line for a score that changes key: in which bars (the song's numbers; `first_bar`
+    is 0 when it starts with a pickup), from what to what (moved as the placement moved the notes),
+    and why the song file has one key signature (SPEC section 4)."""
+    places = [f"bar {first_bar + k} ({abcplan.transpose_key(before, placement.semitones)} to "
+              f"{abcplan.transpose_key(after, placement.semitones)})" for k, before, after in changes]
+    said = places[0] if len(places) == 1 else ", ".join(places[:-1]) + " and " + places[-1]
+    return (f"The melody changes key in {said}. Song files keep one key signature, so it's written in "
+            f"{placement.key} and the changed notes carry their accidentals.")
 
 
 def song_from_bars(bars: list, *, unit: Fraction, meter: str, key: str, tempo,

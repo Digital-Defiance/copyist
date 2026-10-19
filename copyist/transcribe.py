@@ -1179,22 +1179,31 @@ def sheetsage_lead_sheet(text: str) -> tuple[str, list[str]]:
 
 
 def _abc_from_bars(meter: str, unit, tempo: str, key: str, bars: list) -> str:
-    """Minimal planner-dialect ABC from bars, with % section comments."""
+    """Minimal planner-dialect ABC from bars, with % section comments, and a `K:` line before each bar
+    marked with a key change (after the first). The notes carry their own accidentals (abcplan.read_vocal),
+    so the text sounds the same read in any key; the `K:` lines keep where the key changes."""
     from . import abcplan
     lines = ["X:1", "T:", f"M:{meter}", f"L:{unit.numerator}/{unit.denominator}",
              f"Q:{tempo}", "V: Vocal clef=treble", f"K:{key}"]
     section = None
     chunk: list = []
-    for bar in bars:
-        if bar.section != section:
-            if chunk:
-                lines += ["V: Vocal", abcplan.write(chunk, unit, unit).replace("|]", "|")]
-                chunk = []
-            section = bar.section
-            lines.append(f"% {section}")
+    chunk_key = None                    # the K: line the chunk starts with, at a key change
+
+    def flush():
+        if chunk:
+            lines.extend(["V: Vocal"] + ([f"K:{chunk_key}"] if chunk_key else []) +
+                         [abcplan.write(chunk, unit, unit).replace("|]", "|")])
+
+    for k, bar in enumerate(bars):
+        changes_key = bool(bar.new_key) and k > 0
+        if bar.section != section or changes_key:
+            flush()
+            chunk, chunk_key = [], bar.new_key if changes_key else None
+            if bar.section != section:
+                section = bar.section
+                lines.append(f"% {section}")
         chunk.append(bar)
-    if chunk:
-        lines += ["V: Vocal", abcplan.write(chunk, unit, unit).replace("|]", "|")]
+    flush()
     return "\n".join(lines) + "\n"
 
 

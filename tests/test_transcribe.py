@@ -13,7 +13,7 @@ from unittest import mock
 import numpy as np
 
 from copyist import abcplan, transcribe as tr
-from helpers import KEY_CHANGE_INS
+from helpers import KEY_CHANGE_INS, KEY_CHANGE_VOCAL, la
 
 HAVE_AUDIO = all(importlib.util.find_spec(m) for m in ("librosa", "soundfile", "scipy"))
 if HAVE_AUDIO:
@@ -353,6 +353,24 @@ class RhythmTests(unittest.TestCase):
             self.assertTrue(compound)
 
 
+def _fake_sheetsage(tmp: Path, abc_text: str) -> dict:
+    """A stand-in for yue-transcribe that writes `abc_text`, with SheetSage2's model files beside it in
+    `tmp`; returns the environment that points Copyist at them."""
+    runner = tmp / "yue-transcribe"
+    runner.write_text("#!/usr/bin/env python3\nimport sys\nfrom pathlib import Path\na = sys.argv[1:]\n"
+                      f"Path(a[a.index('--out') + 1]).write_text({abc_text!r})\n")
+    runner.chmod(runner.stat().st_mode | stat.S_IEXEC)
+    (tmp / "ss.gguf").write_bytes(b"x")
+    (tmp / "MERT-v2-FullSong-Q8_0.gguf").write_bytes(b"x")  # yue-transcribe loads MERT beside the head
+    return {"COPYIST_YUE_TRANSCRIBE": str(runner), "COPYIST_SHEETSAGE": str(tmp / "ss.gguf")}
+
+
+def _onsets(song) -> list[int]:
+    """MIDI pitch of each sung note's onset (tie continuations left out)."""
+    return [n.pitch.midi for n in song.melody.recurse().notes
+            if hasattr(n, "pitch") and not (n.tie is not None and n.tie.type in ("stop", "continue"))]
+
+
 class DraftReadingTests(unittest.TestCase):
     SHEETSAGE = """X:1
 T:
@@ -435,17 +453,59 @@ Z|
         self.assertEqual(abcplan.pitches(plan.vocal, plan.key), KEY_CHANGE_INS)
         self.assertEqual([b.new_key for b in plan.vocal], [None, None, "D", None, "Bb", None])
 
+    def test_sheetsage_key_changes_through_a_fake_runner_keep_every_bar(self):
+        tmp = Path(tempfile.mkdtemp(prefix="copyist-sheetsage-"))
+        text = KEY_CHANGE.read_text(encoding="utf-8")
+        (tmp / "song.wav").write_bytes(b"")                     # the fake runner never reads it
+        with mock.patch.dict(os.environ, _fake_sheetsage(tmp, text)):
+            d = tr.sheetsage_draft(tmp / "song.wav", tmp)
+        plan = abcplan.parse(d.abc)
+        self.assertEqual(len(plan.vocal), 6)
+        self.assertEqual(abcplan.pitches(plan.vocal, plan.key), KEY_CHANGE_VOCAL)
+        self.assertEqual((d.key, d.octave_above), ("C", 1))
+        self.assertEqual(d.abc, text)                           # SheetSage's own text, unchanged
+
+    @NEEDS_AUDIO
+    def test_sheetsage_key_change_transcription_end_to_end(self):
+        tmp = Path(tempfile.mkdtemp(prefix="copyist-sheetsage-"))
+        sf.write(tmp / "song.wav", np.zeros(SR), SR)
+        with mock.patch.dict(os.environ, _fake_sheetsage(tmp, KEY_CHANGE.read_text(encoding="utf-8"))):
+            index = tr.transcribe(tmp / "song.wav", "Key change", tmp / "out", lyrics=la(22), engine="sheetsage",
+                                  vocals=tmp / "song.wav", accompaniment=tmp / "song.wav", preview=False)
+        folder = tmp / "out" / "key-change" / "transcribe"
+        song = load_song(folder / index["song"])
+        self.assertEqual(_onsets(song), [m - 12 for m in KEY_CHANGE_VOCAL])
+        self.assertEqual(song.key, "C")
+        self.assertTrue(song.lyric_fits[0].fits)
+        report = (folder / "report.md").read_text()
+        self.assertIn("bar 3 (C to D)", report)
+        self.assertIn("non-commercial", report)
+        self.assertTrue(any("bar 5 (D to Bb)" in n for n in index["notes"]))
+
+    def test_short_bars_and_a_key_change_keep_pitches_and_say_where(self):
+        src = KEY_CHANGE.read_text(encoding="utf-8").replace(
+            "% chorus\nV: Vocal\nK:D\n",
+            'V: Vocal\nM:2/4\n"F"a8|\nV: Ins\nM:2/4\nz8|\n% chorus\nV: Vocal\nM:4/4\nK:D\n').replace(
+            "V: Ins\nK:D\n", "V: Ins\nM:4/4\nK:D\n")
+        text, notes = tr.sheetsage_lead_sheet(src)
+        self.assertTrue(any("short mid-song" in n for n in notes))
+        plan = abcplan.parse(text)
+        bars = abcplan.trim(plan)
+        expected = KEY_CHANGE_VOCAL[:8] + [81] + KEY_CHANGE_VOCAL[8:]             # the short bar's A
+        self.assertEqual(abcplan.pitches(bars, plan.key), expected)
+        self.assertEqual(abcplan.key_changes(bars, plan.key), [(2, "C", "D"), (4, "D", "Bb")])
+        from copyist import write
+        cand = write.song_from_plan(text, la(23), "Short bar", None, as_sung=1)
+        self.assertTrue(any("bar 3 (C to D)" in n and "bar 5 (D to Bb)" in n for n in cand.notes), cand.notes)
+        path = Path(tempfile.mkdtemp(prefix="copyist-short-bar-")) / "short-bar.yaml"
+        path.write_text(write.song_yaml(cand.data), encoding="utf-8")
+        self.assertEqual(_onsets(load_song(path)), [m - 12 for m in expected])
+
     @NEEDS_AUDIO
     def test_sheetsage_through_a_fake_runner_is_moved_down_an_octave(self):
         tmp = Path(tempfile.mkdtemp(prefix="copyist-sheetsage-"))
-        runner = tmp / "yue-transcribe"
-        runner.write_text("#!/usr/bin/env python3\nimport sys\nfrom pathlib import Path\na = sys.argv[1:]\n"
-                          f"Path(a[a.index('--out') + 1]).write_text({self.SHEETSAGE!r})\n")
-        runner.chmod(runner.stat().st_mode | stat.S_IEXEC)
-        (tmp / "ss.gguf").write_bytes(b"x")
-        (tmp / "MERT-v2-FullSong-Q8_0.gguf").write_bytes(b"x")  # yue-transcribe loads MERT beside the head
         sf.write(tmp / "song.wav", np.zeros(SR), SR)
-        with mock.patch.dict(os.environ, {"COPYIST_YUE_TRANSCRIBE": str(runner), "COPYIST_SHEETSAGE": str(tmp / "ss.gguf")}):
+        with mock.patch.dict(os.environ, _fake_sheetsage(tmp, self.SHEETSAGE)):
             index = tr.transcribe(tmp / "song.wav", "Pickup", tmp / "out", lyrics="A-maz-ing grace",
                                   engine="sheetsage", vocals=tmp / "song.wav", accompaniment=tmp / "song.wav",
                                   preview=False)
