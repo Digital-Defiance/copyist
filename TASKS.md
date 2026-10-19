@@ -3,7 +3,7 @@
 If you're picking up this work, start here. Tick a box when its task is done and verified, and add new tasks where they fit.
 Background: [SPEC.md](SPEC.md) says what to build, [ROADMAP.md](ROADMAP.md) lays out the milestones, [DECISIONS.md](DECISIONS.md) records why, and [AGENTS.md](AGENTS.md) has the rules.
 
-Last updated: 2026-10-18.
+Last updated: 2026-10-19.
 
 ## Ground rules
 
@@ -27,7 +27,7 @@ Last updated: 2026-10-18.
 ## 1. Push
 
 - [x] `git push`: everything through the expressive performance is pushed (2026-10-17)
-- [ ] `git push`: six commits are waiting (the sampled band, styles, the 12/8 default, the takes gallery, the MIT licence, and the handoff plans for melody writing and the open singer)
+- [x] `git push`: the sampled band, styles, the 12/8 default, the takes gallery, the MIT licence and the handoff plans are on `main`; the 2026-10-19 handoff committed and pushed the rest (nothing waits locally)
 
 ## 1b. Open source
 
@@ -94,6 +94,7 @@ The SoundFont band plus a SoulX vocal will never sound like Suno: they're checki
 - [ ] **NEXT:** on this Mac: create app-specific password, `source` notarize env, `freeze-engine.sh` then `bundle-mac.sh --sign`; smoke-test the DMG; update `Casks/copyist.rb` SHA-256; tag `v0.0.1`
 - [ ] First run on the Mac (dev): quit any old Copyist, then `scripts/package/run-app.sh` — confirm the window opens, the engine starts (`/api/health`), and the page loads (frozen sidecar: `engine_entry.py`, cmudict metadata, `engine_argv` so UI jobs work)
 - [ ] Optional later: CI secrets (`APPLE_CERTIFICATE` …) so release-mac.yml signs in GitHub Actions; until then sign on this Mac
+- [ ] Keep packaging from dirtying the checkout: `freeze-engine.sh` copies the ~200 MB engine over the tracked `binaries/copyist-engine-<triple>` placeholder, and `bundle-mac.sh` rewrites `tauri.conf.json`'s `externalBin`. Until fixed, after a build run `git restore app/src-tauri/binaries/copyist-engine-* app/src-tauri/tauri.conf.json` before committing (GitHub rejects files over 100 MB)
 
 ## 3e. Sound set and default voices (ROADMAP milestone S)
 

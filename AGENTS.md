@@ -4,11 +4,11 @@
 
 Instructions for AI coding agents (Claude, Cursor, anything else) and people picking up this project. Read this first, then SPEC.md, then ROADMAP.md.
 
-## Start here (handoff, 18 October 2026)
+## Start here (handoff, 19 October 2026)
 
 The work moved fast and may change hands at any moment. Here is where things stand.
 
-**Done and working** (tests pass: `python -m unittest discover -s tests`, 273 tests):
+**Done and working** (tests pass: `python -m unittest discover -s tests`, 278 tests):
 - Song files become a lead sheet, band score and parts, MIDI, and a validation report.
 - 23 styles as data files, with a style gallery; styles can cycle a phrase of bars.
 - Expressive performance.
@@ -19,12 +19,12 @@ The work moved fast and may change hands at any moment. Here is where things sta
 - The Tauri desktop shell (default product path: Homebrew cask → app; Install extras in the UI).
 - MIT licence and GitHub Actions (including Mac release workflow).
 - `copyist write` (YuE2 plan or `--engine rules`), `copyist rewrite` (again / higher / simpler) and `copyist transcribe`. Mac write timed: ~8 s a candidate on MTL0.
-- `copyist import` (MusicXML → song file). Round-trip table includes Saints, Silent Night, Amazing Grace, Tyger; Major-General (~128 notes) ready once its truth take is produced.
+- `copyist import` (MusicXML → song file). Round-trip table includes Saints, Silent Night, Amazing Grace, Tyger and Major-General (~128 notes; truth take in `out/major-general/takes/truth/` on the Mac).
 - Public site in `site/` → https://copyist.digitaldefiance.org/
 
 **Next, in this order:**
 1. **Ship the Mac app:** TASKS.md §3d — `freeze-engine` + `bundle-mac`, sign/notarize, tag `v0.0.1` so `brew install --cask copyist` works.
-2. **Transcribing recordings:** TASKS.md section 7 — open table Saints 0.85 / SN 0.80; open-transcriber + `--engine neural` (BP/`clean_notes`) mean ~0.87 (next: close Saints/AG/MG −0.01/−0.02/−0.01); owner songs only after a table win.
+2. **Transcribing recordings:** TASKS.md section 7 — open-transcriber + `--engine neural` (BP/`clean_notes`): note table mean ~0.88 vs open 0.83, Saints/AG gaps closed (0.85 tied, 0.89 vs 0.88); Major-General 0.83 vs open 0.84 (121 of 128 notes). Full `roundtrip.py --engine neural` mean 0.87 vs 0.83, losing only Silent Night (0.78 vs 0.80): next is its 6/8 rhythm snapping. Owner songs only after a table win.
 3. **Less-cheesy exact previews (rest of 3f):** crank/comb music box when a CC0 set can be hosted (celesta is in).
 4. **The open singer (plan B):** TASKS.md section 3h, spec in [docs/open-singer.md](docs/open-singer.md). Start with phase B0 (feasibility).
 

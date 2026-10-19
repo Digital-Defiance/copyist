@@ -2,6 +2,10 @@
 
 Newest first. One entry per decision: what, why, and what we gave up.
 
+## 2026-10-19 (desktop packaging in git)
+
+- **The committed `tauri.conf.json` lists only the engine sidecar; `bundle-mac.sh` adds the yue/sfizz sidecars it stages.** Those binaries come from `.cache/` and are gitignored, so listing them in the committed config would break `npm run dev` on a fresh checkout and the unsigned `release-mac.yml` build. The engine placeholders stay tracked; the frozen ~200 MB engine never goes in git (GitHub refuses files over 100 MB). Lock files (`Cargo.lock`, `package-lock.json`) are committed for reproducible app builds. Gave up: a config that matches a full local bundle without the script's rewrite.
+
 ## 2026-10-19 (neural engine wired; MT3 deferred; Omnizart blocked on arm64)
 
 - **`--engine neural` uses open-transcriber Basic Pitch + Copyist `clean_notes` for melody, open draft for harmony.** Default stays `open` until every round-trip row wins. Magenta MT3 skipped for sung takes (upstream: not trained on singing). Omnizart chords wrapped but fail on Apple Silicon (x86 `nnls-chroma` Vamp). T1 training deferred while −0.01/−0.02 note gaps remain. Gave up: shipping Magenta MT3 as the melody engine; treating Omnizart chords as ready on M-series Macs.
