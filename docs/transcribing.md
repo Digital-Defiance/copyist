@@ -57,7 +57,7 @@ The open engine's job is to close that gap. The evaluation below is how progress
 
 ## Measured
 
-The truth set is Copyist's own public-domain songs, where every note is known: the band rendering of each (melody on the clarinet stem), and YuE2 takes separated with Demucs (`out/<slug>/takes/truth/` for Saints and Silent Night; Amazing Grace under `out/amazing-grace/production/`). `scripts/transcribe/evaluate.py SONG.yaml DRAFT.abc` aligns a transcription to the true score (time shift and tempo ratio) and reports note F1 (onset within a quarter beat, same pitch, `--octave-free` for takes in another octave) and chord accuracy (root and major/minor, by time).
+The truth set is Copyist's own public-domain songs, where every note is known: the band rendering of each (melody on the clarinet stem), and YuE2 takes separated with Demucs (`out/<slug>/takes/truth/` for Saints and Silent Night; Amazing Grace under `out/amazing-grace/production/`). `scripts/transcribe/evaluate.py SONG.yaml DRAFT.abc` aligns a transcription to the true score (time shift and tempo ratio) and reports note F1 (onset within a quarter beat, same pitch, `--octave-free` for takes in another octave) and chord accuracy (root and major/minor, by time). A draft that already matches every note isn't moved; past ±14 s, the shifts where same-pitch onsets line up are tried too, so a draft that keeps a long intro (SheetSage2 does) still aligns.
 
 | Recording | Open: notes, chords | SheetSage2: notes, chords |
 |---|---|---|
