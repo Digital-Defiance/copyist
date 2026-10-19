@@ -107,13 +107,17 @@ def _ql_to_units(ql: float | Fraction, unit: Fraction) -> Fraction:
     return Fraction(ql).limit_denominator(64) / unit_ql
 
 
-def part_to_bars(part: stream.Part, unit: Fraction) -> list[abcplan.Bar]:
-    """One abcplan.Bar per measure, with chord symbols glued to the next note/rest."""
+def part_to_bars(part: stream.Part, unit: Fraction, key: str | None = None) -> list[abcplan.Bar]:
+    """One abcplan.Bar per measure, with chord symbols glued to the next note/rest.
+
+    `key` is the song's key: a natural on a letter it alters is written `=`, so the score's own key
+    changes keep their pitches under the song's one key signature (SPEC section 4)."""
+    key_alters = abcplan.key_accidentals(key) if key else {}
     measures = list(part.getElementsByClass(stream.Measure))
     if not measures:
         # Flat part: one synthetic bar stream
         return [_elements_to_bar(list(part.flatten().notesAndRests) +
-                                 list(part.flatten().getElementsByClass(harmony.ChordSymbol)), unit)]
+                                 list(part.flatten().getElementsByClass(harmony.ChordSymbol)), unit, key_alters)]
 
     bars: list[abcplan.Bar] = []
     for meas in measures:
@@ -132,14 +136,14 @@ def part_to_bars(part: stream.Part, unit: Fraction) -> list[abcplan.Bar]:
                 els.append(n)
         # Sort by offset so chord symbols precede notes at the same beat.
         els.sort(key=lambda e: (e.offset, 0 if isinstance(e, harmony.ChordSymbol) else 1))
-        bars.append(_elements_to_bar(els, unit))
+        bars.append(_elements_to_bar(els, unit, key_alters))
     # Drop trailing empty bars
     while bars and not bars[-1].sung and bars[-1].length == 0:
         bars.pop()
     return bars
 
 
-def _elements_to_bar(els: list, unit: Fraction) -> abcplan.Bar:
+def _elements_to_bar(els: list, unit: Fraction, key_alters: dict[str, int] | None = None) -> abcplan.Bar:
     toks: list[abcplan.Tok] = []
     for el in els:
         if isinstance(el, harmony.ChordSymbol):
@@ -158,6 +162,8 @@ def _elements_to_bar(els: list, unit: Fraction) -> abcplan.Bar:
             toks.append(abcplan.Tok("rest", length=length))
             continue
         acc, step, _, octave = _abc_pitch(el.pitch)
+        if not acc and el.pitch.alter == 0 and (key_alters or {}).get(step):
+            acc = "="                    # natural here (a key change in the score), altered in the song's key
         tie = bool(el.tie and el.tie.type in ("start", "continue"))
         toks.append(abcplan.Tok("note", acc=acc, step=step, octave=octave, length=length, tie=tie))
     return abcplan.Bar(toks, section="verse")
@@ -227,7 +233,7 @@ def song_data_from_musicxml(path: str | Path, *, title: str | None = None,
     key_name = _key_name(score, part)
     meter_text = _meter_text(score, part)
     unit = Fraction(1, 8)  # patter and most lead sheets; write() will coarsen when possible
-    bars = part_to_bars(part, unit)
+    bars = part_to_bars(part, unit, key_name)
     if not any(b.sung for b in bars):
         raise MusicxmlImportError(f"{path.name}: the melody part has no notes.")
     unit = abcplan.best_unit(bars, unit)

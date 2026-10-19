@@ -5,7 +5,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from music21 import converter, harmony, note, stream
+import yaml
+from music21 import converter, harmony, key, meter, note, stream
 
 from copyist import engrave, musicxml_in
 from copyist.song import load_song
@@ -69,6 +70,27 @@ class MusicxmlImportTests(unittest.TestCase):
         data = musicxml_in.song_data_from_musicxml(path, title="Chords")
         self.assertIn('"G"', data["melody"])
         self.assertIn('"D7"', data["melody"])
+
+    def test_a_key_change_keeps_every_pitch(self):
+        # Bar 1 in D, bar 2 in C: the song keeps D's signature, so bar 2's naturals must say so.
+        part = stream.Part()
+        first = stream.Measure(number=1)
+        first.append([key.KeySignature(2), meter.TimeSignature("4/4")])
+        first.append([note.Note(p, quarterLength=1) for p in ("D4", "E4", "F#4", "G4")])
+        second = stream.Measure(number=2)
+        second.append(key.KeySignature(0))
+        second.append([note.Note(p, quarterLength=1) for p in ("C4", "F4", "C5", "B4")])
+        part.append([first, second])
+        score = stream.Score()
+        score.insert(0, part)
+        folder = Path(tempfile.mkdtemp(prefix="copyist-mxl-key-"))
+        score.write("musicxml", fp=str(folder / "change.musicxml"))
+        musicxml_in.import_musicxml(folder / "change.musicxml", folder / "change.yaml", title="Key change")
+        data = yaml.safe_load((folder / "change.yaml").read_text(encoding="utf-8"))
+        self.assertEqual(data["key"], "D")
+        song = load_song(folder / "change.yaml")
+        self.assertEqual([n.pitch.midi for n in song.melody.recurse().notes if n.isNote],
+                         [62, 64, 66, 67, 60, 65, 72, 71])
 
     def test_missing_file_is_readable(self):
         with self.assertRaises(musicxml_in.MusicxmlImportError) as ctx:
