@@ -24,7 +24,8 @@ The work moved fast and may change hands at any moment. Here is where things sta
 
 **Next, in this order:**
 1. **Transcribing recordings:** TASKS.md section 7 — open-transcriber + `--engine neural` (BP/`clean_notes`): note table mean ~0.88 vs open 0.83, Saints/AG gaps closed (0.85 tied, 0.89 vs 0.88); Major-General 0.83 vs open 0.84 (121 of 128 notes). Full `roundtrip.py --engine neural` mean 0.87 vs 0.83, losing only Silent Night (0.78 vs 0.80): next is its 6/8 rhythm snapping. Owner songs only after a table win.
-   - T1: train the neural transcriber. The owner wants this soon, as soon as the non-training passes run out (two attempts in a row that don't move either benchmark table). A planning pass is under way: training data with clean rights and exact labels, model choice, held-out evaluation, time on the M4 Max.
+   - Two big public-domain songs for the round-trip set (TASKS.md §7), chosen to add what the five lack: a minor key, a key change, syncopation, richer harmony, 12/8 or a brisk 6/8, a wide range, held notes, a repeated chorus. Open-ended research runs kept failing with the API error "Improperly formed request", so pick the songs directly and give each song its own small steps.
+   - T1: train the neural transcriber, soon after the non-training passes run out. Plan written 2026-10-19 (summary in TASKS.md §7; full local report in `.agents/tasks/t1-training-plan-2026-10-19/`); waiting on the owner's decisions. `songs/` and the round-trip cases are held out: never train on them.
 2. **Less-cheesy exact previews (rest of 3f):** crank/comb music box when a CC0 set can be hosted (celesta is in).
 3. **The open singer (plan B):** TASKS.md section 3h, spec in [docs/open-singer.md](docs/open-singer.md). Start with phase B0 (feasibility).
 4. **The Mac app's next release:** TASKS.md §3d — an Intel build, then CI signing.

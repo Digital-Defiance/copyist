@@ -50,7 +50,8 @@ Take the first unchecked item in the current milestone. Tick items when they're 
 - [x] Open-transcriber submodule ([Digital-Defiance/open-transcriber](https://github.com/Digital-Defiance/open-transcriber))
 - [x] T0 Basic Pitch baseline scored (loses to open engine except Major-General ≈)
 - [ ] Open neural lead-sheet: T0b tidy path, then T1 if needed (docs/open-transcriber.md)
-- [ ] T1: train the neural transcriber. The owner wants this soon, as soon as the non-training passes run out (two attempts in a row that don't move either benchmark table). A planning pass is under way: training data with clean rights and exact labels, model choice, held-out evaluation, time on the M4 Max.
+- [ ] Two big public-domain songs in the round-trip set, covering a minor key, a key change, syncopation, richer harmony, 12/8, a wide range and a repeated chorus (TASKS.md §7)
+- [ ] T1: train the neural transcriber. The owner wants this soon, as soon as the non-training passes run out (two attempts in a row that don't move either benchmark table). Plan written 2026-10-19: a small lead-sheet model on Basic Pitch, trained on SoulX-sung Copyist melodies with exact labels; owner decisions pending (TASKS.md §7)
 - [ ] Repeats vote, per-doubt A/B by ear (SPEC 12.2a)
 - [ ] The owner transcribes her own songs on the Mac and listens
 

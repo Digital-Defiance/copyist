@@ -35,10 +35,12 @@ Start with **inference of existing Apache/MIT models** on our truth takes (T0). 
 
 ## Data we can train on
 
+**Held out, always:** every song in `songs/` and every case in `scripts/transcribe/roundtrip.py`, in any key, tempo or rendition, with their lyrics. They are the benchmark, so items 1 and 2 below are for evaluation only and never for training. Training data comes from tunes that aren't held out, checked by a tested melodic-fingerprint filter (planned in T1; TASKS.md §7).
+
 Paired (audio → known lead sheet), all public-domain or original to Copyist:
 
-1. **Band renders** of every `songs/*.yaml` (sfizz / SoundFont) — exact notes and chords.
-2. **YuE2 truth takes** already in the round-trip loop (Saints, Silent Night, Amazing Grace, Tyger, Major-General, …) — melody via `follow`; chords vs written (accept that YuE2 harmony may disagree; optionally train a "played harmony" head separately).
+1. **Band renders** of every `songs/*.yaml` (sfizz / SoundFont) — exact notes and chords. Evaluation only (held out).
+2. **YuE2 truth takes** already in the round-trip loop (Saints, Silent Night, Amazing Grace, Tyger, Major-General, …) — melody via `follow`; chords vs written (accept that YuE2 harmony may disagree; optionally train a "played harmony" head separately). Evaluation only (held out).
 3. **Open-singer B1 corpus** (`scripts/open-singer/transcribe.py` gate): songs generated under Apache licences with lead sheets that pass `copyist follow` ≥ 90%.
 4. **Synthetic stress:** patter (Major-General-like), waltz vs 6/8, melisma holds (`_`).
 
