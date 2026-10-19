@@ -32,7 +32,8 @@ Last updated: 2026-10-19.
 ## 1b. Open source
 
 - [x] MIT licence (LICENSE), CONTRIBUTING.md, CODE_OF_CONDUCT.md, issue templates, tests on GitHub Actions (Linux and macOS, Python 3.11 and 3.12), `copyist --version`
-- [ ] Push, then check the first GitHub Actions run passes
+- [x] Push, then check the first GitHub Actions run passes (2026-10-19: `tests` green on Linux and macOS, Python 3.11 and 3.12, run 39286523203; `pages` deployed)
+- [ ] Dependabot's Cargo security update for `glib` (< 0.20, pulled in by Tauri's Linux GTK stack) fails: no patched version fits Tauri 2's gtk-rs 0.18. Revisit when Tauri moves to gtk-rs ≥ 0.20; the Mac app doesn't link glib
 - [x] Public site on GitHub Pages (`site/`): advertises Copyist, explains score-first features, install and setup; deployed by `.github/workflows/pages.yml` to https://copyist.digitaldefiance.org/ (`site/CNAME`). After the next push to `main`: Pages → Source: GitHub Actions, and a DNS CNAME for `copyist` → `digital-defiance.github.io` (plus enforce HTTPS in Pages settings)
 - [ ] A short demo (video or audio) linked from the README and the site — still open; the Pages site covers the written pitch
 - [ ] Label a few good first issues: tango, polka, bluegrass and salsa styles; an instrument library search
