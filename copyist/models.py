@@ -21,6 +21,12 @@ LICENCE = ("YuE2's weights are licensed CC BY-NC 4.0 (non-commercial), with an a
            "tokenizer and decoder adapter are CC BY-NC 4.0 too.")
 LICENCE_URL = "https://huggingface.co/m-a-p/YuE2-3B"
 
+# SheetSage2: same CC BY-NC 4.0 family, but no creator sell-through (unlike YuE2).
+SHEETSAGE_LICENCE = ("SheetSage2's weights are licensed CC BY-NC 4.0: non-commercial use only, with no "
+                     "added permission for creators to sell what they make. Use Copyist's own transcriber "
+                     "for anything you'll sell.")
+SHEETSAGE_LICENCE_URL = "https://huggingface.co/m-a-p/SheetSage2"
+
 
 @dataclass(frozen=True)
 class Model:
@@ -47,16 +53,22 @@ CATALOG = {m.id: m for m in (
           "35a6032ec7e8123c02becdefc7bfe10a3adb33faa8a1951dc0af864b4494b8ef", "MERT, which the tokenizer listens with"),
     Model("realaudio", "nar_lora_joint_v9.bf16.safetensors", *REALAUDIO, 70301896,
           "ce57f98e9e0e65c724c2a00aa23dea2568952590504a428c588d82f00bc61c55", "the realaudio decoder adapter"),
+    Model("sheetsage", "SheetSage2-Q8_0.gguf", *GGUF, 105629856,
+          "95d8fa8761753b4833782a52b68d5c0afa3bd3cfbc03d3dcbbf8ded0c13f611e",
+          "SheetSage2, the optional non-commercial transcriber"),
 )}
 
-# What a person installs, in their words
+# What a person installs, in their words. Optional licence / licence_url override YuE2's.
 GROUPS = {
     "singer": {"label": "The singer", "why": "needed for every take", "models": ["yue2", "yue2-vae"]},
     "voices": {"label": "Voice tools", "why": "for training voices and opening a take with a recording",
                "models": ["tokenizer", "mert", "realaudio"]},
+    "sheetsage": {"label": "SheetSage2", "why": "optional transcriber (often more accurate; non-commercial only)",
+                  "models": ["sheetsage", "mert"], "licence": SHEETSAGE_LICENCE,
+                  "licence_url": SHEETSAGE_LICENCE_URL},
 }
 
-ENV = {"yue2": "COPYIST_YUE_MODEL", "yue2-vae": "COPYIST_YUE_VAE"}
+ENV = {"yue2": "COPYIST_YUE_MODEL", "yue2-vae": "COPYIST_YUE_VAE", "sheetsage": "COPYIST_SHEETSAGE"}
 
 
 def url(m: Model) -> str:
@@ -66,6 +78,17 @@ def url(m: Model) -> str:
 def path_of(model_id: str) -> Path | None:
     m = CATALOG[model_id]
     return paths.find_model(m.file, ENV.get(model_id))
+
+
+def path_in_data(model_id: str) -> Path | None:
+    """The file in the shared data folder (COPYIST_HOME/models), not a developer .cache/ copy.
+
+    yue-transcribe needs SheetSage2 and MERT in the *same* directory; a MERT only in
+    `.cache/yue/` does not count as installed beside a SheetSage in the app data folder.
+    """
+    m = CATALOG[model_id]
+    p = paths.models_dir() / m.file
+    return p if p.is_file() and p.stat().st_size == m.size else None
 
 
 def status(model_id: str) -> dict:
@@ -81,12 +104,24 @@ def status(model_id: str) -> dict:
     return {**asdict(m), "state": state, "have": have, "path": str(p) if state == "ready" else None}
 
 
+def group_licence(group: str) -> tuple[str, str]:
+    """Licence text and URL for a download group (SheetSage2 differs from YuE2)."""
+    g = GROUPS[group]
+    return g.get("licence", LICENCE), g.get("licence_url", LICENCE_URL)
+
+
 def group_status(group: str) -> dict:
     g = GROUPS[group]
     items = [status(i) for i in g["models"]]
     total = sum(i["size"] for i in items)
+    licence, licence_url = group_licence(group)
+    # SheetSage's runner needs every file in the data folder beside each other; a MERT
+    # only in `.cache/yue/` is not enough once SheetSage itself is in COPYIST_HOME.
+    ready = all(path_in_data(i) for i in g["models"]) if group == "sheetsage" else \
+        all(i["state"] == "ready" for i in items)
     return {"id": group, "label": g["label"], "why": g["why"], "size": total,
-            "have": sum(i["have"] for i in items), "ready": all(i["state"] == "ready" for i in items), "models": items}
+            "have": sum(i["have"] for i in items), "ready": ready,
+            "models": items, "licence": licence, "licence_url": licence_url}
 
 
 def sha256_of(path: Path, chunk: int = 1 << 22) -> str:
@@ -101,12 +136,23 @@ Progress = Callable[[int, int], None]
 
 
 def download(model_id: str, progress: Progress | None = None, opener=urlopen, chunk: int = 1 << 20) -> Path:
-    """Download one model into the data folder, resuming a .part file, and verify it."""
+    """Download one model into the data folder, resuming a .part file, and verify it.
+
+    Always lands in `models_dir()`. A developer copy in `.cache/yue/` is copied into
+    the data folder when present (so SheetSage and MERT end up beside each other).
+    """
+    import shutil
     m = CATALOG[model_id]
     dest = paths.models_dir()
     dest.mkdir(parents=True, exist_ok=True)
     final, part = dest / m.file, dest / (m.file + ".part")
     if final.is_file() and final.stat().st_size == m.size:
+        return final
+    elsewhere = path_of(model_id)
+    if elsewhere and elsewhere.resolve() != final.resolve() and elsewhere.stat().st_size == m.size:
+        shutil.copy2(elsewhere, final)
+        if progress:
+            progress(m.size, m.size)
         return final
     start = part.stat().st_size if part.is_file() else 0
     if start > m.size:
@@ -132,17 +178,17 @@ def download(model_id: str, progress: Progress | None = None, opener=urlopen, ch
 
 
 def download_group(group: str, progress: Progress | None = None, opener=urlopen) -> list[Path]:
-    """Download every model in a group, reporting progress across the whole group."""
+    """Download every model in a group into the data folder, reporting progress across the group."""
     ids = GROUPS[group]["models"]
     total = sum(CATALOG[i].size for i in ids)
     before = 0
     out = []
     for i in ids:
-        if status(i)["state"] == "ready":
+        if path_in_data(i):
             before += CATALOG[i].size
             if progress:
                 progress(before, total)
-            out.append(path_of(i))
+            out.append(path_in_data(i))
             continue
         base = before
         out.append(download(i, (lambda d, _t, base=base: progress(base + d, total)) if progress else None, opener))

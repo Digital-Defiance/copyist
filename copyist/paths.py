@@ -20,6 +20,11 @@ from pathlib import Path
 APP = "Copyist"
 
 
+def desktop_app() -> bool:
+    """True when the Tauri shell is running the engine (`COPYIST_DESKTOP=1`)."""
+    return os.environ.get("COPYIST_DESKTOP", "").strip().lower() in ("1", "true", "yes")
+
+
 def data_home() -> Path:
     env = os.environ.get("COPYIST_HOME")
     if env:

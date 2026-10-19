@@ -101,6 +101,16 @@ class ModelTests(unittest.TestCase):
         Path(".cache/yue/blob.gguf").write_bytes(BLOB)
         self.assertEqual(models.status("blob")["state"], "ready")
 
+    def test_download_copies_a_developer_file_into_the_data_folder(self):
+        """SheetSage needs MERT beside it; a hit in `.cache/yue/` must be copied into COPYIST_HOME."""
+        Path(".cache/yue").mkdir(parents=True)
+        Path(".cache/yue/blob.gguf").write_bytes(BLOB)
+        self.assertIsNone(models.path_in_data("blob"))
+        p = models.download("blob")
+        self.assertEqual(p, self.home / "models" / "blob.gguf")
+        self.assertEqual(p.read_bytes(), BLOB)
+        self.assertEqual(models.path_in_data("blob"), p)
+
     def test_programs_come_from_copyist_bin(self):
         bin_dir = Path(tempfile.mkdtemp())
         (bin_dir / "yue-synth").write_bytes(b"")
@@ -117,6 +127,12 @@ class ModelTests(unittest.TestCase):
             self.assertEqual(len(m.sha256), 64)
         self.assertEqual(ORIGINAL_URL(models.CATALOG["yue2"]),
                          "https://huggingface.co/Serveurperso/YuE2-GGUF/resolve/e630f2b8f6aedf8254c3186438633c1b5eeaf80a/YuE2-3B-Q6_K.gguf")
+        self.assertEqual(models.CATALOG["sheetsage"].file, "SheetSage2-Q8_0.gguf")
+        self.assertEqual(models.GROUPS["sheetsage"]["models"], ["sheetsage", "mert"])
+        text, url = models.group_licence("sheetsage")
+        self.assertIn("no added permission", text)
+        self.assertIn("SheetSage2", url)
+        self.assertEqual(models.group_licence("singer")[0], models.LICENCE)
 
 
 if __name__ == "__main__":
