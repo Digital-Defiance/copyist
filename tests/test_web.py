@@ -316,10 +316,12 @@ class WebTests(unittest.TestCase):
         self.assertEqual(slug, "my-song")
         self.assertEqual(args, ["transcribe", up["upload"], "--title", "My Song", "--engine", "open",
                                 "--lyrics", "out/my-song/transcribe/lyrics-given.txt"])
-        for bad in ({"upload": "songs/amazing-grace.yaml"}, {"upload": "out/uploads/nothing.wav"}, {"title": ""},
-                    {"engine": "sheetsage", "accept_licence": True}, {"engine": "magic"}):
-            with self.subTest(bad=bad), self.assertRaises(ValueError):
-                job_args(project, {"action": "transcribe", "upload": up["upload"], "title": "T", **bad})
+        # SheetSage2 "not installed" must not depend on what this machine has downloaded.
+        with mock.patch("copyist.web.server.sheetsage_ready", return_value=False):
+            for bad in ({"upload": "songs/amazing-grace.yaml"}, {"upload": "out/uploads/nothing.wav"}, {"title": ""},
+                        {"engine": "sheetsage", "accept_licence": True}, {"engine": "magic"}):
+                with self.subTest(bad=bad), self.assertRaises(ValueError):
+                    job_args(project, {"action": "transcribe", "upload": up["upload"], "title": "T", **bad})
         folder = self.root / "out" / "my-song" / "transcribe"
         self.assertEqual(json.loads(self.request("GET", "/api/transcriptions/my-song")[1])["pending"], True)
         (folder / "source.wav").write_bytes(b"RIFF")
