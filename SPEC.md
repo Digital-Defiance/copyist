@@ -109,6 +109,7 @@ written_with:          # optional, kept but not used: how copyist write made the
 ### Melody (ABC subset)
 
 - Notes `C D E F G A B c d e f g a b`, octave marks `,` (down) and `'` (up). `C` is middle C (C4). Accidentals `^` sharp, `_` flat, `=` natural. An accidental applies to its own note only (music21 reads it that way), so write it on every altered note in the bar.
+- One key signature, the song's `key:`. A key change is written with accidentals on the notes it alters, not with `K:` in the melody: music21 ignores an inline `[K:…]`, so the notes after it would sound in the old key, and the `key` check fails on one. `copyist write` and `copyist transcribe` write a planner's or SheetSage's key change this way, and their report says in which bar it changes.
 - Lengths are multiples of `unit`: `A2` = two units, `A/` = half a unit, `A3/2` = one and a half.
 - Rests `z`. Ties `-` (e.g. `d3- | d2`). Bar lines `|`.
 - Chord symbols in double quotes before the note they start on: `"G"`, `"D7"`, `"Am/C"`. A chord lasts until the next chord symbol.
@@ -139,7 +140,7 @@ Each check reports `pass`, `warn` or `fail`, with bar and beat. A song is **fini
 | `range` | Melody stays within the voice's range | fail outside by more than a whole step, else warn |
 | `chord-tones` | Melody notes on strong beats are chord tones, or are listed as non-chord tones (suspensions and appoggiaturas are allowed but listed). Strong beats use Copyist's grid: downbeat and the other main beats of the bar (beat 2 in 6/8; beats 2–4 in 4/4), not every quarter in a compound bar | warn |
 | `prosody` | In multi-syllable words, the stressed syllable doesn't land on a weaker beat than an unstressed syllable of the same word (CMU Pronouncing Dictionary). Beat strength uses the same grid (`fit.beat_strength`): a dotted quarter is the beat in 6/8 and 12/8 | warn |
-| `key` | Chord symbols parse and melody accidentals outside the key are listed | warn |
+| `key` | Chord symbols parse and melody accidentals outside the key are listed; a `K:` field in the melody fails (section 4) | warn; fail for a `K:` field |
 
 Planned: `breath` (singers get a breath at least every N bars), `tessitura` (where the melody sits, not just its extremes), `voice-leading` (arrangements: parallel fifths and octaves between outer voices, unresolved leading tones), `playability` (per-instrument ranges, idiomatic writing), `page-turns` (parts).
 

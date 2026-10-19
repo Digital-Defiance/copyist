@@ -1,7 +1,7 @@
 import unittest
 from pathlib import Path
 
-from helpers import severities, song_from
+from helpers import la, severities, song_from
 
 from copyist.song import load_song
 from copyist.validate import (
@@ -110,6 +110,23 @@ class ProsodyTests(unittest.TestCase):
 class KeyTests(unittest.TestCase):
     def test_note_outside_key_warns(self):
         findings = validate(song_from(melody='"C"C D E ^F |', lyrics=["a b c d"]))
+        self.assertIn(WARN, severities(findings, "key"))
+
+    def test_a_key_change_written_into_the_melody_fails(self):
+        # music21 ignores an inline [K:D]: the F and C after it would sound natural, and the key
+        # check used to pass. A K: line plays the right notes but still isn't a song's way.
+        for melody in ("\"C\"C D E F | G A B c | [K:D] \"D\"d e f g | a b c' d' |]",
+                       "\"C\"C D E F | G A B c |\nK:D\n\"D\"d e f g | a b c' d' |]"):
+            with self.subTest(melody=melody):
+                findings = validate(song_from(melody=melody, lyrics=[la(16)]))
+                fails = [f for f in findings if f.check == "key" and f.severity == FAIL]
+                self.assertEqual([f.bar for f in fails], [3])
+                self.assertIn("K:D", fails[0].message)
+
+    def test_a_key_change_written_with_accidentals_only_warns(self):
+        findings = validate(song_from(melody="\"C\"C D E F | G A B c | \"D\"d e ^f g | a b ^c' d' |]",
+                                      lyrics=[la(16)]))
+        self.assertNotIn(FAIL, severities(findings, "key"))
         self.assertIn(WARN, severities(findings, "key"))
 
 

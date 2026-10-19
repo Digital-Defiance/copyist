@@ -14,7 +14,7 @@ import pronouncing
 from music21 import harmony, meter, note, stream
 
 from .lyrics import lyric_slots
-from .song import Song
+from .song import ABC_BARLINE, ABC_IGNORE, Song
 
 PASS, WARN, FAIL = "pass", "warn", "fail"
 
@@ -231,8 +231,29 @@ def display_word(sylls) -> str:
 
 # ---------------------------------------------------------------- key
 
-def check_key(song: Song) -> list[Finding]:
+KEY_FIELD = re.compile(r"\[K:[^\]]*\]|^[ \t]*K:.*$", re.M)
+
+
+def key_fields(song: Song) -> list[Finding]:
+    """A `K:` field in the melody, inline or on its own line, fails at its bar. music21 ignores an inline
+    `[K:…]`, so the notes after it would sound in the old key; a song keeps one key signature and writes
+    a key change as accidentals on the notes (SPEC section 4)."""
+    text = re.sub(r'"[^"]*"', lambda m: " " * len(m.group(0)), song.melody_abc)   # no chord symbols, same offsets
+    totals = song.written_bars()
+    full = Fraction(meter.TimeSignature(song.meter).barDuration.quarterLength).limit_denominator(64)
+    first_number = 0 if totals and totals[0] < full else 1                    # a pickup is bar 0
     out = []
+    for m in KEY_FIELD.finditer(text):
+        before = ABC_BARLINE.split(ABC_IGNORE.sub(" ", text[:m.start()]))
+        done = sum(1 for piece in before[:-1] if piece.strip())                 # bars finished before it
+        out.append(Finding("key", FAIL, f"The melody changes key with {m.group(0).strip()}: a song keeps one key "
+                           "signature, so write the accidentals on the notes instead (SPEC section 4).",
+                           bar=first_number + done))
+    return out
+
+
+def check_key(song: Song) -> list[Finding]:
+    out = key_fields(song)
     k = song.key_object()
     for cs in song.melody.recurse().getElementsByClass(harmony.ChordSymbol):
         if not cs.pitches:
