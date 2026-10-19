@@ -1,0 +1,28 @@
+format: copyist-song/0
+title: Major-General's Song
+credits:
+  words: W. S. Gilbert (1879)
+  music: Arthur Sullivan (1879)
+  # Lead-sheet reduction of No. 13 from the public-domain vocal score
+  # (The Pirates of Penzance; US pub. before 1929). Verse 1 only — the patter
+  # stress case for transcription round-trip (~128 sung notes).
+key: Eb
+meter: 4/4
+unit: 1/8
+tempo: 132
+voice:
+  name: Melody
+  range: [D4, C5]
+style: broadway-uptempo
+# Words CMU lacks (hyphenated compounds join to one lookup key for SoulX/YuE2).
+pronunciations:
+  MajorGeneral: M EY1 JH ER0 JH EH1 N ER0 AH0 L
+  quadratical: K W AA2 D R AE1 T IH0 K AH0 L
+  hypotenuse: HH AY2 P AA1 T AH0 N UW2 S
+melody: |
+  "Eb"B B B B B B B B | B B B B B B c B | "Ab"A A A A A A A A | A A A A A A G F |
+  "Eb"E E E E E E E E | E E E E E E F E | "Bb"D D D D D D D D | D D D D D D E D |
+  "Eb"B B B B B B B B | B B B B B B c B | "Ab"A A A A A A A A | A A A A A A G F |
+  "Eb"E E E E E E E E | E E E E E E F E | "Bb"D D D D D D D D | "Eb"E E E E E E E E |]
+lyrics:
+  - I am the ve-ry mo-del of a mo-dern Ma-jor-Ge-ne-ral, I've in-for-ma-tion ve-ge-ta-ble, a-ni-mal, and mi-ne-ral, I know the kings of Eng-land, and I quote the fights his-to-ri-cal, From Ma-ra-thon to Wa-ter-loo, in or-der ca-te-go-ri-cal; I'm ve-ry well ac-quaint-ed, too, with mat-ters ma-the-ma-ti-cal, I un-der-stand e-qua-tions, both the sim-ple and quad-ra-ti-cal, A-bout bi-no-mial the-o-rem I'm teem-ing with a lot o' news, With ma-ny cheer-ful facts a-bout the square of the hy-pot-e-nuse.
