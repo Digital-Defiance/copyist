@@ -96,11 +96,14 @@ class DurationTests(unittest.TestCase):
         self.assertIn("c4-c", music)
         self.assertTrue(all(n in yue.ALLOWED for n in durations(music)), music)
 
-    def test_a_triplet_is_refused(self):
+    def test_a_triplet_is_snapped_to_sixteenths(self):
+        # YuE2's dialect has no tuplets; productions approximate them on the binary grid.
         song = song_from(meter="4/4", melody="(3CDE F2 z | C D E F |",
                          lyrics=["one two three four five six seven eight"])
-        with self.assertRaises(SongError):
-            yue.score_abc(song, 1, intro_bars=0)
+        abc, _ = yue.score_abc(song, 1, intro_bars=0)
+        music = "".join(vocal_lines(abc))
+        self.assertTrue(music)
+        self.assertTrue(all(n in yue.ALLOWED for n in durations(music)), music)
 
 
 class RuntimeTests(unittest.TestCase):

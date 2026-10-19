@@ -8,7 +8,7 @@ YuE2's own ABC dialect (see the mlx-Yue "abc-editing" reference):
 - header X/T/M/L/Q, two voices `Vocal` and `Ins`, then K;
 - blocks of up to four bars, `V: Vocal` then `V: Ins`, under `% section` comments;
 - chord symbols in the Vocal voice at the onset where they change;
-- every bar complete (a pickup is padded with a rest), no repeats, no tuplets;
+- every bar complete (a pickup is padded with a rest), no repeats; tuplets are snapped to sixteenths;
 - durations from {1,2,3,4,6,8,12,16,24,32,48} units, anything else tied;
 - accidentals relative to the key, carried by letter across octaves within a bar.
 
@@ -71,13 +71,52 @@ def tune_events(song: Song) -> tuple[list[Event], list[tuple[Fraction, str]], Fr
     return events, chords, length, pickup, full
 
 
-def unit_for(events: list[Event]) -> int:
-    """The ABC unit denominator (16 means L:1/16) that makes every length a whole number."""
+def unit_for(events: list[Event]) -> int | None:
+    """The ABC unit denominator (16 means L:1/16) that makes every length a whole number, or None."""
     for den in (16, 32, 64):
         q = Fraction(4, den)   # one unit in quarter notes
         if all((e.dur / q).denominator == 1 and (e.start / q).denominator == 1 for e in events):
             return den
-    raise SongError("This melody has rhythms (tuplets?) YuE2's score format can't write yet.")
+    return None
+
+
+def snap_to_unit(events: list[Event], chords: list[tuple[Fraction, str]], den: int = 16
+                 ) -> tuple[list[Event], list[tuple[Fraction, str]]]:
+    """Snap starts and ends onto YuE2's binary grid (tuplets → nearest sixteenths at den=16).
+
+    Transcriptions and some songs carry triplet figures YuE2's dialect can't write; the lead sheet
+    keeps them for reading, and the production approximates them so a take can still be made.
+    """
+    q = Fraction(4, den)
+
+    def snap(t: Fraction) -> Fraction:
+        return Fraction(round(t / q)) * q
+
+    out: list[Event] = []
+    for e in events:
+        start = snap(e.start)
+        end = snap(e.start + e.dur)
+        if out and start < out[-1].start + out[-1].dur:
+            start = out[-1].start + out[-1].dur
+        if end <= start:
+            end = start + q
+        out.append(Event(start, end - start, e.pitch))
+    snapped_chords = sorted({(snap(t), name) for t, name in chords}, key=lambda x: x[0])
+    return out, snapped_chords
+
+
+def binary_unit(events: list[Event], chords: list[tuple[Fraction, str]]
+                ) -> tuple[list[Event], list[tuple[Fraction, str]], int]:
+    """Unit denominator and events/chords that fit it, snapping tuplets when needed."""
+    den = unit_for(events)
+    if den is not None:
+        return events, chords, den
+    events, chords = snap_to_unit(events, chords, 16)
+    den = unit_for(events)
+    if den is None:
+        raise SongError("This melody has rhythms YuE2's score format can't write, even after "
+                        "snapping to sixteenths.")
+    return events, chords, den
 
 
 def split_lengths(units: int) -> list[int]:
@@ -155,7 +194,8 @@ def score_abc(song: Song, verses: int, intro_bars: int = 4,
     where it should sound (see SUNG_OCTAVE_BELOW). Returns the ABC and each block's section label.
     """
     events, chords, _, pickup, full = tune_events(song)
-    q = Fraction(4, unit_for(events))
+    events, chords, den = binary_unit(events, chords)
+    q = Fraction(4, den)
     lead, period, full = _placed(song, intro_bars)
     all_events: list[Event] = []
     all_chords: list[tuple[Fraction, str]] = []
@@ -228,7 +268,7 @@ def lyrics_text(song: Song, verses: int, intro: bool = True) -> str:
     from .sing import ONSET, soulx_segments, sung_notes
     parts = ["[Intro]", ""] if intro else []
     for v in range(1, verses + 1):
-        notes = sung_notes(song, v)
+        notes = sung_notes(song, v, pronunciations=song.pronunciations)
         runs: list[tuple[str, list]] = []
         for n in notes:
             name = (song.section_at(n.bar) if n.bar is not None else None) or "verse"
