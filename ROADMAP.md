@@ -106,9 +106,10 @@ Take the first unchecked item in the current milestone. Tick items when they're 
 A free, open-source Tauri app (Homebrew cask → `Copyist.app`): the page as its window, the engine and yue2.cpp as sidecars, optional packs downloaded when the person chooses them, everything on their own computer. Default install path for users.
 
 - [x] Engine as a sidecar: `--root` library folder, `--port 0 --machine`, health and version endpoint, model manager (pinned, verified, resumable downloads with progress and the licence shown first), `copyist models`
-- [x] Tauri shell: the window loads the engine's page; the engine starts and stops with the app (app/; compiles; first Mac run pending)
-- [x] Default path: Homebrew cask (`Casks/copyist.rb`), packaging scripts, release workflow; Install extras in the UI; write without the singer
-- [ ] Mac packaging finish: freeze-engine + signed/notarized DMG on a `v*` tag so `brew install --cask copyist` works
+- [x] Tauri shell: the window loads the engine's page; the engine starts and stops with the app (app/; the release app checked on the Mac 2026-10-19)
+- [x] Default path: Homebrew cask, packaging scripts, release workflow; Install extras in the UI; write without the singer
+- [x] Mac packaging finish: v0.0.1 (2026-10-19), a signed, notarized, stapled Apple Silicon DMG on the GitHub release; `brew install --cask digital-defiance/tap/copyist` (cask in Digital-Defiance/homebrew-tap)
+- [ ] Intel Mac build
 - [ ] First run polish: hardware check; demo already via `--demo`
 - [ ] Best of several takes, ranked by the melody and lyric checks; re-render one section
 - [ ] Windows and Linux builds; updates

@@ -16,18 +16,18 @@ The work moved fast and may change hands at any moment. Here is where things sta
 - YuE2 takes that follow the score, checked by `copyist follow`.
 - Voice LoRA training on the Mac.
 - The local web page (`copyist serve`).
-- The Tauri desktop shell (default product path: Homebrew cask → app; Install extras in the UI).
-- MIT licence and GitHub Actions (including Mac release workflow).
+- The Mac app, shipped as v0.0.1 (Apple Silicon): `brew install --cask digital-defiance/tap/copyist`. The cask lives in Digital-Defiance/homebrew-tap (`/Volumes/Code/homebrew-tap` on the Mac); the signed, notarized DMG is on the GitHub release. Release steps: scripts/package/README.md. Install extras in the UI.
+- MIT licence. GitHub Actions workflows exist (tests; an unsigned Mac build that never touches releases), but GitHub CI isn't tracked as a gate for now: the local suite is.
 - `copyist write` (YuE2 plan or `--engine rules`), `copyist rewrite` (again / higher / simpler) and `copyist transcribe`. Mac write timed: ~8 s a candidate on MTL0.
 - `copyist import` (MusicXML → song file). Round-trip table includes Saints, Silent Night, Amazing Grace, Tyger and Major-General (~128 notes; truth take in `out/major-general/takes/truth/` on the Mac).
 - Public site in `site/` → https://copyist.digitaldefiance.org/
 
 **Next, in this order:**
-1. **Ship the Mac app:** TASKS.md §3d — `freeze-engine` + `bundle-mac`, sign/notarize, tag `v0.0.1` so `brew install --cask copyist` works.
-2. **Transcribing recordings:** TASKS.md section 7 — open-transcriber + `--engine neural` (BP/`clean_notes`): note table mean ~0.88 vs open 0.83, Saints/AG gaps closed (0.85 tied, 0.89 vs 0.88); Major-General 0.83 vs open 0.84 (121 of 128 notes). Full `roundtrip.py --engine neural` mean 0.87 vs 0.83, losing only Silent Night (0.78 vs 0.80): next is its 6/8 rhythm snapping. Owner songs only after a table win.
+1. **Transcribing recordings:** TASKS.md section 7 — open-transcriber + `--engine neural` (BP/`clean_notes`): note table mean ~0.88 vs open 0.83, Saints/AG gaps closed (0.85 tied, 0.89 vs 0.88); Major-General 0.83 vs open 0.84 (121 of 128 notes). Full `roundtrip.py --engine neural` mean 0.87 vs 0.83, losing only Silent Night (0.78 vs 0.80): next is its 6/8 rhythm snapping. Owner songs only after a table win.
    - T1: train the neural transcriber. The owner wants this soon, as soon as the non-training passes run out (two attempts in a row that don't move either benchmark table). A planning pass is under way: training data with clean rights and exact labels, model choice, held-out evaluation, time on the M4 Max.
-3. **Less-cheesy exact previews (rest of 3f):** crank/comb music box when a CC0 set can be hosted (celesta is in).
-4. **The open singer (plan B):** TASKS.md section 3h, spec in [docs/open-singer.md](docs/open-singer.md). Start with phase B0 (feasibility).
+2. **Less-cheesy exact previews (rest of 3f):** crank/comb music box when a CC0 set can be hosted (celesta is in).
+3. **The open singer (plan B):** TASKS.md section 3h, spec in [docs/open-singer.md](docs/open-singer.md). Start with phase B0 (feasibility).
+4. **The Mac app's next release:** TASKS.md §3d — an Intel build, then CI signing.
 
 **The owner's machine:**
 - An M4 Max Mac with 64 GB, the repository at `/Volumes/Code/copyist`, a `.venv` there.

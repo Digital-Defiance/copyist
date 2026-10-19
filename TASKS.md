@@ -90,12 +90,14 @@ The SoundFont band plus a SoulX vocal will never sound like Suno: they're checki
 - [x] Step 1, the engine as a sidecar: `--root`, `--port 0 --machine`, `/api/health`, `/api/models`, the model manager (`copyist/models.py`, `copyist/paths.py`), the install panel on the page, `copyist models`. 90 tests pass
 - [x] Apple Developer account: she has one
 - [x] Step 2, the Tauri shell: written (`app/`, app/README.md) and compiling on Linux
-- [x] App as the default path: README + Pages lead with Homebrew/`Copyist.app`; **Install extras** page (`#/setup`); write works without the singer (rules/auto); `COPYIST_DESKTOP=1`; packaging scripts (`scripts/package/`), `Casks/copyist.rb`, release workflow
+- [x] App as the default path: README + Pages lead with Homebrew/`Copyist.app`; **Install extras** page (`#/setup`); write works without the singer (rules/auto); `COPYIST_DESKTOP=1`; packaging scripts (`scripts/package/`), a Homebrew cask (since moved to Digital-Defiance/homebrew-tap), release workflow
 - [x] Signing path ready: Digital Defiance Developer ID (`J6887N729S`) on this Mac; `bundle-mac.sh --sign` + entitlements + notarize env documented (`scripts/package/README.md`)
-- [ ] **NEXT:** on this Mac: create app-specific password, `source` notarize env, `freeze-engine.sh` then `bundle-mac.sh --sign`; smoke-test the DMG; update `Casks/copyist.rb` SHA-256; tag `v0.0.1`
-- [ ] First run on the Mac (dev): quit any old Copyist, then `scripts/package/run-app.sh` — confirm the window opens, the engine starts (`/api/health`), and the page loads (frozen sidecar: `engine_entry.py`, cmudict metadata, `engine_argv` so UI jobs work)
-- [ ] Optional later: CI secrets (`APPLE_CERTIFICATE` …) so release-mac.yml signs in GitHub Actions; until then sign on this Mac
-- [ ] Keep packaging from dirtying the checkout: `freeze-engine.sh` copies the ~200 MB engine over the tracked `binaries/copyist-engine-<triple>` placeholder, and `bundle-mac.sh` rewrites `tauri.conf.json`'s `externalBin`. Until fixed, after a build run `git restore app/src-tauri/binaries/copyist-engine-* app/src-tauri/tauri.conf.json` before committing (GitHub rejects files over 100 MB)
+- [x] Shipped v0.0.1 (2026-10-19): `freeze-engine.sh` (66 s) then `bundle-mac.sh --sign` (180 s, both notarizations included) on this Mac with the App Store Connect API key, from commit 0878a5d. Every binary in the app is signed with the Digital Defiance Developer ID, hardened runtime and a timestamp; the app and the DMG are notarized and stapled. The DMG is on the [v0.0.1 release](https://github.com/Digital-Defiance/copyist/releases/tag/v0.0.1); the cask is in Digital-Defiance/homebrew-tap (`brew install --cask digital-defiance/tap/copyist`), and `brew fetch` and `brew audit --online` pass
+- [x] First run on the Mac: the release app, opened from the mounted DMG, opened its window; the engine answered `/api/health` within 7–14 s of opening, the page and Install extras (`#/setup`) loaded, and quitting stopped the engine. That check found the frozen engine outliving the app (Tauri killed only PyInstaller's launcher); fixed by running the engine in its own process group. `scripts/package/run-app.sh` (the dev path) wasn't run again
+- [ ] An Intel Mac build: v0.0.1 is Apple Silicon only (`depends_on arch: :arm64`). Needs an Intel Mac (or CI signing) to build, notarize and smoke-test an x64 DMG, then an `on_intel` block in the tap's cask
+- [ ] Optional later: CI secrets (`APPLE_CERTIFICATE` …) so release-mac.yml signs in GitHub Actions; until then sign on this Mac (the workflow uploads unsigned artifacts only, never to the release)
+- [x] Keep packaging from dirtying the checkout: the engine freezes to `dist/`, `bundle-mac.sh` stages it over the placeholder only for the build (a trap restores it) and passes the extra sidecars by `--config`. `git status` was empty after the v0.0.1 freeze and signed build
+- [ ] The neural transcriber in the app: left out of the frozen engine for now (TensorFlow doubles it to ~410 MB). Bundle it with its models once `--engine neural` becomes the default (DECISIONS.md 2026-10-19)
 
 ## 3e. Sound set and default voices (ROADMAP milestone S)
 
@@ -108,7 +110,7 @@ The SoundFont band plus a SoulX vocal will never sound like Suno: they're checki
 - [x] Wire it in: the band pack downloads pinned and checked (`copyist/instruments.py`, `copyist models download band`, the page's Download button); `render.py` plays one part at a time on sfizz with stems; `mixdown.py` balances by loudness (BS.1770), adds one room and masters to -16 LUFS under -1 dBFS; credits in the report and on the page; SoundFont fallback. 117 tests pass. Amazing Grace: every melody and bass note within half a semitone, parts aligned within about 15 ms
 - [x] Melody voice: the VSCO 2 CE clarinet with Copyist's own SFZ (`scripts/instruments/clarinet.py`: VSCO's octave naming, mislabelled F#5 files, silent starts trimmed, tuning, loudness evened, loops for held notes)
 - [ ] On the Mac: `scripts/setup-sfizz.sh --instruments`, then build Amazing Grace and listen
-- [ ] `sfizz_render` as a desktop sidecar (with the engine packaging, 3d step 3)
+- [x] `sfizz_render` as a desktop sidecar: bundled and signed in the v0.0.1 app; the app's engine reports `"sfizz": true`
 - [x] Music-box stand-in: VCSL glockenspiel (`bells` pack, ~17 MB), then real celesta. Decision: DECISIONS.md 2026-10-18 (music box / celesta)
 - [x] Real celesta (Neil Bickford CC0, ~5 MB subset); music-box style uses it. A crank/comb music box (folkman on Freesound, CC0) still needs a redistributable host. Decision: DECISIONS.md 2026-10-18 (celesta)
 - [ ] Orchestra and pit pack from VSCO 2 CE, and a pit-orchestra template for Broadway songs
