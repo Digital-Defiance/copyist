@@ -19,3 +19,14 @@ dist/
 app/src-tauri/target/
 app/src-tauri/gen/
 app/node_modules/
+# Sidecars bundle-mac.sh stages from .cache/ (native builds, several MB each).
+# The copyist-engine-* placeholders stay tracked; freeze-engine.sh overwrites the
+# local one with a ~200 MB binary, so never commit that change.
+app/src-tauri/binaries/yue-*-aarch64-apple-darwin
+app/src-tauri/binaries/yue-*-x86_64-apple-darwin
+app/src-tauri/binaries/sfizz_render-*
+# Local tool state and secrets
+.cookie
+.codacy/
+# Agent workflow artifacts (reports, plans)
+.agents/
