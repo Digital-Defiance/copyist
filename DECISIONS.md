@@ -16,6 +16,12 @@ Newest first. One entry per decision: what, why, and what we gave up.
   - **Judging:** YuE2 learned from SheetSage2's transcriptions, so YuE2 takes favour SheetSage2, and would favour a model trained on YuE2 too. Real recordings, not YuE2 takes, decide whether we're better.
   - **Gave up:** a training set with no licence doubt.
 - **Goal raised: the best open transcriber available, beating SheetSage2 objectively,** for songs, musicals and orchestral music (owner). A design audit comes before T1 trains anything. Gave up: starting the GPU data work today.
+- **The transcriber's budget is $0.** Owner's call.
+  - **What it rules out:** every dataset, model and tool must be a free download. No test recordings are bought, and there's no external drive. The plan fits in about 300 GB of the Mac's own disk (685 GB free after the owner's cleanup), and jobs stop by themselves below 150 GB free. Copyist keeps recipes rather than renders, and stores only the costly audio (SoulX and YuE2) as FLAC.
+  - **What replaces Rock Corpus,** SheetSage2's rock test, whose recordings must be bought, so it can't be scored:
+    - RWC's other 75 sung pieces (CC BY-NC, testing only);
+    - the 39 Creative Commons songs with karaoke charts in UltraStar Deluxe's GitHub song library (the owner's idea). 4 of them are in HookTheory's training split and are scored apart; 35 are non-commercial, so they're testing only, and only scores are published for them.
+  - **Gave up:** a head-to-head on SheetSage2's rock test. A claim to beat it on its own ground rests on RWC-Pop alone, and we'll say so.
 
 ## 2026-10-19 (v0.0.1 release and where the cask lives)
 

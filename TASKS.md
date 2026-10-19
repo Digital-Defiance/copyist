@@ -280,17 +280,25 @@ Spec: docs/transcribing.md. The owner asked for this on 18 October 2026; her mus
     - **T1 as planned** (a head on Basic Pitch plus log-mel) almost certainly won't beat it on pop and rock. It could on lyric-given vocals. T1 is re-scoped to multi-task heads on the winner of an encoder bake-off (MusicFM, Dasheng, HeartCodec's encoder, Whisper). It keeps Basic Pitch as a side input and gets structured decoding.
     - **The judge:** real, licence-clean recordings, never YuE2 takes. That's SheetSage2's own two tests, reproduced; neutral sets; and COTB-v1, about 120 public-domain recordings (musicals, choir, band, orchestral, syncopated, old), with performance-aligned truth checked by ear. Scored with strict metrics (octave-exact 50 ms F1, MV2H, notation edit distance, meter, key, underlay), paired bootstrap tests, and a pre-registered decision rule.
     - **Roadmap:** stage 0, the judge (3–4 weeks); stage 1, rhythm and notation decoding (3–4 weeks, overlapping); stage 2, the encoder bake-off and heads (5–7 weeks); stage 3, real data and priors (4–6 weeks); stage 4, the one-time test; stage 5, the product. About 4–5 months of GPU nights on the M4 Max. Full orchestral scores stay a research goal; orchestral lead sheets and short scores are the promise.
-  - [ ] Owner decisions on the audit (plain words at the end of its report):
-    - testing-only use of non-commercial test sets and systems (RWC, MuScriptor, YourMT3+);
-    - buying the Rock Corpus recordings (about $200–400, testing only);
-    - real recordings as the judge;
-    - about 6–10 hours of listening;
+  - [x] Budget: $0 (owner, 2026-10-19; DECISIONS). Nothing is bought: no Rock Corpus recordings, no external drive. Every dataset, model and tool is a free download, and the plan fits in about 300 GB of the Mac's disk (685 GB free after the owner's cleanup). Jobs stop by themselves below 150 GB free. Rock Corpus is out, so a claim on SheetSage2's own ground rests on RWC-Pop alone. Free stand-ins:
+    - RWC's other 75 sung pieces;
+    - the 39 Creative Commons songs with karaoke charts in UltraStar Deluxe's GitHub song library (the owner's idea). 4 of them are in HookTheory's training split and are scored apart.
+  - [ ] Owner decisions on the revised audit (plain words at the end of its report):
+    - testing-only use of non-commercial collections and systems (RWC, the 35 non-commercial karaoke songs, SheetSage2, MuScriptor, YourMT3+), publishing only scores for the non-commercial songs;
+    - real recordings as the judge, with YuE2 takes as practice;
+    - about 8–12 hours of listening;
     - open-licence encoders whose training data can't be checked;
     - self-labelled CC0/CC BY music;
+    - up to about 300 GB of disk;
     - song format `copyist-song/1` (triplets, key, meter and tempo changes, repeats, a second voice);
-    - an external SSD later;
     - claiming "best" only after the one-time test.
-  - [ ] Stage 0, the judge (after the owner's decisions and the key-change fix, which touches the same scorer): timed-event outputs from every engine; SheetSage2's scorer replicated and reproduced on RWC-Pop and Rock Corpus with its official implementation (testing only); the strict metric suite and bootstrap; a 40-recording COTB pilot, then 120; baselines run once
+  - [ ] Stage 0, the judge (after the owner's decisions and the key-change fix, which touches the same scorer). It needs:
+    - timed-event outputs from every engine;
+    - SheetSage2's scorer replicated, and reproduced on RWC-Pop with its official implementation (testing only);
+    - the free stand-ins scored the same way;
+    - the strict metric suite and bootstrap;
+    - a 40-recording COTB pilot, then 120;
+    - baselines run once.
   - [ ] The open-transcriber README still says Omnizart chords are blocked on Apple Silicon; they run natively since the arm64 nnls-chroma build (DECISIONS 2026-10-18). Fix it with the next submodule change
   - [ ] SheetSage2 once on all seven test songs as a yardstick (evaluation only; owner OK 2026-10-19). Five done 2026-10-19 on the M4 Max, about 5 s a take. Notes: Saints 0.97, Silent Night 0.96, Amazing Grace 0.94, Tyger 1.00, Major-General 0.98. Chords: 0.87, 0.91, 0.97, 0.91, 0.74. It reads The Tyger's 3/4 right and writes Silent Night as 3/4. Docs: docs/transcribing.md; raw outputs: `out/<slug>/sheetsage-yardstick/`; script: `.agents/tasks/sheetsage-yardstick-2026-10-19/yardstick.py`, which reads roundtrip's CASES. The two big songs get the same single run when they land
   - [ ] Key changes break Copyist's ABC readers (found by the yardstick run, 2026-10-19). `abcplan.parse` keeps only the bars after the last `K:` line, and a mid-bar `[K:…]` stops it with a PlanError; evaluate.py's chord reader (`parse_any`) resets the same way (read, not run). SheetSage2 writes a key change as `K:` in both voices. Fix with tests before the big songs, since one should change key
