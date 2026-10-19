@@ -36,8 +36,8 @@ The work moved fast and may change hands at any moment. Here is where things sta
 - YuE2 weights in `.cache/yue/`.
 - Instruments install with `scripts/setup-sfizz.sh --instruments` (band), `copyist models download keys` / `bells` / `folk` / `electric` / `winds` (organ, harp, tonewheel, celesta, music-box glock, guitars, fiddle, flute, oboe, sax).
 - Run YuE2 with `--device MTL0`.
-- GPU work (takes, planning, training) runs there, started by the owner in Terminal or from the page.
-- An agent in a cloud container can't use the Mac's GPU. Write scripts and commands for her to run, and say how long they take.
+- GPU work (takes, planning, training) runs there. Agents running on the Mac start and watch GPU jobs themselves, one at a time (owner, 2026-10-19); she doesn't start, stop or watch them. Whether jobs may also run whenever the Mac is idle, by day, is her open decision; until she answers, prefer nights.
+- An agent in a cloud container can't use the Mac's GPU. Write the scripts, say how long they take, and leave the run to an agent on the Mac, not to the owner.
 
 **Never commit:** `voices/`, `.cache/` (weights, LoRAs, instruments), `out/`, or anything from the owner's musical *I Left the Lights On* (`lights-on*` folders). The `lightson` LoRA is private and never ships.
 
@@ -133,4 +133,4 @@ out/              build output (ignored)
 
 ## Owner
 
-Jessica Mulein (Digital Defiance). She writes lyrics and directs the work through AI tools in short bursts. She can't sing, play an instrument or read music, so melodies and sounds are chosen by listening, so leave the repo in a state where the next person can continue without context: tests passing, roadmap current, no half-finished changes left uncommitted.
+Jessica Mulein (Digital Defiance). She writes lyrics and directs the work through AI tools in short bursts. She can't sing, play an instrument or read music, so melodies and sounds are chosen by listening. Nothing may wait on her listening, hands-on work or time (2026-10-19): make every check automatic, run the jobs yourself, and ask her only for decisions. Leave the repo in a state where the next person can continue without context: tests passing, roadmap current, no half-finished changes left uncommitted.

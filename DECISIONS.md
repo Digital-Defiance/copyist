@@ -25,6 +25,13 @@ Newest first. One entry per decision: what, why, and what we gave up.
     - the Creative Commons songs with karaoke charts in UltraStar Deluxe's GitHub song library (the owner's idea), 32 of the 39. The 2 under older no-derivatives licences are left out, because a transcription may count as an adaptation, which those licences don't allow. The 4 that are in HookTheory's training split are scored apart.
   - **Non-commercial test material is for testing only, with safeguards.** The owner left this to the audit's judgment. It covers RWC, the non-commercial karaoke songs, and runs of SheetSage2, MuScriptor and YourMT3+. These songs are never trained on, shipped or shared; for them we publish only scores and credits, never their audio or our transcriptions. Why: testing a free MIT tool with nothing sold sits on the non-commercial side, and RWC's re-release says its licence covers research, including research inside companies. This is a reading of the licences, not legal advice; ask a lawyer before publishing results if certainty is wanted.
   - **Gave up:** a head-to-head on SheetSage2's rock test. A claim to beat it on its own ground rests on RWC-Pop alone, and we'll say so.
+- **Real recordings decide "best"; YuE2 takes are practice.** The owner agreed. YuE2 learned from SheetSage2's transcriptions, so its songs flatter SheetSage2, and would flatter us once we train on YuE2. Real recordings with clean rights flatter neither. The five truth takes and the two big songs become dev sets. Gave up: the convenience of a benchmark we can make ourselves in a minute.
+- **Nothing waits on the owner's listening, hands-on work or time.** Owner's call.
+  - **Test truth:** checked automatically by two independent aligners and torchcrepe pitch checks.
+  - **Listening tests:** replaced by a playback check, which renders each transcription with Copyist's band and compares it with the original by pitch track and chroma.
+  - **Correction effort:** measured with a simulated listener, a script that picks the alternative closer to the truth.
+  - **GPU jobs:** agents on the Mac start and watch them. Running them whenever the Mac is idle, by day as well as at night, is still her decision.
+  - **Gave up:** human listening as an endpoint. An automatic sound check can't be validated without people, so it backs up the claims rather than deciding them.
 
 ## 2026-10-19 (v0.0.1 release and where the cask lives)
 

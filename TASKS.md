@@ -8,6 +8,7 @@ Last updated: 2026-10-19.
 ## Ground rules
 
 - The person directing this can't sing, hum, play an instrument or read music. Every step has to work by listening and choosing, never by performing or reading notation.
+- Nothing may wait on the owner's listening, hands-on work or time (owner, 2026-10-19). Every check is automatic, and agents on the Mac run the GPU jobs. The "Listen" and "owner listens" items below are optional and never block anything. Ask her only for decisions.
 - The target is Suno-level sound. The SoundFont preview is a draft, not the product.
 - Singer voices live in `voices/`, which git ignores. Never commit or publish them.
 - Before calling anything done, look at every PDF page and listen to every render (or run the pitch and lyric checks on it).
@@ -278,20 +279,31 @@ Spec: docs/transcribing.md. The owner asked for this on 18 October 2026; her mus
     - **What SheetSage2 can't do:** triplets, swing or 12/8; tempo changes (one tempo anchor); more than one vocal line; lyrics; chords past sevenths. Key changes are never scored.
     - **Its own tests:** RWC-Pop 82.5 and Rock Corpus 67.1 (pitch class, 50 ms). About half the Rock Corpus songs are in the HookTheory data it trained on, and it scores 6.6 points higher on those (not significant). Its fair Rock Corpus bar is about 64.5.
     - **T1 as planned** (a head on Basic Pitch plus log-mel) almost certainly won't beat it on pop and rock. It could on lyric-given vocals. T1 is re-scoped to multi-task heads on the winner of an encoder bake-off (MusicFM, Dasheng, HeartCodec's encoder, Whisper). It keeps Basic Pitch as a side input and gets structured decoding.
-    - **The judge:** real, licence-clean recordings, never YuE2 takes. That's SheetSage2's own two tests, reproduced; neutral sets; and COTB-v1, about 120 public-domain recordings (musicals, choir, band, orchestral, syncopated, old), with performance-aligned truth checked by ear. Scored with strict metrics (octave-exact 50 ms F1, MV2H, notation edit distance, meter, key, underlay), paired bootstrap tests, and a pre-registered decision rule.
-    - **Roadmap:** stage 0, the judge (3–4 weeks); stage 1, rhythm and notation decoding (3–4 weeks, overlapping); stage 2, the encoder bake-off and heads (5–7 weeks); stage 3, real data and priors (4–6 weeks); stage 4, the one-time test; stage 5, the product. About 4–5 months of GPU nights on the M4 Max. Full orchestral scores stay a research goal; orchestral lead sheets and short scores are the promise.
+    - **The judge:** real, licence-clean recordings, never YuE2 takes. That's SheetSage2's own two tests, reproduced; neutral sets; and COTB-v1, about 120 public-domain recordings (musicals, choir, band, orchestral, syncopated, old), with performance-aligned truth checked automatically. Two independent aligners must agree, torchcrepe checks the pitches, and a playback check renders the truth and compares it with the recording bar by bar; nothing waits on anyone's ears. Scored with strict metrics (octave-exact 50 ms F1, MV2H, notation edit distance, meter, key, underlay), paired bootstrap tests, and a pre-registered decision rule.
+    - **Roadmap:** stage 0, the judge (3–4 weeks); stage 1, rhythm and notation decoding (3–4 weeks, overlapping); stage 2, the encoder bake-off and heads (5–7 weeks); stage 3, real data and priors (4–6 weeks); stage 4, the one-time test; stage 5, the product; stage 6, giving the disk back. The stages overlap. Estimates, revised 2026-10-19:
+      - a first honest scoreboard against SheetSage2 on real recordings in about 2 weeks;
+      - the rhythm and notation fixes in about 5–6 weeks;
+      - the trained model and the one-time test in about 2.5–3 months if GPU jobs run whenever the Mac is idle, or about 4 months at night only (200–350 GPU hours).
+
+      Full orchestral scores stay a research goal; orchestral lead sheets and short scores are the promise.
   - [x] Budget: $0 (owner, 2026-10-19; DECISIONS). Nothing is bought: no Rock Corpus recordings, no external drive. Every dataset, model and tool is a free download, and jobs stop by themselves below 150 GB free.
     - **Disk:** about 300 GB at most of the Mac's 685 GB free, for training and testing only (owner, 2026-10-19). After the test is published and the model ships, stage 6 shrinks the project to about 15 GB. That keeps the COTB recordings and their truth, plus manifests that can rebuild everything else.
     - **Rock Corpus is out:** the owner owns none of its songs. So a claim on SheetSage2's own ground rests on RWC-Pop alone.
     - **Free stand-ins:** RWC's other 75 sung pieces, and the Creative Commons songs with karaoke charts in UltraStar Deluxe's GitHub song library (the owner's idea). 32 of those karaoke songs are used. The 2 under older no-derivatives licences are left out, and the 4 that are in HookTheory's training split are scored apart.
   - [x] Non-commercial test material: testing only, with safeguards (owner, 2026-10-19). This covers RWC, the non-commercial karaoke songs, and runs of SheetSage2, MuScriptor and YourMT3+. These songs are never trained on, shipped or shared. For them we publish only scores and credits, never their audio or our transcriptions. That's a reading of the licences, not legal advice; ask a lawyer before publishing if certainty is wanted
+  - [x] The judge and the owner's time (owner, 2026-10-19):
+    - **Real recordings decide "best".** YuE2 takes and the two big songs are practice (dev) sets.
+    - **None of the owner's time is needed.** Every check is automatic:
+      - the aligners and the torchcrepe pitch checks for the test truth;
+      - a playback check (each transcription rendered by Copyist's band and compared with the original) instead of listening tests;
+      - a simulated listener, a script that picks the alternative closer to the truth, for correction effort.
+    - **Agents start and watch the GPU jobs.** Listening is no longer an endpoint.
   - [ ] Owner decisions still open on the revised audit (plain words at the end of its report):
-    - real recordings as the judge, with YuE2 takes as practice;
-    - about 8–12 hours of listening;
-    - open-licence encoders whose training data can't be checked;
-    - self-labelled CC0/CC BY music;
-    - song format `copyist-song/1` (triplets, key, meter and tempo changes, repeats, a second voice);
-    - claiming "best" only after the one-time test.
+    - decision 6: pre-trained "ears" with open licences whose training recordings can't all be checked;
+    - decision 10: song format `copyist-song/1` (triplets, key, meter and tempo changes, repeats, a second voice);
+    - decision 14: GPU jobs whenever the Mac is idle, day or night. They pause while she's using it; without this, it's nights only.
+
+    Planned unless she objects: self-labelled CC0/CC BY music; claiming "best" only after the one-time test; switching the default engine once that test passes.
   - [ ] Stage 6, give the disk back: once the test is published and the model ships, shrink the project from about 300 GB to about 15 GB. Check first that the manifests can rebuild everything that's deleted (recipes for renders; source links and checksums for downloads)
   - [ ] Stage 0, the judge (after the owner's decisions and the key-change fix, which touches the same scorer). It needs:
     - timed-event outputs from every engine;
@@ -305,7 +317,7 @@ Spec: docs/transcribing.md. The owner asked for this on 18 October 2026; her mus
   - [ ] Key changes break Copyist's ABC readers (found by the yardstick run, 2026-10-19). `abcplan.parse` keeps only the bars after the last `K:` line, and a mid-bar `[K:…]` stops it with a PlanError; evaluate.py's chord reader (`parse_any`) resets the same way (read, not run). SheetSage2 writes a key change as `K:` in both voices. Fix with tests before the big songs, since one should change key
   - [ ] Widen `evaluate.py`'s ±14 s shift search, or align on the first sung note: SheetSage2 keeps intro bars, and its best shifts on the five takes were already −8.4 to −11.5 s, so a longer intro would mis-score
 - [ ] SheetSage ABC through the same fold/tidy path
-- [ ] Owner listen check on June Snow / other songs only after a table win. Never commit them
+- [ ] Optional, never blocking: the owner hears her own songs (June Snow and others) through the new engine if she wants to, after a table win. Never commit them
 - [ ] Repeats vote (SPEC 12.2a step 3): the same section sung again settles doubtful notes
 - [ ] Per-doubt A/B by ear (SPEC 12.2a step 7), writing the choice back into the song file
 - [ ] Bass line, drum groove and band parts (SPEC 12.1); analysis by synthesis (SPEC 12.2 step 4)
