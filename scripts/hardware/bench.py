@@ -10,7 +10,8 @@ also runs on Linux or Windows (CUDA, Vulkan or CPU builds of yue2.cpp; Demucs on
 
 Steps (the GPU ones first, so a short window still gets the answers that matter most):
 - yue:    one take, then 2 and 4 takes in one run (`lm_batch_size`), then 4 variations of one take
-          (`synth_batch_size`), and whether take 2 of a batch is the same as that take rendered alone;
+          (`synth_batch_size`), and whether take 2 of a batch is the same performance as that take
+          rendered alone; on a Mac, each run's peak memory (`/usr/bin/time -l`);
 - plan:   four melody plans with `yue-plan`, one run each, as `copyist write` makes them;
 - demucs: separating a take's vocal on the GPU and on the CPU;
 - whisper: hearing the words (faster-whisper base.en on the CPU, as Copyist does now);
@@ -90,33 +91,91 @@ def digest(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()[:16]
 
 
+def semantic_tokens(replay: Path) -> str | None:
+    """The performance yue2.cpp drew (its replay request's codes), to compare takes by content."""
+    try:
+        return json.loads(replay.read_text(encoding="utf-8")).get("semantic_tokens") or None
+    except (OSError, ValueError):
+        return None
+
+
+def timed_synth(work: Path, real: str) -> tuple[str, Path] | None:
+    """On a Mac, a stand-in for yue-synth that runs it under /usr/bin/time -l, appending each run's
+    resource use to a log, so the peak memory of every YuE2 run is recorded."""
+    if sys.platform != "darwin" or not Path("/usr/bin/time").exists():
+        return None
+    log = work / "yue-synth-time.log"
+    wrapper = work / "yue-synth-timed"
+    wrapper.write_text(f'#!/bin/sh\nexec /usr/bin/time -a -o "{log}" -l "{real}" "$@"\n', encoding="utf-8")
+    wrapper.chmod(0o755)
+    return str(wrapper), log
+
+
+def last_peak_gb(log: Path | None) -> dict:
+    """The last run's peak memory footprint and maximum resident set from the /usr/bin/time log."""
+    if not log or not log.is_file():
+        return {}
+    text = log.read_text(encoding="utf-8", errors="replace")
+    out = {}
+    for key, label in (("peak_footprint_gb", "peak memory footprint"), ("max_rss_gb", "maximum resident set size")):
+        values = [int(line.split()[0]) for line in text.splitlines() if line.strip().endswith(label)]
+        if values:
+            out[key] = round(values[-1] / 2 ** 30, 2)
+    return out
+
+
 # ------------------------------------------------------------------ steps
 
 def step_yue(work: Path, results: dict) -> Path | None:
     from copyist import paths, yue
     from copyist.song import load_song
-    if not paths.find_program("yue-synth", "COPYIST_YUE_SYNTH"):
+    real = paths.find_program("yue-synth", "COPYIST_YUE_SYNTH")
+    if not real:
         results["yue"] = {"skipped": "yue2.cpp isn't installed (scripts/setup-yue.sh)"}
         return None
     song = load_song(SONG)
     req = yue.request(song, verses=1, seed=831001)
     req["output_format"] = "wav16"
     r = results["yue"] = {"audio_seconds": round(yue.score_seconds(song, 1, 4), 1)}
-    r["one_take_s"], (first,) = timed(yue.render_takes, req, [work / "yue" / "one"])
-    r["two_takes_s"], _ = timed(yue.render_takes, req, [work / "yue" / f"two-{k}" for k in (1, 2)])
-    r["four_takes_s"], four = timed(yue.render_takes, req, [work / "yue" / f"four-{k}" for k in (1, 2, 3, 4)])
-    # A batch leaves each take yue2.cpp's replay request; the one-at-a-time fallback doesn't.
-    r["four_takes_batched"] = all((work / "yue" / f"four-{k}" / "replay.json").is_file() for k in (1, 2, 3, 4))
-    variations = dict(req, synth_batch_size=4)
-    t, _ = timed(yue.run_yue2cpp, variations, work / "yue" / "variations")
-    r["four_variations_s"] = t
-    # Take 2 of the batch, rendered alone: the same take? (Then a failed batch's fallback is too.)
-    t, alone = timed(yue.run_yue2cpp, yue.take_request(req, 1), work / "yue" / "alone-2")
-    r["take_2_alone_s"] = t
-    r["take_2_same_as_batch"] = digest(alone) == digest(four[1])
-    for key in ("two_takes_s", "four_takes_s"):
-        n = 2 if key.startswith("two") else 4
+    (work / "yue").mkdir(parents=True, exist_ok=True)
+    wrapped = timed_synth(work / "yue", str(real))
+    before = os.environ.get("COPYIST_YUE_SYNTH")
+    if wrapped:
+        os.environ["COPYIST_YUE_SYNTH"] = wrapped[0]
+    log = wrapped[1] if wrapped else None
+    try:
+        r["one_take_s"], (first,) = timed(yue.render_takes, req, [work / "yue" / "one"])
+        r["one_take_memory"] = last_peak_gb(log)
+        r["two_takes_s"], _ = timed(yue.render_takes, req, [work / "yue" / f"two-{k}" for k in (1, 2)])
+        r["two_takes_memory"] = last_peak_gb(log)
+        r["four_takes_s"], four = timed(yue.render_takes, req, [work / "yue" / f"four-{k}" for k in (1, 2, 3, 4)])
+        r["four_takes_memory"] = last_peak_gb(log)
+        # A batch leaves each take yue2.cpp's replay request; the one-at-a-time fallback doesn't.
+        r["four_takes_batched"] = all((work / "yue" / f"four-{k}" / "replay.json").is_file() for k in (1, 2, 3, 4))
+        # Four variations of one performance: yue-synth numbers them production00 ... production03.
+        folder = work / "yue" / "variations"
+        t0 = time.perf_counter()
+        try:
+            yue.run_yue2cpp(dict(req, synth_batch_size=4), folder)
+        except RuntimeError:
+            pass                       # it looks for one production.wav; check the numbered ones
+        r["four_variations_s"] = round(time.perf_counter() - t0, 2)
+        r["four_variations_ok"] = all((folder / f"production0{j}.wav").is_file() for j in range(4))
+        r["four_variations_memory"] = last_peak_gb(log)
+        # Take 2 of the batch, rendered alone: the same performance? (Then a failed batch's fallback is too.)
+        t, alone = timed(yue.run_yue2cpp, yue.take_request(req, 1), work / "yue" / "alone-2")
+        r["take_2_alone_s"] = t
+        batch_codes = semantic_tokens(four[1].parent / "replay.json")
+        alone_codes = semantic_tokens(alone.with_suffix(".json"))
+        r["take_2_same_performance"] = bool(batch_codes) and batch_codes == alone_codes
+        r["take_2_same_audio_bytes"] = digest(alone) == digest(four[1])
+    finally:
+        os.environ.pop("COPYIST_YUE_SYNTH", None)
+        if before is not None:
+            os.environ["COPYIST_YUE_SYNTH"] = before
+    for key, n in (("two_takes_s", 2), ("four_takes_s", 4)):
         r[key.replace("_s", "_per_take_s")] = round(r[key] / n, 2)
+    r["four_in_one_run_vs_four_runs"] = round(r["four_takes_s"] / (4 * r["one_take_s"]), 2)
     return first
 
 
