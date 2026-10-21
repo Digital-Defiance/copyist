@@ -32,6 +32,11 @@ class MusicxmlImportTests(unittest.TestCase):
         n_orig = sum(1 for n in song.melody.flatten().notes if n.isNote)
         n_imp = sum(1 for n in again.melody.flatten().notes if n.isNote)
         self.assertEqual(n_imp, n_orig)
+        # Every verse comes back on the same notes, holds included ("A-maz-ing_ grace").
+        self.assertEqual(len(again.verses), 4)
+        self.assertTrue(all(f.fits for f in again.lyric_fits))
+        self.assertEqual([" ".join(v.split()) for v in again.verses],
+                         [" ".join(v.split()) for v in song.verses])
 
     def test_picks_the_vocal_part_in_a_piano_vocal_score(self):
         score = stream.Score()
@@ -73,6 +78,55 @@ class MusicxmlImportTests(unittest.TestCase):
         score.write("musicxml", fp=str(path))
         part = musicxml_in.pick_melody_part(converter.parse(str(path)))
         self.assertEqual(part.partName, "Captain Hook")
+
+    def test_a_choir_scores_melody_is_the_top_voice(self):
+        # Every part has words; the bass has the most. The tune is the soprano's.
+        score = stream.Score()
+        for name, pitches in (("Soprano", ("E5", "D5", "C5", "D5")), ("Alto", ("C5", "B4", "A4", "B4")),
+                              ("Bass", ("C3", "G2", "A2", "G2", "G2"))):
+            p = stream.Part(id=name)
+            p.partName = name
+            for pitch, word in zip(pitches, ("Lift", "ev", "ry", "voice", "now")):
+                n = note.Note(pitch, quarterLength=1)
+                n.lyric = word
+                p.append(n)
+            score.insert(0, p)
+        path = Path(tempfile.mkdtemp(prefix="copyist-satb-")) / "satb.musicxml"
+        score.write("musicxml", fp=str(path))
+        self.assertEqual(musicxml_in.pick_melody_part(converter.parse(str(path))).partName, "Soprano")
+
+    def test_words_stay_on_their_notes(self):
+        # Verse 1 holds "home" over two notes; after a rest, verse 2 starts a note late (a skip);
+        # verse 2 is silent for the last bar, a refrain printed once under verse 1.
+        part = stream.Part()
+        m1, m2, m3 = stream.Measure(number=1), stream.Measure(number=2), stream.Measure(number=3)
+        m1.append(meter.TimeSignature("4/4"))
+
+        def sung(pitch, *words, length=1.0):
+            n = note.Note(pitch, quarterLength=length)
+            for k, w in enumerate(words, start=1):
+                if w:
+                    text, _, syllabic = w.partition("|")
+                    n.addLyric(text, lyricNumber=k)
+                    if syllabic:
+                        n.lyrics[-1].syllabic = syllabic
+            return n
+
+        m1.append([sung("C4", "Car|begin", "Sing|begin"), sung("D4", "ry|end", "ing|end"),
+                   sung("E4", "me", "out"), sung("F4", "home,", "loud,")])
+        m2.append([sung("G4"), note.Rest(quarterLength=1), sung("A4", "oh", None), sung("G4", "go", "and")])
+        m3.append([sung("F4", "now", None), sung("E4", "to", None), sung("D4", "the", None), sung("C4", "sea.", None)])
+        part.append([m1, m2, m3])
+        score = stream.Score()
+        score.insert(0, part)
+        folder = Path(tempfile.mkdtemp(prefix="copyist-mxl-words-"))
+        score.write("musicxml", fp=str(folder / "words.musicxml"))
+        musicxml_in.import_musicxml(folder / "words.musicxml", folder / "words.yaml", title="Words")
+        song = load_song(folder / "words.yaml")
+        self.assertEqual([" ".join(v.split()) for v in song.verses],
+                         ["Car-ry me home,_ oh go now to the sea.",
+                          "Sing-ing out loud,_ * and now to the sea."])
+        self.assertTrue(all(f.fits for f in song.lyric_fits))
 
     def test_chord_symbols_become_quoted_abc(self):
         part = stream.Part()

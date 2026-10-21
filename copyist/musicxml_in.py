@@ -16,8 +16,12 @@ from . import abcplan
 from .song import FORMAT, SongError
 from .write import song_yaml
 
-# Without lyrics to go by, prefer a part named like the sung line.
-_VOCAL_NAME = re.compile(r"(voice|vocal|melody|solo|singer)", re.IGNORECASE)
+# Among parts with words, or without lyrics to go by, prefer a part named like the sung line;
+# in a choir score, the soprano.
+_VOCAL_NAME = re.compile(r"(voice|vocal|melody|solo|singer|lead)", re.IGNORECASE)
+_TOP_VOICE = re.compile(r"(soprano|treble|cantus)", re.IGNORECASE)
+SHARE_OF_WORDS = 0.8          # parts with this share of the most sung words are all candidates
+REFRAIN_RUN = 4               # a verse silent this many notes where another sings shares its words
 
 
 class MusicxmlImportError(SongError):
@@ -42,9 +46,10 @@ def load_score(path: str | Path) -> stream.Score:
 
 
 def pick_melody_part(score: stream.Score) -> stream.Part:
-    """The sung line: the part with the most sung words (a vocal part is often named for its
-    character, such as "Major-General"), else a part named like a voice, else the first part
-    with pitched notes."""
+    """The sung line. Parts with words come first (a vocal part is often named for its character,
+    such as "Major-General"); among those with about as many words as the most, one named like a
+    voice, else the highest soprano, else the highest part. Without words: a part named like a voice, else the
+    first part with pitched notes."""
     parts = list(score.parts)
     if not parts:
         raise MusicxmlImportError("That MusicXML has no parts.")
@@ -54,9 +59,19 @@ def pick_melody_part(score: stream.Score) -> stream.Part:
     def _sung(p: stream.Part) -> int:
         return sum(1 for n in p.recurse().notes if isinstance(n, note.Note) and n.lyrics)
 
+    def _height(p: stream.Part) -> float:
+        ps = [n.pitch.ps for n in p.recurse().notes if isinstance(n, note.Note)]
+        return sum(ps) / len(ps) if ps else 0.0
+
     words = {id(p): _sung(p) for p in parts}
-    if max(words.values()) > 0:
-        return max(parts, key=lambda p: words[id(p)])
+    most = max(words.values())
+    if most > 0:
+        close = [p for p in parts if words[id(p)] >= SHARE_OF_WORDS * most]
+        named = [p for p in close if _VOCAL_NAME.search(_label(p))]
+        if named:
+            return max(named, key=lambda p: words[id(p)])
+        top = [p for p in close if _TOP_VOICE.search(_label(p))]
+        return max(top or close, key=_height)    # Soprano I over Soprano II, a choir's top line
     named = [p for p in parts if _VOCAL_NAME.search(_label(p))]
     candidates = named or parts
     for part in candidates:
@@ -177,41 +192,116 @@ def _elements_to_bar(els: list, unit: Fraction, key_alters: dict[str, int] | Non
     return abcplan.Bar(toks, section="verse")
 
 
-def _lyrics_by_verse(part: stream.Part) -> list[str]:
-    """One lyric string per verse number, syllables joined for Copyist's lyric fit."""
-    verses: dict[int, list[str]] = {}
-    for n in part.recurse().notes:
-        if not isinstance(n, note.Note):
+def _sung_slots(part: stream.Part) -> list[note.NotRest | None]:
+    """The notes that can take a syllable, in order (tie continuations and grace notes left out),
+    with None for each rest, which ends a held syllable."""
+    out: list[note.NotRest | None] = []
+    for el in part.recurse().notesAndRests:
+        if isinstance(el, note.Rest):
+            if out and out[-1] is not None:
+                out.append(None)
             continue
-        if n.tie and n.tie.type in ("stop", "continue"):
-            # Tied continuation: melisma already marked on the start in export; skip empties.
-            pass
-        for ly in n.lyrics:
-            if not ly or not ly.text or ly.text == "_":
-                continue
-            num = int(ly.number) if ly.number else 1
-            text = str(ly.text).strip()
-            if ly.syllabic in ("begin", "middle"):
-                text = text + "-"
-            verses.setdefault(num, []).append(text)
-    if not verses:
-        return []
-    out = []
-    for num in sorted(verses):
-        # Hyphen already on begin/middle; join with spaces between words.
-        parts = verses[num]
-        line = []
-        buf = ""
-        for p in parts:
-            if p.endswith("-"):
-                buf += p
-            else:
-                line.append(buf + p)
-                buf = ""
-        if buf:
-            line.append(buf.rstrip("-"))
-        out.append(" ".join(line))
+        if not isinstance(el, note.NotRest) or el.duration.isGrace or el.quarterLength == 0:
+            continue
+        if el.tie is not None and el.tie.type in ("stop", "continue"):
+            continue
+        out.append(el)
     return out
+
+
+def _syllable(n: note.NotRest, verse: int) -> tuple[str, str] | None:
+    for ly in n.lyrics:
+        if (int(ly.number) if ly.number else 1) == verse and ly.text and ly.text.strip() not in ("", "_"):
+            return "".join(str(ly.text).split()), ly.syllabic or "single"
+    return None
+
+
+def _verse_tokens(slots: list, verse: int, verses: list[int]) -> list[tuple]:
+    """One token per sung note for `verse`: ("syl", text, syllabic), ("hold",) or ("skip",).
+
+    A note with no syllable for this verse holds the syllable before it, unless a rest came
+    between (then it's skipped). Where this verse is silent for REFRAIN_RUN notes or more and
+    another verse sings, the words are shared: a refrain printed once, under the first verse."""
+    notes = [n for n in slots if n is not None]
+    own = [_syllable(n, verse) for n in notes]
+    donor_of = []
+    for n in notes:
+        donor = next((v for v in verses if v != verse and _syllable(n, v)), None)
+        donor_of.append(donor)
+    shared = [False] * len(notes)
+    k = 0
+    while k < len(notes):
+        if own[k] is None:
+            j = k
+            while j < len(notes) and own[j] is None:
+                j += 1
+            donors = [d for d in donor_of[k:j] if d is not None]
+            if j - k >= REFRAIN_RUN and len(donors) >= REFRAIN_RUN - 1:
+                for i in range(k, j):
+                    shared[i] = True
+            k = j
+        else:
+            k += 1
+    tokens: list[tuple] = []
+    sung_since_rest = False
+    i = 0
+    for n in slots:
+        if n is None:
+            sung_since_rest = False
+            continue
+        syl = own[i]
+        if syl is None and shared[i]:
+            first = next(d for d in donor_of[i:] + donor_of[:i] if d is not None)
+            syl = _syllable(n, donor_of[i] or first)
+        if syl:
+            tokens.append(("syl", *syl))
+            sung_since_rest = True
+        elif sung_since_rest:
+            tokens.append(("hold",))
+        else:
+            tokens.append(("skip",))
+        i += 1
+    return tokens
+
+
+def _render_verse(tokens: list[tuple]) -> str:
+    """Tokens in Copyist's lyric syntax: "A-maz-ing_ grace", "al-_ read-y", "*" for a skip."""
+    chunks: list[str] = []
+    buf = ""
+    for tok in tokens:
+        if tok[0] == "syl":
+            _, text, syllabic = tok
+            text = text.replace("-", "").replace("_", "").replace("*", "")
+            buf += text
+            if syllabic in ("begin", "middle"):
+                buf += "-"
+            else:
+                chunks.append(buf)
+                buf = ""
+        elif tok[0] == "hold":
+            if buf:                      # inside a word: "al-_" and the word goes on in the next chunk
+                chunks.append(buf + "_")
+                buf = ""
+            elif chunks:
+                chunks[-1] += "_"
+        else:
+            if buf:
+                chunks.append(buf.rstrip("-"))
+                buf = ""
+            chunks.append("*")
+    if buf:
+        chunks.append(buf.rstrip("-"))
+    text = " ".join(chunks)
+    return re.sub(r"^\d+\.\s*", "", text)      # a verse number printed before the first word
+
+
+def _lyrics_by_verse(part: stream.Part) -> list[str]:
+    """One lyric string per verse number, in Copyist's syntax, with holds and skips so every verse
+    lines up with the melody's notes as the score placed it."""
+    slots = _sung_slots(part)
+    verses = sorted({int(ly.number) if ly.number else 1 for n in slots if n is not None
+                     for ly in n.lyrics if ly.text and ly.text.strip()})
+    return [_render_verse(_verse_tokens(slots, v, verses)) for v in verses]
 
 
 def _title_credits(score: stream.Score, path: Path, title: str | None,

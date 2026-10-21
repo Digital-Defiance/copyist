@@ -7,7 +7,10 @@ lyric editor shows the words), which also tests Copyist's own syllable counts. R
 
     python scripts/fit/evaluate.py [-v] [--plain] [songs/NAME.yaml ...]
 
-`-v` shows every miss in context. The default set is the public-domain songs placed by hand.
+`-v` shows every miss in context. The default set is the public-domain songs placed by hand in
+`songs/`, plus public-domain English songs from music21's corpus (music21 is a dependency), whose
+editors placed the words: they're imported with `copyist import` (copyist/musicxml_in.py) into a
+temporary song file, so nothing from the corpus is copied into this repo.
 """
 from __future__ import annotations
 
@@ -20,10 +23,24 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
-from copyist import refit  # noqa: E402
+from copyist import musicxml_in, refit  # noqa: E402
 from copyist.song import load_song  # noqa: E402
 
 HAND_PLACED = ("amazing-grace", "silent-night", "when-the-saints", "major-general")
+CORPUS = (
+    "johnson_j_r/lift_every_voice.mxl",        # J. Rosamond Johnson, 1900: hymn, 6/8, three verses
+    "leadSheet/fosterBrownHair.mxl",           # Stephen Foster, 1854: parlour song, two verses
+    "leadSheet/berlinAlexandersRagtime.mxl",   # Irving Berlin, 1911: Tin Pan Alley
+    "beach/prayer_of_a_tired_child.musicxml",  # Amy Beach, 1914: choral art song, melismatic
+)
+
+
+def corpus_song(name: str) -> Path:
+    """A corpus score imported as a song file in a temporary folder."""
+    import music21
+    source = Path(music21.__file__).parent / "corpus" / name
+    out = Path(tempfile.mkdtemp(prefix="copyist-fit-corpus-")) / (Path(name).stem + ".yaml")
+    return musicxml_in.import_musicxml(source, out)
 
 
 def sung_notes(song) -> list:
@@ -82,7 +99,8 @@ def evaluate(path: Path, verbose: bool, plain: bool = False) -> tuple[int, int]:
 
 def main(argv: list[str]) -> int:
     verbose, plain = "-v" in argv, "--plain" in argv
-    paths = [Path(a) for a in argv if not a.startswith("-")] or [ROOT / "songs" / f"{s}.yaml" for s in HAND_PLACED]
+    paths = [Path(a) for a in argv if not a.startswith("-")] or \
+        [ROOT / "songs" / f"{s}.yaml" for s in HAND_PLACED] + [corpus_song(c) for c in CORPUS]
     missed = total = 0
     for path in paths:
         m, t = evaluate(path, verbose, plain)

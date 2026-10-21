@@ -175,6 +175,8 @@ For transcribed and written songs. Both modes ship; neither is a consolation pri
 - [ ] Spec and page sketch: by-ear controls (nudge pitch/length, chord list, "try this bar again") and by-note controls (select on the score, change pitch/duration/chord/lyrics)
 - [ ] Write edits back into the song file; re-validate; refresh the engraving and the exact preview
 - [x] MusicXML → song file (`copyist import`, `copyist/musicxml_in.py`): lead sheet or vocal line → melody ABC, chords, lyrics, key/meter/tempo. First slice of import; edit round-trip that keeps every Copyist field still open
+- [x] Imported lyrics stay on their notes (2026-10-20): each verse is written with `_` holds and `*` skips as the score placed it, and a refrain printed once under verse 1 is shared by every verse; Amazing Grace exports and imports back verse for verse. A choir score's melody is its top soprano, not the part with the most words
+- [ ] MusicXML repeats and 1st/2nd endings: the import plays every ending in a row (Foster's "Jeanie" in music21's corpus), and the song format has no repeats yet
 - [ ] MusicXML edit round-trip (import edits without losing Copyist fields)
 - [ ] "Try another version of this bar" uses the melody writer on one section
 
@@ -217,7 +219,7 @@ A singer anyone may use commercially that follows Copyist's score: HeartMuLa-oss
 - [ ] Concert-pitch option
 - [ ] Drum key
 - [ ] Simile marks
-- [ ] Flat chord roots print without their flat in the PDFs: "Eb" and "Bb" show as "E" and "B" (seen 2026-10-19 on Major-General's lead sheet and on the key-change test song). The MusicXML is right (`<root-alter>-1`). Verovio writes the flat as a SMuFL glyph (U+E260) in a Leipzig tspan, and `engrave.SMUFL_TEXT` maps only the metronome glyphs to characters MuPDF can draw
+- [x] Flat chord roots print without their flat in the PDFs: "Eb" and "Bb" show as "E" and "B" (seen 2026-10-19 on Major-General's lead sheet and on the key-change test song). The MusicXML is right (`<root-alter>-1`). Verovio writes the flat as a SMuFL glyph (U+E260) in a Leipzig tspan, and `engrave.SMUFL_TEXT` maps only the metronome glyphs to characters MuPDF can draw Fixed 2026-10-20: Verovio draws a chord symbol's flat and sharp with the figured-bass glyphs (U+EA64, U+EA66), now mapped with the other accidentals; a test reads the PDF text
 
 ## 6. Following directions (M2, SPEC §8)
 
