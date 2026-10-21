@@ -466,6 +466,34 @@ def transpose_notes(bars: list[Bar], key: str, semitones: int) -> None:
                                   for row in _note_midis(bars, key)])
 
 
+def key_tonic(key: str) -> int | None:
+    """The tonic's pitch class ("Bb" 10, "F#m" 6), or None for a key Copyist can't read."""
+    parts = _key_parts(key)
+    if not parts:
+        return None
+    letter, acc, _ = parts
+    return (NATURAL[letter] + {"#": 1, "b": -1, "": 0}[acc]) % 12
+
+
+def key_mode(key: str) -> int | None:
+    """The mode as its shift in fifths from major (0 major, -3 minor, -2 dorian), or None."""
+    parts = _key_parts(key)
+    if not parts:
+        return None
+    mode = parts[2].lower()
+    return MODE_SHIFT.get(mode, MODE_SHIFT.get(mode[:3]))
+
+
+def move_to_key(bars: list[Bar], from_key: str, to_key: str, semitones: int) -> None:
+    """Move bars written in `from_key` by `semitones` (notes and chords) and spell them in `to_key`."""
+    _set_note_pitches(bars, to_key, [[None if m is None else m + semitones for m in row]
+                                     for row in _note_midis(bars, from_key)])
+    for bar in bars:
+        for t in bar.toks:
+            if t.kind == "chord":
+                t.text = transpose_chord(t.text, semitones, to_key)
+
+
 def clamp_notes(bars: list[Bar], key: str, low: int, high: int) -> None:
     """Move notes that sit outside [low, high] by whole octaves until they fit (or as close as they can)."""
     rows = _note_midis(bars, key)

@@ -2,6 +2,15 @@
 
 Newest first. One entry per decision: what, why, and what we gave up.
 
+## 2026-10-20 (fixes from Claude's review)
+
+- **Chord symbols keep their flats and sharps on the PDFs.** Verovio draws the flat in "Bb" with a figured-bass glyph (U+EA64; sharp U+EA66). `engrave.SMUFL_TEXT` didn't map those, so every lead sheet printed B♭ as "B" and F♯m as "Fm", wrong chords for anyone playing from it. They now map to ♭ ♮ ♯ 𝄫 𝄪, and a test reads the PDF text. Gave up: nothing.
+- **The rules writer counts dotted quarters in compound meters.** A style's tempo is beats a minute, and in 6/8 the beat is a dotted quarter, so a jig at 105 is now `tempo: "3/8=105"`, not quarter = 105 (two-thirds the speed). Gave up: nothing.
+- **Refit sings each verse to the whole melody when the words are too many for one pass.** Blocks separated by a blank line (as the page shows verses) become verses. The longest verse is fitted first, so a note it splits is split for all; the others hold notes. A block under 70% of the melody's notes in syllables is refused rather than stretched, since it's more likely half a verse. Gave up: one pass with sections separated by blank lines still works only while its words fit the melody once.
+- **Rewrite's donors can be in any key of the same mode.** "Again" and "simpler" used only write candidates in the base song's key, so most were thrown away. A donor section is now moved into the base key (notes and chords), in the octave nearest the section it replaces, inside the voice's range. Gave up: a minor donor for a major song (or the reverse), which would change the song's character rather than its tune.
+- **MusicXML import picks the part with the most sung words.** Vocal parts are often named for a character, so the name pattern (which had grown a "major-general" special case) only decides when no part has lyrics. Gave up: nothing.
+- **The Intel Mac build runs on `macos-15-intel`.** GitHub retired `macos-13` in December 2025, so that leg couldn't start. Gave up: nothing; Intel CI ends when GitHub retires the macOS 15 image (planned for fall 2027).
+
 ## 2026-10-19 (key changes, and the scorer's alignment)
 
 - **Copyist's ABC reader keeps every bar through a key change, and each note leaves it with its own accidental.** SheetSage2 and yue-plan write a key change as a `K:` line in both voices, or `[K:…]` inside a bar. `abcplan.parse` started a new plan at every `K:` line, so it kept only the bars after the last one, and it refused `[K:…]`. Now `abcplan.read_vocal` follows ABC 2.1 and SheetSage2's own writer. The first `K:` ends the header and sets every voice's key. After that, a `K:` line or `[K:…]` changes the key of the voice it's written in, from that point on. Accidentals hold for their letter, in every octave, until the bar line or the key change. Every note then gets the accidental for the pitch it sounds (`=` for a natural), so the rest of the pipeline reads the right pitch under one key, with no other change. That also fixes a bug: pairing 2/4 bars joined one bar's `^f` with the next bar's `f`, and the F came out sharp. Any other inline field, and a key Copyist can't read, is refused. Gave up: nothing.

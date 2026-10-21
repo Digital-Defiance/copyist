@@ -2,7 +2,9 @@
 # Runs on v* tags and by hand. It never touches the GitHub Release: the release DMG is
 # built, signed, notarized and stapled on the owner's Mac (scripts/package/bundle-mac.sh
 # --sign) and uploaded with `gh release create`, so an unsigned CI build can't replace it
-# (DECISIONS.md, 2026-10-19). The Intel build is a smoke test until Intel ships.
+# (DECISIONS.md, 2026-10-19). The Intel build is a smoke test until Intel ships. GitHub
+# retired the macos-13 image in December 2025; macos-15-intel is its Intel runner now, until
+# the macOS 15 image retires (planned for fall 2027), after which Intel builds end here.
 name: Mac build (unsigned)
 on:
   push:
@@ -19,7 +21,7 @@ jobs:
           - os: macos-14
             triple: aarch64-apple-darwin
             arch: aarch64
-          - os: macos-13
+          - os: macos-15-intel
             triple: x86_64-apple-darwin
             arch: x64
     runs-on: ${{ matrix.os }}

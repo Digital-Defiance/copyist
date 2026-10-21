@@ -43,6 +43,26 @@ class ComposeTests(unittest.TestCase):
             [t.step + str(t.octave) for bar in a.bars for t in bar.toks if t.kind == "note"],
             [t.step + str(t.octave) for bar in b.bars for t in bar.toks if t.kind == "note"])
 
+    def test_compound_meter_tempo_counts_dotted_quarters(self):
+        # A jig's 96-132 BPM is dotted quarters; written as a bare number it played at
+        # quarter = N, two-thirds of the speed.
+        draft = ruleswrite.compose(LYRICS, "celtic-jig", "alto", seed=1)
+        self.assertEqual(draft.meter, "6/8")
+        self.assertRegex(str(draft.tempo), r"^3/8=\d+$")
+        bpm = int(str(draft.tempo).split("=")[1])
+        self.assertTrue(96 <= bpm <= 132, bpm)
+        self.assertIn(f"Q:3/8={bpm}", ruleswrite.plan_abc(draft))
+        cand = write.song_from_bars(
+            draft.bars, unit=draft.unit, meter=draft.meter, key=draft.key, tempo=draft.tempo,
+            lyrics=LYRICS, title="Jig", voice="alto", style="celtic-jig",
+            written_with={"planner": "rules", "seed": 1}, notes=draft.notes)
+        path = Path(tempfile.mkdtemp(prefix="copyist-rules-jig-")) / "song.yaml"
+        path.write_text(write.song_yaml(cand.data), encoding="utf-8")
+        mark = load_song(path).score.recurse().getElementsByClass("MetronomeMark").first()
+        self.assertEqual((mark.referent.quarterLength, mark.number), (1.5, bpm))
+        waltz = ruleswrite.compose(LYRICS, "waltz", "alto", seed=1)
+        self.assertIsInstance(waltz.tempo, int)
+
     def test_empty_lyrics_refused(self):
         with self.assertRaises(write.WriteError):
             ruleswrite.compose("   ", "waltz", "alto", 1)

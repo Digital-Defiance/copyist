@@ -66,6 +66,23 @@ class EngraveTests(unittest.TestCase):
         dark = sum(1 for i in range(0, len(pix.samples), pix.n) if pix.samples[i] < 128)
         self.assertGreater(dark, 500)  # the page isn't blank
 
+    def test_flat_and_sharp_chords_keep_their_signs(self):
+        # Verovio draws the flat in "Bb" with a music-font glyph; unmapped, the PDF lost it
+        # and printed "B", a different chord.
+        out = Path(tempfile.mkdtemp(prefix="copyist-chords-"))
+        (out / "chords.yaml").write_text(
+            "format: copyist-song/0\ntitle: Chord Signs\nkey: F\nmeter: 4/4\ntempo: 100\n"
+            "voice: {name: Melody, range: [C4, F5]}\n"
+            'melody: |\n  "F"F2 A2 | "Bb"B2 d2 | "Eb"e2 c2 | "F#m"f2 A2 | "C#dim"c4 |]\n'
+            "lyrics:\n  - one two three four five six sev-en eight\n", encoding="utf-8")
+        song = load_song(out / "chords.yaml")
+        paths = engrave.engrave(song.score, out, "lead-sheet", song.title, song.credits)
+        text = pymupdf.open(paths["pdf"])[0].get_text()
+        for chord in ("B♭", "E♭", "F♯m", "C♯dim"):
+            self.assertIn(chord, text)
+        unprintable = [hex(ord(c)) for c in text if c == "\x00" or 0xE000 <= ord(c) <= 0xF8FF]
+        self.assertEqual(unprintable, [])
+
 
 if __name__ == "__main__":
     unittest.main()

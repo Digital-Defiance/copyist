@@ -3,17 +3,48 @@
 The notes and chords stay; the words are placed again with the same fitter `copyist write`
 uses. Note splits are allowed when there are more syllables than notes, so the melody may
 gain a repeated pitch. The song file is rewritten in place.
+
+Several verses (blocks of lines separated by a blank line, as the page shows them) are each
+fitted to the melody on their own, as a hymn's verses are, when the words are too many for one
+pass through it.
 """
 from __future__ import annotations
 
+import re
 from fractions import Fraction
 from pathlib import Path
 
 import yaml
 
-from . import rewrite, write
+from . import fit as fitting, rewrite, syllables, write
 from .song import FORMAT
 from .write import WriteError
+
+MIN_VERSE_SHARE = 0.7    # a verse sung to the whole melody has at least this many syllables a note
+
+
+def verse_blocks(lyrics: str) -> list[str]:
+    """The lyrics' blocks of lines, split at blank lines."""
+    return [b.strip() for b in re.split(r"\n\s*\n", lyrics) if b.strip()]
+
+
+def syllable_count(text: str) -> int:
+    return len(syllables.all_syllables(syllables.parse_lyrics(text)))
+
+
+def verses_for(lyrics: str, n_notes: int) -> list[str]:
+    """One pass through the melody when the words fit it; otherwise each block is a verse."""
+    blocks = verse_blocks(lyrics)
+    if len(blocks) < 2 or syllable_count(lyrics) <= n_notes * (1 + fitting.SPLIT_LIMIT):
+        return [lyrics]
+    for i, block in enumerate(blocks, start=1):
+        n = syllable_count(block)
+        if n < MIN_VERSE_SHARE * n_notes:
+            raise WriteError(
+                f"The melody has {n_notes} notes. The words have {syllable_count(lyrics)} syllables, too many "
+                f"to sing once through it, and block {i} has only {n}, too few to be a verse of its own. "
+                "Separate verses with a blank line, and keep each verse's lines together.")
+    return blocks
 
 
 def refit(path: Path, lyrics: str) -> Path:
@@ -42,16 +73,35 @@ def refit(path: Path, lyrics: str) -> Path:
     voice = rewrite.voice_of(data)
     ww = dict(data.get("written_with") or {})
     ww["refit"] = True
-    notes = ["Lyrics refitted to the existing melody."]
+    verses = verses_for(lyrics, len(fitting.slots(bars, unit, meter)))
+    notes = ["Lyrics refitted to the existing melody."
+             + (f" {len(verses)} verses, each sung to the whole melody." if len(verses) > 1 else "")]
+
+    def which(i: int) -> str:
+        return f"Verse {i + 1}: " if len(verses) > 1 else ""
+
+    # The longest verse goes first: it may split a long note in two for an extra syllable, and the
+    # others are then fitted to that same melody, holding notes where they have fewer syllables.
+    order = sorted(range(len(verses)), key=lambda i: -syllable_count(verses[i]))
     try:
         cand = write.song_from_bars(
-            bars, unit=unit, meter=meter, key=key, tempo=tempo, lyrics=lyrics,
+            bars, unit=unit, meter=meter, key=key, tempo=tempo, lyrics=verses[order[0]],
             title=str(data["title"]), voice=voice, style=style, written_with=ww,
             credits=credits, notes=notes)
-    except WriteError:
-        raise
-    except ValueError as e:
-        raise WriteError(str(e)) from e
+    except (WriteError, ValueError) as e:
+        raise WriteError(which(order[0]) + str(e)) from e
+    if len(verses) > 1:
+        fitted = {order[0]: cand.data["lyrics"][0]}
+        sung = rewrite.bars_from_melody(cand.data["melody"], cand.data.get("sections"))
+        for i in order[1:]:
+            sylls = syllables.all_syllables(syllables.parse_lyrics(verses[i]))
+            if not sylls:
+                raise WriteError(which(i) + "no words to sing.")
+            try:
+                fitted[i] = fitting.fit(sung, unit, meter, sylls).lyrics
+            except ValueError as e:
+                raise WriteError(which(i) + str(e)) from e
+        cand.data["lyrics"] = [fitted[i] for i in range(len(verses))]
 
     # Keep fields write doesn't know about.
     out = cand.data

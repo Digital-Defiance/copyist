@@ -64,7 +64,7 @@ class Draft:
     key: str
     meter: str
     unit: Fraction
-    tempo: int
+    tempo: int | str       # a song file's tempo: quarter notes a minute, or "3/8=N" in 6/8, 9/8, 12/8
     notes: list[str]
 
 
@@ -86,6 +86,14 @@ def _tempo_of(style_id: str | None, rng: random.Random) -> int:
         mid = (lo + hi) // 2
         return int(rng.triangular(lo, min(hi, mid + 20), mid))
     return rng.choice([72, 84, 96, 108])
+
+
+def _tempo_field(meter: str, bpm: int) -> int | str:
+    """A style's tempo counts beats; in compound meters the beat is a dotted quarter."""
+    num, den = (int(x) for x in meter.split("/"))
+    if den == 8 and num % 3 == 0 and num > 3:
+        return f"3/8={bpm}"
+    return bpm
 
 
 def _rhythms(meter: str) -> tuple[tuple[int, ...], ...]:
@@ -188,7 +196,7 @@ def compose(lyrics: str, style_id: str | None, voice: str, seed: int) -> Draft:
         raise WriteError("The lyrics have no words to sing.")
     rng = random.Random(seed)
     meter = _meter_of(style_id, rng)
-    tempo = _tempo_of(style_id, rng)
+    tempo = _tempo_field(meter, _tempo_of(style_id, rng))
     key = rng.choice(KEYS)
     unit = Fraction(1, 8)
     bar_len = _bar_units(meter, unit)
@@ -309,7 +317,7 @@ def plan_abc(draft: Draft) -> str:
     """Optional YuE2-shaped ABC for the report folder (not required to build the song)."""
     lines = [
         "X:1", "T:", f"M:{draft.meter}", f"L:{draft.unit.numerator}/{draft.unit.denominator}",
-        f"Q:1/4={draft.tempo}", f"K:{draft.key}", "% verse", "V: Vocal",
+        f"Q:{draft.tempo if isinstance(draft.tempo, str) else f'1/4={draft.tempo}'}", f"K:{draft.key}", "% verse", "V: Vocal",
     ]
     # Write without Ins voice; tests don't need a full dialect plan.
     body = abcplan.write(draft.bars, draft.unit, draft.unit)

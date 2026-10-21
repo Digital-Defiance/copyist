@@ -202,6 +202,44 @@ class AgainTests(unittest.TestCase):
                                              candidates=1, previews=False, plan_more=False)
         self.assertEqual(result["candidates"][0]["donor"], 3)
 
+    def test_donor_in_another_key_is_moved_into_the_song_key(self):
+        # Donors used to need the same key, so most write candidates were thrown away.
+        write_folder = self.out / "carry-me-home" / "write"
+        base = rewrite.load_data(self.base_path)
+        bars = rewrite.bars_from_melody(base["melody"], base["sections"])
+        up_key = abcplan.respell(bars, base["key"], 2)
+        self.assertNotEqual(up_key, base["key"])
+        up_cand = rewrite.candidate_from_bars(
+            bars, unit=__import__("fractions").Fraction(base["unit"]),
+            meter=base["meter"], key=up_key, tempo=base["tempo"],
+            lyrics=plan_lyrics("alto-waltz"), title="Carry Me Home", voice="alto", style="waltz",
+            written_with={"planner": "yue-plan", "seed": 4})
+        path = write_folder / "candidate-4" / "carry-me-home.yaml"
+        path.parent.mkdir()
+        path.write_text(write.song_yaml(up_cand.data), encoding="utf-8")
+        write.write_index(write_folder, {"title": "Carry Me Home", "slug": "carry-me-home", "candidates": [
+            {"seed": 4, "folder": "candidate-4", "ok": True, "song": "candidate-4/carry-me-home.yaml",
+             "key": up_key, "meter": base["meter"]}]})
+        with mock.patch.object(write, "band_preview", return_value="fake"):
+            index = rewrite.rewrite_section(self.song, "chorus", "again", self.out,
+                                            candidates=1, previews=False, plan_more=False)
+        entry = index["candidates"][0]
+        self.assertTrue(entry["ok"], entry.get("reason"))
+        self.assertEqual(entry["donor"], 4)
+        self.assertIn(f"Moved it from {up_key} to {base['key']} (-2 semitones).", entry["notes"])
+        out = rewrite.load_data(self.out / "carry-me-home" / "rewrite" / "again" / entry["song"])
+        self.assertEqual(out["key"], base["key"])
+        self.assertEqual(abcplan.pitches(rewrite.section_slice(out, "chorus"), out["key"]),
+                         abcplan.pitches(rewrite.section_slice(base, "chorus"), base["key"]))
+        chords = [t.text for b in rewrite.section_slice(out, "chorus") for t in b.toks if t.kind == "chord"]
+        base_chords = [t.text for b in rewrite.section_slice(base, "chorus") for t in b.toks if t.kind == "chord"]
+        self.assertEqual(chords, base_chords)
+
+    def test_donor_in_another_mode_is_not_used(self):
+        self.assertTrue(rewrite.same_mode("G", "Bb"))
+        self.assertTrue(rewrite.same_mode("Em", "F#m"))
+        self.assertFalse(rewrite.same_mode("G", "Em"))
+
     def test_keep_rewrite(self):
         with mock.patch.object(write, "band_preview", return_value="fake"):
             rewrite.rewrite_section(self.song, "chorus", "again", self.out,

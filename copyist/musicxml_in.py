@@ -16,8 +16,8 @@ from . import abcplan
 from .song import FORMAT, SongError
 from .write import song_yaml
 
-# Prefer a part that looks like the sung line when a piano-vocal file has several.
-_VOCAL_NAME = re.compile(r"(voice|vocal|melody|solo|singer|major.?general)", re.IGNORECASE)
+# Without lyrics to go by, prefer a part named like the sung line.
+_VOCAL_NAME = re.compile(r"(voice|vocal|melody|solo|singer)", re.IGNORECASE)
 
 
 class MusicxmlImportError(SongError):
@@ -42,13 +42,21 @@ def load_score(path: str | Path) -> stream.Score:
 
 
 def pick_melody_part(score: stream.Score) -> stream.Part:
-    """The sung line: a part named like a voice, else the first part with pitched notes."""
+    """The sung line: the part with the most sung words (a vocal part is often named for its
+    character, such as "Major-General"), else a part named like a voice, else the first part
+    with pitched notes."""
     parts = list(score.parts)
     if not parts:
         raise MusicxmlImportError("That MusicXML has no parts.")
     def _label(p: stream.Part) -> str:
         return str(p.partName or p.id or "")
 
+    def _sung(p: stream.Part) -> int:
+        return sum(1 for n in p.recurse().notes if isinstance(n, note.Note) and n.lyrics)
+
+    words = {id(p): _sung(p) for p in parts}
+    if max(words.values()) > 0:
+        return max(parts, key=lambda p: words[id(p)])
     named = [p for p in parts if _VOCAL_NAME.search(_label(p))]
     candidates = named or parts
     for part in candidates:

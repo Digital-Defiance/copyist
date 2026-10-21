@@ -58,6 +58,41 @@ Carry me over the water home
         with self.assertRaises(write.WriteError):
             refit.refit(self.path, "   ")
 
+    def amazing_grace(self) -> Path:
+        path = self.tmp / "amazing-grace.yaml"
+        path.write_text((PLANS.parents[2] / "songs" / "amazing-grace.yaml").read_text(encoding="utf-8"),
+                        encoding="utf-8")
+        return path
+
+    def test_each_verse_fits_the_whole_melody(self):
+        # Two verses used to be fitted as one: "32 notes for 56 syllables".
+        path = self.amazing_grace()
+        before = [n.pitch.midi for n in load_song(path).melody.recurse().notes if hasattr(n, "pitch")]
+        refit.refit(path, "Amazing grace, how sweet the sound\nThat saved a wretch like me\n"
+                          "I once was lost, but now am found\nWas blind, but now I see\n\n"
+                          "When we've been there ten thousand years\nBright shining as the sun\n"
+                          "We've no less days to sing God's praise\nThan when we'd first begun\n")
+        after = load_song(path)
+        self.assertEqual(len(after.verses), 2)
+        self.assertTrue(all(f.fits for f in after.lyric_fits))
+        self.assertIn("thou-sand", after.verses[1])
+        self.assertEqual(before, [n.pitch.midi for n in after.melody.recurse().notes if hasattr(n, "pitch")])
+
+    def test_all_verses_from_the_page_round_trip(self):
+        path = self.amazing_grace()
+        verses = load_song(path).verses
+        refit.refit(path, refit.plain_for_edit(verses))
+        after = load_song(path)
+        self.assertEqual(len(after.verses), 4)
+        self.assertTrue(all(f.fits for f in after.lyric_fits))
+
+    def test_half_a_verse_is_not_stretched_over_the_melody(self):
+        with self.assertRaisesRegex(write.WriteError, "too few to be a verse"):
+            refit.refit(self.amazing_grace(),
+                        "Amazing grace how sweet the sound that saved a wretch like me\n\n"
+                        "I once was lost but now am found was blind but now I see "
+                        "and more and more words here to sing")   # 36 syllables, 14 in the first block
+
 
 class RefitPageTests(unittest.TestCase):
     def test_job_args_refit(self):

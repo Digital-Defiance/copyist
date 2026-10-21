@@ -1,8 +1,8 @@
 """Section rewriting (`copyist rewrite`, docs/melody-writing.md): try a section again, higher, or simpler.
 
 YuE2's planner writes whole songs, so "again" and "simpler" plan more candidates (or reuse the write
-folder) and swap in a section that matches the base song's meter, key and section length. "Higher"
-raises the notes of one section without calling the planner.
+folder) and swap in a section that matches the base song's meter, mode and section length, moved into
+the base song's key. "Higher" raises the notes of one section without calling the planner.
 """
 from __future__ import annotations
 
@@ -159,9 +159,35 @@ def section_slice(data: dict, section: str) -> list[abcplan.Bar]:
     return bars[lo:hi]
 
 
+def same_mode(a: str, b: str) -> bool:
+    """Both major, both minor, ...: a donor in another key can be moved into the base key."""
+    ma, mb = abcplan.key_mode(a), abcplan.key_mode(b)
+    if ma is None or mb is None or abcplan.key_tonic(a) is None or abcplan.key_tonic(b) is None:
+        return a == b
+    return ma == mb
+
+
+def donor_section(donor: dict, section: str, key: str, near: list[int],
+                  voice_range: tuple[int, int] | None) -> tuple[list[abcplan.Bar], int]:
+    """The donor's `section` moved into `key`, in the octave nearest the pitches `near`, kept inside
+    the voice's range. Returns (bars, semitones moved)."""
+    piece = copy.deepcopy(section_slice(donor, section))
+    donor_key = str(donor["key"])
+    up = (abcplan.key_tonic(key) - abcplan.key_tonic(donor_key)) % 12 if donor_key != key else 0
+    if up:
+        own = abcplan.pitches(piece, donor_key)
+        mid = sorted(own)[len(own) // 2] if own else 60
+        target = sorted(near)[len(near) // 2] if near else mid
+        up = min((up, up - 12), key=lambda s: abs(mid + s - target))
+        abcplan.move_to_key(piece, donor_key, key, up)
+        if voice_range:
+            abcplan.clamp_notes(piece, key, *voice_range)
+    return piece, up
+
+
 def donor_songs(write_folder: Path, base: dict, section: str, lo: int, hi: int,
                 base_path: Path) -> list[tuple[int, Path, dict]]:
-    """Usable write candidates with the same key, meter and section length as the base."""
+    """Usable write candidates with the same meter, mode and section length as the base (any key)."""
     index = write.read_index(write_folder)
     out: list[tuple[int, Path, dict]] = []
     base_melody = base_path.resolve()
@@ -171,7 +197,7 @@ def donor_songs(write_folder: Path, base: dict, section: str, lo: int, hi: int,
         path = write_folder / e["song"]
         if path.resolve() == base_melody:
             continue
-        if e.get("key") != base["key"] or e.get("meter") != base["meter"]:
+        if e.get("meter") != base["meter"] or not same_mode(str(e.get("key")), str(base["key"])):
             continue
         try:
             data = load_data(path)
@@ -284,20 +310,22 @@ def rewrite_section(song_path: Path, section: str, how: str, out_root: Path = Pa
                           device, cache, previews=previews, progress=progress)
         donors = donor_songs(write_folder, data, section, lo, hi, song_path)
 
+    base_pitches = abcplan.pitches(base_bars[lo:hi], key)
+    rng = (data.get("voice") or {}).get("range")
+    voice_range = tuple(m21pitch.Pitch(str(p)).midi for p in rng) if rng else None
+    moved = {d[1]: donor_section(d[2], section, key, base_pitches, voice_range) for d in donors}
     if how == "simpler":
-        donors = sorted(donors, key=lambda d: leap_score(section_slice(d[2], section), d[2]["key"]))
+        donors = sorted(donors, key=lambda d: leap_score(moved[d[1]][0], key))
     else:
-        base_pitches = abcplan.pitches(base_bars[lo:hi], key)
-
         def different(d: tuple) -> bool:
-            return abcplan.pitches(section_slice(d[2], section), d[2]["key"]) != base_pitches
+            return abcplan.pitches(moved[d[1]][0], key) != base_pitches
 
         donors = sorted(donors, key=lambda d: (0 if different(d) else 1, d[0]))
 
     if not donors:
         raise WriteError(
-            f"No donor {section} with the same key ({key}), meter ({meter}) and length "
-            f"({hi - lo} bars). Run `copyist write` for these lyrics first, or pass more --candidates.")
+            f"No donor {section} in {meter}, in a key of the same mode as {key}, {hi - lo} bars long. "
+            "Run `copyist write` for these lyrics first, or pass more --candidates.")
 
     for k, (donor_seed, donor_path, donor_data) in enumerate(donors[:candidates]):
         s = seed + k
@@ -307,16 +335,17 @@ def rewrite_section(song_path: Path, section: str, how: str, out_root: Path = Pa
         cdir.mkdir(parents=True, exist_ok=True)
         entry = {"seed": s, "folder": cdir.name, "ok": False, "how": how, "donor": donor_seed}
         try:
-            donor_bars = bars_from_melody(donor_data["melody"], donor_data.get("sections"))
-            dlo, dhi = section_bounds(donor_data.get("sections") or [{"name": "verse", "bar": 1}],
-                                      section, len(donor_bars))
-            merged = splice(base_bars, lo, hi, donor_bars[dlo:dhi])
+            piece, moved_by = moved[donor_path]
+            merged = splice(base_bars, lo, hi, piece)
             ww = dict(data.get("written_with") or {})
             ww.update({"rewrite": how, "section": section, "donor_seed": donor_seed,
                        "donor": str(donor_path)})
             notes = [f"Swapped the {section} from write candidate {donor_seed} ({how})."]
+            if moved_by:
+                notes.append(f"Moved it from {donor_data['key']} to {key} ({moved_by:+d} semitones).")
+                ww["donor_key"] = str(donor_data["key"])
             if how == "simpler":
-                notes.append(f"Donor section leaps: {leap_score(donor_bars[dlo:dhi], donor_data['key'])}.")
+                notes.append(f"Donor section leaps: {leap_score(piece, key)}.")
             cand = candidate_from_bars(
                 merged, unit=unit, meter=meter, key=key, tempo=tempo, lyrics=words,
                 title=title, voice=voice, style=style, written_with=ww, credits=credits, notes=notes)

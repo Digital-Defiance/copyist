@@ -56,6 +56,19 @@ SMUFL_TEXT = {
     chr(0xE1D5): chr(0x2669),
     chr(0xE1D7): chr(0x266A),
     chr(0xE1E7): ".",
+    # Accidentals in chord symbols: Verovio writes "Bb" as B plus the figured-bass flat.
+    # Unmapped, these printed as nothing, so every flat or sharp chord lost its sign.
+    chr(0xEA63): chr(0x1D12B),  # double flat
+    chr(0xEA64): chr(0x266D),   # flat
+    chr(0xEA65): chr(0x266E),   # natural
+    chr(0xEA66): chr(0x266F),   # sharp
+    chr(0xEA67): chr(0x1D12A),  # double sharp
+    # Standard accidentals, in case text uses them
+    chr(0xE260): chr(0x266D),
+    chr(0xE261): chr(0x266E),
+    chr(0xE262): chr(0x266F),
+    chr(0xE263): chr(0x1D12A),
+    chr(0xE264): chr(0x1D12B),
 }
 
 

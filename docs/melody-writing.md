@@ -106,7 +106,7 @@ copyist rewrite --title T --how higher --keep SEED [--replace] [--build]
 YuE2's planner writes whole songs, so Copyist rewrites a section in two ways:
 
 - **`higher`:** raises that section by a few semitones (melody and chords together; the key moves when the section is the whole song), clamps to the voice range, and writes several shifts (`+2`…`+5`) as candidates. No planner call.
-- **`again` / `simpler`:** reuse (or plan) other write candidates with the same key, meter and section length, then swap that section into the base song. `simpler` prefers the donor whose section has the smallest leaps; when it plans more, it also asks for a stepwise melody. Pass `--no-plan` to use only donors already in `out/<slug>/write/`.
+- **`again` / `simpler`:** reuse (or plan) other write candidates with the same meter, mode (major or minor) and section length, then swap that section into the base song. A donor in another key is moved into the song's key first, in the octave nearest the section it replaces and inside the voice's range. `simpler` prefers the donor whose section has the smallest leaps; when it plans more, it also asks for a stepwise melody. Pass `--no-plan` to use only donors already in `out/<slug>/write/`.
 
 Output: `out/<slug>/rewrite/<how>/candidate-*/` with song file, report and band preview, plus `candidates.json`. Keep one with `--keep` (same rules as `write --keep`). Plain lyrics come from `out/<slug>/write/lyrics.txt` when present, or `--lyrics`.
 
@@ -235,6 +235,8 @@ copyist refit SONG.yaml --lyrics new.txt [--build]
 ```
 
 Keeps the melody and chords; places new words with the same fitter as `copyist write` (note splits allowed when there are more syllables than notes). On the page, a kept song's Song tab has **Edit the lyrics** and **Fit lyrics and write the score**.
+
+**Verses:** when the words are too many to sing once through the melody, each block of lines (separated by a blank line, as the page shows a song's verses) is a verse sung to the whole melody, as in a hymn. The longest verse is fitted first, so any note it splits is split for every verse; the others hold notes where they have fewer syllables. A block with fewer syllables than 70% of the melody's notes is refused rather than stretched over it, since it's more likely half a verse.
 
 ## Rule-based writer (`--engine rules`)
 

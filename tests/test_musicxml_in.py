@@ -55,6 +55,25 @@ class MusicxmlImportTests(unittest.TestCase):
         self.assertGreaterEqual(data["melody"].count("G") + data["melody"].count("A")
                                 + data["melody"].count("B") + data["melody"].count("c"), 4)
 
+    def test_picks_the_part_with_the_words_whatever_its_name(self):
+        # A vocal part is often named for its character; the words say which part is sung.
+        score = stream.Score()
+        flute = stream.Part(id="P1")
+        flute.partName = "Melody (flute)"
+        flute.append([note.Note(p, quarterLength=1) for p in ("C5", "D5", "E5", "F5")])
+        sung = stream.Part(id="P2")
+        sung.partName = "Captain Hook"
+        for p, word in (("G4", "Yo"), ("A4", "ho"), ("B4", "yo"), ("C5", "ho")):
+            n = note.Note(p, quarterLength=1)
+            n.lyric = word
+            sung.append(n)
+        score.insert(0, flute)
+        score.insert(0, sung)
+        path = Path(tempfile.mkdtemp(prefix="copyist-hook-")) / "hook.musicxml"
+        score.write("musicxml", fp=str(path))
+        part = musicxml_in.pick_melody_part(converter.parse(str(path)))
+        self.assertEqual(part.partName, "Captain Hook")
+
     def test_chord_symbols_become_quoted_abc(self):
         part = stream.Part()
         m = stream.Measure(number=1)
