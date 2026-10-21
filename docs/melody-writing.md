@@ -176,6 +176,11 @@ Output: `out/<slug>/rewrite/<how>/candidate-*/` with song file, report and band 
 | A rest after a syllable in the middle of a line | 0.8; 2.0 in the middle of a word |
 | Neighbouring syllables of one word with the stressed one on the weaker beat ("a-BASH" sung "A-bash") | 1.5 (added after the first real test: `copyist check` warned about it) |
 | The first syllable of a line not after a rest or a note at least a beat long | 0.5 |
+| A syllable starting in the middle of a beat whose first note only held the syllable before ("A-maz-_ ing grace", where the hymnal sings "A-maz-ing_ grace") | 0.5 |
+
+**Measured:** `scripts/fit/evaluate.py` refits each hand-placed public-domain song's own words to its melody and counts the syllables that start on a different note. It misses 11 of 420 (2.6%), down from 13 before the mid-beat rule. What's left:
+- Silent Night's "night": a stressed word on the eighth before the beat, slurred into it. A rule that let a held syllable count the stronger beat it reaches fixed it, but moved every long word in Amazing Grace onto the eighth before the bar, so it isn't used. This needs more hand-placed songs to settle.
+- Major-General's "binomial theorem": the syllables differ ("mi-al", "theo-rem"), not the placement. Typed hyphens aren't kept yet, so the fitter can't be told "the-o-rem".
 
 More syllables than notes: before aligning, split the longest notes (a beat or longer, not ending a line) into two equal notes of the same pitch, one per missing syllable. Each split costs 2.0 and is listed in the report. If it would take more than 10% splits, reject the candidate: it was written for different words.
 

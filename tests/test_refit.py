@@ -86,6 +86,25 @@ Carry me over the water home
         self.assertEqual(len(after.verses), 4)
         self.assertTrue(all(f.fits for f in after.lyric_fits))
 
+    def test_refit_places_syllables_where_the_hymnal_does(self):
+        # Refitting a song's own words should give back its hand placement. Amazing Grace sang
+        # "A-maz-_ ing grace" (maz carried onto beat 3's first eighth) before the beat rule.
+        def starts(song):
+            notes = [n for n in song.melody.recurse().notes
+                     if n.isNote and not (n.tie is not None and n.tie.type in ("stop", "continue"))]
+            return [[i for i, n in enumerate(notes) if any(l.number == v + 1 and (l.text or "").strip()
+                                                           for l in n.lyrics)]
+                    for v in range(len(song.verses))]
+
+        for name in ("amazing-grace", "when-the-saints"):
+            path = self.tmp / f"{name}.yaml"
+            path.write_text((PLANS.parents[2] / "songs" / f"{name}.yaml").read_text(encoding="utf-8"),
+                            encoding="utf-8")
+            hand = load_song(path)
+            refit.refit(path, refit.plain_for_edit(hand.verses))
+            self.assertEqual(starts(load_song(path)), starts(hand), name)
+        self.assertIn("A-maz-ing_ grace", load_song(self.tmp / "amazing-grace.yaml").verses[0])
+
     def test_half_a_verse_is_not_stretched_over_the_melody(self):
         with self.assertRaisesRegex(write.WriteError, "too few to be a verse"):
             refit.refit(self.amazing_grace(),

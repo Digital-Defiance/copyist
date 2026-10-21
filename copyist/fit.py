@@ -17,6 +17,7 @@ from .abcplan import Bar, Tok
 from .syllables import Section, Syllable
 
 MAX_HOLD = 5                    # extra notes one syllable may hold
+SPLIT_BEAT = 0.5                # a held note and the next syllable's first note share a beat
 HINT_WEIGHT = 1.0               # what the recording says outweighs a weak beat
 SPLIT_LIMIT = 0.10              # split at most this share of the notes
 
@@ -63,6 +64,7 @@ class Slot:
     rest_after: bool            # a rest follows before the next onset
     breath_before: bool         # a rest, or a note at least a beat long, comes before it
     syllable_hint: float | None = None   # from a recording: how surely a new syllable starts here (0..1)
+    beat: tuple[int, int] = (0, 0)       # (bar, beat in the bar) the onset falls in
 
 
 @dataclass
@@ -121,7 +123,8 @@ def slots(bars: list[Bar], unit: Fraction, meter: str) -> list[Slot]:
                 out[-1].length += length
             else:
                 breath = rest_pending or (bool(out) and out[-1].length >= beat)
-                out.append(Slot(b, k, pos, length, beat_strength(in_bar, meter), False, breath))
+                out.append(Slot(b, k, pos, length, beat_strength(in_bar, meter), False, breath,
+                                beat=(b, int(in_bar // beat))))
                 rest_pending = False
             tied = t.kind == "note" and t.tie
             pos += length
@@ -198,7 +201,10 @@ def align(sylls: list[Syllable], notes: list[Slot], meter: str) -> tuple[list[tu
     """Cheapest assignment of every note to a syllable, each syllable taking 1..MAX_HOLD+1 notes in order.
 
     The state is (syllables placed, notes used, notes the last syllable took), so the cost can
-    compare a syllable with the one before it in the same word.
+    compare a syllable with the one before it in the same word, and see a held note just before it.
+    A syllable shouldn't start in the middle of a beat whose first note only held the one before:
+    "A-maz-ing_ grace" sings "ing" on both eighths of beat 3, not "A-maz-_ ing" with "maz" carried
+    onto the first eighth and "ing" squeezed onto the second.
     """
     beat_q = beat_length(meter)
     S, N = len(sylls), len(notes)
@@ -221,6 +227,8 @@ def align(sylls: list[Syllable], notes: list[Slot], meter: str) -> tuple[list[tu
                     if j + take > N - (S - i - 1):
                         break
                     c = here + cost_of(syl, notes[j:j + take], beat_q)
+                    if t >= 2 and notes[j - 1].beat == notes[j].beat:
+                        c += SPLIT_BEAT
                     if pair_prev:
                         c += pair_cost(pair_prev[0], pair_prev[1], syl, notes[j])
                     if c < best[i + 1][j + take][take]:
