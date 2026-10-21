@@ -189,10 +189,13 @@ CPU, GPU and Neural Engine at once on the M4 Max; Linux and Windows keep working
 - [x] Demucs uses CUDA off a Mac when its own PyTorch can; it always chose the CPU there (2026-10-21)
 - [x] Several takes in one YuE2 run: `copyist produce --takes N` (`lm_batch_size`), the page's "Takes" (1-4); each take in its own folder with its request and yue2.cpp's replay; a failed batch renders the takes one at a time with the same seeds (2026-10-21)
 - [x] `scripts/hardware/bench.py`: one unattended run (about 10-15 min on the Mac; keeps it awake, waits on battery) timing takes alone and batched, variations, plans, Demucs GPU/CPU, Whisper, pYIN, the band one part at a time and side by side (2026-10-21)
-- [ ] H1: run the benchmark in a GPU window; put the numbers in docs/hardware.md. Check that take 2 of a batch matches it rendered alone
+- [x] H1: measured 21 October (`out/hardware/bench-20261021-1423.json`; docs/hardware.md has the table). A 47.2 s take: 47.5 s, of which the flow-matching render is 65% (28.7 s), the performance 16%, the VAE 12%, loading 7%. 4 takes in one run: 0.8 of four runs, 12.4 GB. 4 variations: no saving. Take 2 of a batch has the same codes as alone. Plans 3-4 s; Whisper and pYIN 2.2 s; band 4.1 → 2.9 s side by side; Demucs 20 s GPU (cold, first) / 10.5 s CPU. GPU steps slow about 20% as it heats
+- [ ] H2: `bench.py --only steps` (about 5 min on the GPU): one take's codes rendered at 32/16/12/8 flow steps, each checked for sound against 32 steps, notes on pitch and words heard; Demucs warm on the GPU and the CPU
+- [ ] H2: draft takes: several performances in one run rendered at the draft step count, and "Finish this take" re-rendering the chosen one from its codes at 32 steps (`copyist produce --draft`, `copyist finish`), on the page too
+- [ ] H4: Demucs on the device the warm measurement favours; `HF_HUB_OFFLINE=1` once its model is downloaded (it contacts the Hub on every run)
 - [ ] H3: the page's GPU lane (one job) and CPU lane (several)
-- [ ] H4: pYIN in overlapping pieces on all performance cores (`copyist follow`, the voice prompt; the open transcriber is Kiro's call); band previews of write candidates and gallery styles in parallel; `copyist doctor`
-- [ ] H2: `yue-plan --batch N` (upstream patch to yue2.cpp) for `copyist write`; `yue-server --keep-loaded` behind the GPU lane if loading shows in H1; Q5_K/Q4_K weights only if H1 shows the GPU is the bottleneck, judged by `follow` and `hear` on the same seeds
+- [ ] H4: band previews of write candidates and gallery styles in parallel; `copyist doctor`. (pYIN in pieces dropped: 0.05× real time on one core)
+- [ ] Deferred by H1: `yue-plan --batch` (plans take 3-4 s), `yue-server --keep-loaded` (loading is about 0.6 s warm), smaller weights (the render is limited by arithmetic, not by reading weights)
 - [ ] H5: whisper.cpp (Core ML encoder on the Neural Engine; CUDA/Vulkan elsewhere) with large-v3-turbo for hearing words; then HTDemucs on Core ML (schism-audio, MIT), checked against its test vectors
 - [ ] H6: one LoRA training step in MLX against PyTorch MPS, before any port
 

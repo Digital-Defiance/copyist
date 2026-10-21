@@ -216,10 +216,10 @@ A singer anyone may use commercially that follows the score: HeartMuLa-oss-3B pl
 CPU, GPU and Neural Engine working at once on the owner's M4 Max; the GPU kept for what only it can do. Still runs on Linux and Windows (CUDA, Vulkan, CPU).
 
 - [x] Plan; band parts side by side; Demucs on CUDA where it can; several takes in one YuE2 run (`produce --takes`, the page's "Takes"); the benchmark script
-- [ ] H1 Measure in one GPU window (`scripts/hardware/bench.py`)
+- [x] H1 Measured (21 October): the flow-matching render is 65% of a take and doesn't batch; 4 takes in one run save a fifth
+- [ ] H2 Draft takes at fewer render steps, then finish the chosen one from its codes (measure the steps first)
 - [ ] H3 The page's GPU and CPU lanes
-- [ ] H4 pYIN in pieces; band previews in parallel; `copyist doctor`
-- [ ] H2 Batched plans (`yue-plan --batch`), a resident `yue-server`, smaller weights if measured worth it
+- [ ] H4 Demucs on the faster device and offline; band previews in parallel; `copyist doctor`
 - [ ] H5 whisper.cpp with Core ML; HTDemucs on Core ML
 - [ ] H6 MLX against PyTorch MPS for one training step
 

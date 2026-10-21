@@ -364,7 +364,7 @@ function soundTab(song) {
         <div class="field"><label for="verses">Verses</label><select id="verses">${verseOptions}</select></div>
         <div class="field"><label for="takes">Takes</label><select id="takes">
           ${[1, 2, 3, 4].map((n) => `<option value="${n}">${n}</option>`).join("")}</select>
-          <p class="hint">Several takes are sung side by side in one run, for not much longer than one.</p></div>
+          <p class="hint">Each take takes about as long as the song. Several in one go save about a fifth of the time.</p></div>
         <div class="field"><label for="seed">Seed</label>
           <div class="row"><input id="seed" type="number" min="0" value="831001"><button type="button" class="small" id="reseed">Another</button></div></div>
         <div class="field wide"><label for="style">Style</label>

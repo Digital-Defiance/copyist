@@ -16,7 +16,13 @@ Steps (the GPU ones first, so a short window still gets the answers that matter 
 - demucs: separating a take's vocal on the GPU and on the CPU;
 - whisper: hearing the words (faster-whisper base.en on the CPU, as Copyist does now);
 - pyin:   pitch tracking the vocal on one core;
-- band:   the band's parts rendered one at a time and side by side.
+- band:   the band's parts rendered one at a time and side by side;
+- steps:  one take's performance re-rendered from its codes at 32, 16, 12 and 8 flow-matching steps
+          (yue2.cpp's `steps`; the render is most of a take's time), each checked automatically:
+          its sound against the 32-step render, the melody (`copyist follow`'s pitch check) and the
+          words (Whisper); plus Demucs on the GPU twice (cold, then warm) against the CPU.
+
+`--only steps` runs just that one (about 5 minutes on the Mac).
 
 Writes out/hardware/bench-<time>.json and .md.
 """
@@ -37,7 +43,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
-STEPS = ("yue", "plan", "demucs", "whisper", "pyin", "band")
+STEPS = ("yue", "plan", "demucs", "whisper", "pyin", "band", "steps")
+FLOW_STEPS = (32, 16, 12, 8)
 SONG = ROOT / "songs" / "amazing-grace.yaml"
 
 
@@ -256,6 +263,68 @@ def step_band(work: Path, results: dict) -> None:
             os.environ["COPYIST_JOBS"] = before
 
 
+def mel_distance_db(a: Path, b: Path) -> float:
+    """Mean absolute difference of two recordings' log-mel spectrograms, in dB (0 = the same)."""
+    import librosa
+    import numpy as np
+    x, sr = librosa.load(str(a), sr=22050, mono=True)
+    y, _ = librosa.load(str(b), sr=22050, mono=True)
+    n = min(len(x), len(y))
+    mx, my = (librosa.power_to_db(librosa.feature.melspectrogram(y=v[:n], sr=sr, n_mels=80), ref=1.0, top_db=None)
+              for v in (x, y))
+    return round(float(np.mean(np.abs(np.maximum(mx, -80) - np.maximum(my, -80)))), 2)
+
+
+def melody_and_words(song, vocal: Path) -> dict:
+    """The automatic checks Copyist runs on a take: notes on pitch (any octave, as `copyist follow`)
+    and the share of the words Whisper hears, in order."""
+    from copyist import hear, pitch, refit, sing, yue
+    notes = sing.sung_notes(song, 1, pronunciations=song.pronunciations)
+    checked = pitch.check(vocal, notes, offset=yue.verse_offset(song, 1, 4), search=3.0, any_octave=True)
+    out = {"notes_on_pitch": round(sum(r.ok for r in checked) / max(len(checked), 1), 3)}
+    if hear.available():
+        expected = refit.plain_for_edit([song.verses[0]]).split()
+        out["words_heard"] = round(hear.compare(expected, hear.heard_words(vocal))[0], 3)
+    return out
+
+
+def step_steps(work: Path, results: dict) -> None:
+    """Fewer flow-matching steps: how much faster, and what it costs, checked automatically."""
+    from copyist import paths, stems, yue
+    from copyist.song import load_song
+    if not paths.find_program("yue-synth", "COPYIST_YUE_SYNTH"):
+        results["steps"] = {"skipped": "yue2.cpp isn't installed (scripts/setup-yue.sh)"}
+        return
+    if not stems.demucs_binary():
+        results["steps"] = {"skipped": "Demucs isn't installed (scripts/setup-demucs.sh)"}
+        return
+    song = load_song(SONG)
+    req = yue.request(song, verses=1, seed=831005)
+    req["output_format"] = "wav16"
+    r = results["steps"] = {}
+    r["first_take_s"], ref = timed(yue.run_yue2cpp, req, work / "steps" / "take")
+    replay = json.loads(ref.with_suffix(".json").read_text(encoding="utf-8"))
+    rendered = {}
+    for n in FLOW_STEPS:
+        again = dict(replay, steps=n, output_format="wav16")
+        t, audio = timed(yue.run_yue2cpp, again, work / "steps" / f"steps-{n}")
+        rendered[n] = audio
+        r[f"steps_{n}"] = {"render_s": t}
+    # Demucs: the GPU cold and warm, then the CPU, on the same take.
+    gpu = stems.demucs_device(stems.demucs_binary())
+    r["demucs"] = {"device": gpu}
+    r["demucs"]["gpu_first_s"], _ = timed(stems.split_vocals, ref, work / "steps" / "demucs-gpu-1", device=gpu)
+    r["demucs"]["gpu_again_s"], _ = timed(stems.split_vocals, ref, work / "steps" / "demucs-gpu-2", device=gpu)
+    r["demucs"]["cpu_s"], _ = timed(stems.split_vocals, ref, work / "steps" / "demucs-cpu", device="cpu")
+    for n, audio in rendered.items():
+        entry = r[f"steps_{n}"]
+        entry["sound_vs_32_db"] = mel_distance_db(audio, rendered[FLOW_STEPS[0]])
+        vocal, _ = stems.split_vocals(audio, work / "steps" / f"stems-{n}", device="cpu")
+        entry.update(melody_and_words(song, vocal))
+    # Two renders of the same codes at 32 steps should be the same: the floor the others are measured against.
+    r["steps_32_again_vs_32_db"] = mel_distance_db(ref, rendered[FLOW_STEPS[0]])
+
+
 # ------------------------------------------------------------------ main
 
 def report(results: dict) -> str:
@@ -277,6 +346,7 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--max-minutes", type=float, default=30, help="stop starting new steps after this (default 30)")
     ap.add_argument("--skip", default="", help="comma-separated steps to skip: " + ",".join(STEPS))
+    ap.add_argument("--only", default="", help="comma-separated steps to run, skipping the rest")
     ap.add_argument("--out", default=str(ROOT / "out" / "hardware"))
     args = ap.parse_args(argv)
     if sys.platform == "darwin" and not os.environ.get("COPYIST_BENCH_AWAKE") and shutil.which("caffeinate"):
@@ -284,6 +354,9 @@ def main(argv: list[str] | None = None) -> int:
         return subprocess.run(["caffeinate", "-i", sys.executable, *sys.argv], env=env).returncode
     deadline = time.time() + args.max_minutes * 60
     skip = {s.strip() for s in args.skip.split(",") if s.strip()}
+    only = {s.strip() for s in args.only.split(",") if s.strip()}
+    if only:
+        skip |= set(STEPS) - only
     stamp = datetime.now().strftime("%Y%m%d-%H%M")
     out = Path(args.out)
     work = out / f"bench-{stamp}"
@@ -292,10 +365,12 @@ def main(argv: list[str] | None = None) -> int:
     take = vocals = None
     plan = [("yue", lambda: step_yue(work, results)), ("plan", lambda: step_plan(work, results)),
             ("demucs", lambda: step_demucs(work, results, take)), ("whisper", lambda: step_whisper(results, vocals)),
-            ("pyin", lambda: step_pyin(results, vocals)), ("band", lambda: step_band(work, results))]
+            ("pyin", lambda: step_pyin(results, vocals)), ("band", lambda: step_band(work, results)),
+            ("steps", lambda: step_steps(work, results))]
     for name, fn in plan:
         if name in skip:
-            results[name] = {"skipped": "--skip"}
+            if not only:
+                results[name] = {"skipped": "--skip"}
             continue
         if time.time() > deadline or not wait_for_power(deadline):
             results[name] = {"skipped": "the window ran out"}

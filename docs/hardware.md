@@ -20,69 +20,78 @@ An M4 Max has three engines that can all work at once, on one pool of memory:
 
 The GPU needs a window and draws the most power. The CPU and the Neural Engine are mostly idle and don't: work moved to them can run outside a window, or alongside a GPU job inside one.
 
-## Where the time goes now
+## Where the time goes (measured 21 October 2026)
 
-Measured on the M4 Max unless noted (TASKS, docs/melody-writing.md, docs/singing.md, docs/transcribing.md):
+`scripts/hardware/bench.py` on the M4 Max (16 CPU cores, 12 of them performance cores, 40 GPU cores, 64 GB; macOS 26.6), LM Studio unloaded. The test is verse 1 of Amazing Grace with a 4-bar intro, 47.2 s of audio. Results: `out/hardware/bench-20261021-1423.json` and its log.
 
-| Step | Runs on | Time |
+| Step | Runs on | Measured |
 |---|---|---|
-| A melody plan (`yue-plan`) | GPU | 7-8 s a candidate, one run each, the model loaded each time |
-| A YuE2 take (`yue-synth`) | GPU | About real time (a 47 s verse in 45 s), one take a run |
-| A take per style (`copyist gallery --takes`) | GPU | About 45 s a style |
-| SoulX singing | GPU | 0.5× real time, plus 8 s loading a call |
-| Separating the vocal (Demucs) | GPU (MPS) on a Mac; the CPU elsewhere, even with an NVIDIA GPU (fixed: see H5) | Under 10 s a song, with the open transcriber |
-| Hearing the words (faster-whisper base.en) | CPU, int8 | Not measured |
-| Pitch tracking (librosa pYIN) | One CPU core | 0.34× real time on a cloud core: about a minute for a 3-minute song |
-| The band (sfizz) | CPU, one part after another (fixed: H4) | About 2 s a part |
-| Engraving (music21, Verovio) | CPU | Seconds |
-| The page | One job at a time, of any kind | A band preview waits behind a take |
+| A YuE2 take | GPU | **47.5 s** for 47.2 s of audio; peak memory 4.6 GB |
+| 2 takes in one run | GPU | 84.9 s (42.4 s a take); 7.2 GB |
+| 4 takes in one run | GPU | 152.9 s (38.2 s a take): **0.8 of four separate runs**; 12.4 GB |
+| 4 variations of one take | GPU | 147.2 s: no saving over four takes; 4.5 GB |
+| A melody plan (`yue-plan`) | GPU | 2.9-4.2 s each, 13.6 s for four |
+| Separating the vocal (Demucs) | GPU (MPS) / CPU | 20.0 s on the GPU (run first, cold) / 10.5 s on the CPU (second): to measure warm |
+| Hearing the words (faster-whisper base.en) | CPU | 2.2 s |
+| Pitch tracking (pYIN, one core) | CPU | 2.2 s (0.05× real time) |
+| The band (sfizz, 3 parts) | CPU | 4.1 s one part at a time, 2.9 s side by side |
 
-`scripts/hardware/bench.py` measures all of these in one unattended run, about 10-15 minutes, including the YuE2 batch levers below (H1).
+**Inside a take** (yue2.cpp's own log, the single take):
 
-## The levers, in order
+| Stage | Time | Share |
+|---|---|---|
+| Loading the three models | 3.2 s cold, about 0.6 s once they're in the disk cache | 7% |
+| The performance (the autoregressive half: the codes) | 6.9 s (5.8 ms a frame) | 16% |
+| **Rendering it (flow matching: 32 steps over every frame)** | **28.7 s** (0.80-1.0 s a step) | **65%** |
+| The VAE (latents to sound) | 5.2 s | 12% |
 
-### H1. Measure first
+What that means:
+- **The render is the cost, and it doesn't batch.** In a batch, the performances are drawn together: 9.3 s for four, against 6.9 s for one, as expected of a stage limited by memory bandwidth. But each take's 32 render steps still run one take at a time, and the GPU is already full during them: 4 variations in one graph took 3.7 s a step, exactly four times one. So 4 takes in one run save only a fifth.
+- **Loading is small.** Keeping YuE2 loaded (`yue-server --keep-loaded`) would save about half a second a take once the files are in the disk cache.
+- **The GPU slows as it heats.** A render step took 0.80 s at the start of the first take and 0.97 s by its end, and 0.95-1.02 s through the batches: about 20% slower under sustained load. High Power Mode (System Settings → Battery → Energy Mode, on AC) may hold the speed; the step times in the log show it.
+- **Batched takes are the same takes.** Take 2 of a batch has exactly the performance (the same codes) as that take rendered alone; only the last bits of the audio differ.
+- **The CPU steps are already quick on this Mac.** Whisper, pYIN and the band take seconds. Demucs may even be faster on the CPU, which would keep the GPU free; that needs a warm measurement. Demucs also contacts the Hugging Face Hub on every run, even with its model downloaded.
 
-One GPU window runs `caffeinate -i python scripts/hardware/bench.py`. It times one take against 2 and 4 takes in one run, 4 variations of one take, the planner, Demucs on the GPU and the CPU, Whisper, pYIN, and the band one part at a time against side by side. It also checks that take 2 of a batch is the same as that take rendered alone. Results go in `out/hardware/bench-<time>.md`; the numbers go in this file and TASKS. No speed claim below counts until it's measured there.
+## The levers, in order (revised after H1)
 
-### H2. YuE2: several takes in one run, and staying loaded
+### H1. Measure. Done 21 October
 
-yue2.cpp already has the levers; Copyist didn't use them.
+### H2. Draft takes, then the final one
 
-- **Several takes in one run** (`lm_batch_size`). yue2.cpp draws song *i* of a batch with `lm_seed + i`, the batch decoding in lockstep. Writing a take is limited by memory bandwidth, not arithmetic, so a batch of 4 should cost far less than 4 runs (to measure). **Built:** `copyist produce --takes N` and the page's "Takes" choice (1-4). Each take lands in its own folder with its own request and yue2.cpp's replay request. If a batch fails, each take is rendered alone with the same seeds.
-- **Variations of one take** (`synth_batch_size`, up to 9). The same performance under different noise, from the half of the work that's cheap. For "the same take, a little different".
-- **One plan run for several candidates.** `yue-plan` makes one plan a run, but the generator underneath takes a batch (`yue2_generate` with several prefixes). A small patch (`yue-plan --batch N`, offered upstream to ServeurpersoCom/yue2.cpp) would let `copyist write` plan four candidates in one run.
-- **Staying loaded** (`yue-server --keep-loaded`). One process holds the model between requests instead of loading it for every plan and take. The page's GPU work would go through it. Its job queue is FIFO with cancel, which fits "one GPU job at a time".
-- **Smaller weights.** Copyist uses `YuE2-3B-Q6_K`; yue2.cpp's `quantize` makes Q5_K and Q4_K. Smaller is faster when bandwidth-bound, but quality has to be checked automatically: the melody check (`copyist follow`) and the word check (`hear.py`) on the same seeds. Only if H1 shows the GPU is the bottleneck.
-- All of this is the same on Linux and Windows: yue2.cpp builds for CUDA, Vulkan and SYCL (`buildcuda.sh`, `buildvulkan.sh`).
+The render's 32 steps are two-thirds of every take, and yue2.cpp can re-render a take from its codes (its replay request) with any number of steps, without drawing the performance again.
+- **Draft takes:** draw several performances in one run (cheap: 9.3 s for four) and render each with fewer steps, to choose between by ear. Then **finish** the chosen one at 32 steps from its codes: the same performance at full quality. With 8 steps, four drafts would take about a minute instead of two and a half (estimated from the step times), and finishing one about 35 s.
+- **Measure first** (`bench.py --only steps`, about 5 minutes on the GPU). It renders one take's codes at 32, 16, 12 and 8 steps and checks each automatically:
+  - how far its sound is from the 32-step render;
+  - the notes on pitch, as `copyist follow` checks them;
+  - the words Whisper hears.
+  The draft step count is the fewest steps that keep the melody and the words; the ear judges the rest. The same run measures Demucs warm, on the GPU and the CPU.
+- Several takes in one run (`produce --takes`, built) stays: it's a fifth quicker, and drafts build on it.
 
 ### H3. The page: a GPU lane and a CPU lane
 
-The page runs one job at a time, whatever it is. Split it in two lanes:
-- **GPU:** takes, plans, SoulX, training; one at a time, as now.
-- **CPU:** engraving, band previews, the rules writer, checks, import, refit; several at once, up to the performance cores.
+Unchanged. A take holds the GPU for about the length of the song, so a band preview, an engraving or a check shouldn't wait behind it.
 
-A band preview or a new lead sheet no longer waits behind a three-minute take.
+### H4. The CPU
 
-### H4. The CPU, in parallel
+- Band parts side by side: built (1.4× on a three-part waltz; more for fuller bands).
+- Demucs on the CPU if the warm measurement agrees, which keeps the GPU free for takes; and no network once its model is in place (`HF_HUB_OFFLINE`).
+- pYIN in pieces: **dropped.** It's 0.05× real time on one performance core.
 
-Cross-platform for free: it's Python, processes and threads.
-- **Band parts side by side. Built:** each part is its own sfizz process, so they play at once (`COPYIST_JOBS` caps it; the default is the performance cores).
-- **Band previews of several candidates or styles at once** (`copyist write`, `copyist gallery`): one process each.
-- **pYIN in pieces:** split the audio into overlapping pieces, track each on its own core, join them. About ten times faster on the Mac. Used by `copyist follow`, the voice prompt and (Kiro's call) the open transcriber.
-- **Checks after a batch of takes**, one per take.
+### H5. The Neural Engine
 
-### H5. The Neural Engine, for the listening models
-
-The listening models are small enough for the Neural Engine. There they run beside a YuE2 take without slowing it, and without a window.
-
-- **Words:** whisper.cpp instead of faster-whisper. It's the same ggml family as yue2.cpp. On a Mac its encoder runs on the Neural Engine through Core ML, more than 3× faster than the CPU by its README, and the rest on Metal. Elsewhere it runs on CUDA or Vulkan. With the speed, a better model (large-v3-turbo instead of base.en) hears more of a sung take's words.
-- **Separation:** HTDemucs converted to Core ML (schism-audio, MIT, as Demucs is). The fp16 model can run on the Neural Engine. It needs Copyist's own STFT before and after, checked against its test vectors. Elsewhere Demucs stays PyTorch on CUDA or the CPU. **Fixed now:** Copyist asks Demucs's own PyTorch whether it can use CUDA, instead of always choosing the CPU off a Mac.
-- **Pitch and notes:** Basic Pitch already runs through Core ML in the open transcriber. Any "ear" the transcriber picks (TASKS §7) should be exported to ONNX, then run on the Neural Engine through ONNX Runtime's Core ML provider and on CUDA or DirectML elsewhere.
+For the listening models, the reason is now quality and a free GPU, not speed:
+- whisper.cpp with Core ML, to afford a better model (large-v3-turbo) for checking a take's words;
+- HTDemucs on Core ML, if the GPU is busy with takes.
 
 ### H6. Training
 
-LoRA training (`scripts/yue-lora/train.py`) and the transcriber's training run on PyTorch with MPS. MLX is Apple's own framework, usually faster than MPS on Apple silicon, and it now also runs on Linux with CUDA (not on Windows). Measure one training step both ways before porting anything. The transcriber's training is Kiro's (TASKS §7).
+Unchanged: one LoRA training step in MLX against PyTorch MPS before any port, with Kiro.
+
+### Deferred by the measurement
+
+- `yue-server --keep-loaded`: half a second a take.
+- `yue-plan --batch`: plans take 3-4 s each.
+- Smaller YuE2 weights: the render is limited by arithmetic, not by reading weights, so a smaller file wouldn't speed the 65% that matters.
 
 ## Not worth it now
 
@@ -93,7 +102,7 @@ LoRA training (`scripts/yue-lora/train.py`) and the transcriber's training run o
 ## Memory (64 GB)
 
 - **LM Studio:** about 36 GB loaded (unloaded before a window).
-- **YuE2:** 3B Q6_K is 2.9 GB, the VAE 0.5 GB, and each take in a batch has its own cache. yue2.cpp measured a 65 s song's peak at 3.8 GB (`--max-seq 8192`) to 5.8 GB (full context) above idle, so 4 takes of a verse should fit in about 12-20 GB. The page allows 4; the command line up to 9.
+- **YuE2:** 3B Q6_K is 2.9 GB, the VAE 0.5 GB, and each take in a batch has its own cache. Measured on a 47 s verse: 4.6 GB peak for one take, 7.2 GB for two in one run, 12.4 GB for four (about 2.6 GB more a take). Even nine would fit beside LM Studio's 36 GB. The page allows 4; the command line up to 9.
 - **The CPU lane and the Neural Engine models:** a few GB.
 
 ## Cross-platform rules
@@ -108,15 +117,15 @@ LoRA training (`scripts/yue-lora/train.py`) and the transcriber's training run o
 
 ## Steps
 
-1. **Built (21 October):**
+1. **Built and measured (21 October):**
    - `copyist/compute.py`;
    - band parts side by side;
    - Demucs on CUDA where its PyTorch has it;
    - `copyist produce --takes N` and the page's "Takes";
    - `scripts/hardware/bench.py`.
-2. H1: run the benchmark in one window (an agent on the Mac); record the numbers here and in TASKS.
-3. H3: the page's two lanes.
-4. H4: pYIN in pieces; band previews of candidates and styles in parallel; `copyist doctor`.
-5. H2: `yue-plan --batch` (upstream patch), then `yue-server --keep-loaded` behind the GPU lane, if H1 shows loading costs.
-6. H5: whisper.cpp with Core ML; then HTDemucs on Core ML.
+2. H1, measured (above).
+3. H2: `bench.py --only steps` in one short window; then draft takes on the page and `copyist produce --draft`, with "Finish this take" re-rendering the chosen one from its codes at 32 steps.
+4. H3: the page's two lanes.
+5. H4: Demucs's device by the warm measurement, and offline once downloaded.
+6. H5: whisper.cpp with Core ML for a better word check; HTDemucs on Core ML if the GPU stays busy.
 7. H6: an MLX training-step measurement, with Kiro.
