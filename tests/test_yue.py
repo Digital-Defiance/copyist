@@ -181,13 +181,19 @@ class RuntimeTests(unittest.TestCase):
         "with open(Path(sys.argv[0]).with_name('calls.txt'), 'a') as f:\n"
         "    f.write(json.dumps({'lm_batch_size': req.get('lm_batch_size', 1), 'lm_seed': req['lm_seed']}) + '\\n')\n"
         "out = Path(args[args.index('--out') + 1])\n"
+        "if req.get('semantic_tokens'):\n"
+        "    out.write_bytes(b'RIFF' + f\"replay-{req['semantic_tokens']}/s{req.get('steps', 32)}\".encode())\n"
+        "    out.with_suffix('.json').write_text(json.dumps(dict(req)))\n"
+        "    sys.exit(0)\n"
         "n = req.get('lm_batch_size', 1)\n"
         "if n > 1 and os.environ.get('FAKE_BATCH_FAILS'):\n"
         "    sys.exit(3)\n"
         "for i in range(n):\n"
         "    track = out.with_name(out.stem + f'{i}0' + out.suffix) if n > 1 else out\n"
-        "    track.write_bytes(b'RIFF' + str(req['lm_seed'] + i).encode())\n"
-        "    track.with_suffix('.json').write_text(json.dumps({'lm_seed': req['lm_seed'] + i, 'seed': req['seed']}))\n"
+        "    steps = f\"/s{req['steps']}\" if 'steps' in req else ''\n"
+        "    track.write_bytes(b'RIFF' + (str(req['lm_seed'] + i) + steps).encode())\n"
+        "    track.with_suffix('.json').write_text(json.dumps({'lm_seed': req['lm_seed'] + i, 'seed': req['seed'],\n"
+        "        'steps': req.get('steps', 32), 'semantic_tokens': f\"codes-{req['lm_seed'] + i}\"}))\n"
     )
 
     def batch_env(self) -> tuple[Path, dict]:
@@ -233,6 +239,54 @@ class RuntimeTests(unittest.TestCase):
         takes = out / "amazing-grace" / "takes"
         self.assertEqual(sorted(p.name for p in takes.iterdir()), ["seed-7-1", "seed-7-2"])
         self.assertEqual((takes / "seed-7-2" / "production.wav").read_bytes(), b"RIFF8")
+
+    def test_drafts_then_finishing_the_one_you_like(self):
+        from copyist import yue
+        from copyist.web.server import Project, job_args
+        tmp, env = self.batch_env()
+        root = tmp / "project"
+        (root / "songs").mkdir(parents=True)
+        (root / "songs" / "amazing-grace.yaml").write_text((ROOT / "songs" / "amazing-grace.yaml").read_text())
+        out = root / "out"
+        with mock.patch.dict(os.environ, env):
+            code = main(["produce", str(root / "songs" / "amazing-grace.yaml"), "--takes", "2", "--draft",
+                         "--take", "d", "--seed", "5", "--out", str(out)])
+        self.assertEqual(code, 0)
+        takes = out / "amazing-grace" / "takes"
+        self.assertEqual(self.calls(tmp), [{"lm_batch_size": 2, "lm_seed": 5}])
+        for k in (1, 2):
+            folder = takes / f"d-{k}"
+            self.assertEqual(json.loads((folder / "yue-request.json").read_text())["steps"], yue.DRAFT_STEPS)
+            self.assertEqual(json.loads((folder / yue.TAKE_INFO).read_text())["steps"], yue.DRAFT_STEPS)
+            self.assertTrue(yue.is_draft(folder))
+        project = Project(root)
+        listed = {r["name"]: r for r in project.recordings("amazing-grace") if r["kind"] == "take"}
+        self.assertTrue(listed["d-2"]["draft"])
+        label, _, args = job_args(project, {"action": "produce", "song": "amazing-grace", "takes": 4, "draft": True})
+        self.assertEqual(label, "Making 4 drafts")
+        self.assertIn("--draft", args)
+        label, _, args = job_args(project, {"action": "finish", "song": "amazing-grace", "take": "d-2"})
+        self.assertEqual((label, args[0], args[2]), ("Finishing the take", "finish", "d-2"))
+
+        with mock.patch.dict(os.environ, env):
+            code = main(["finish", str(root / "songs" / "amazing-grace.yaml"), "d-2", "--out", str(out)])
+        self.assertEqual(code, 0)
+        folder = takes / "d-2"
+        # The same performance (take 2's codes), all 32 steps; the draft kept beside it.
+        self.assertEqual((folder / "production.wav").read_bytes(), b"RIFFreplay-codes-6/s32")
+        self.assertEqual((folder / "draft.wav").read_bytes(), b"RIFF6/s12")
+        self.assertFalse(yue.is_draft(folder))
+        self.assertNotIn("steps", json.loads((folder / "yue-request.json").read_text()))
+        self.assertFalse(any(p.name.startswith(".finish") for p in takes.iterdir()))
+        with self.assertRaises(ValueError):       # finished now: nothing left to finish
+            job_args(Project(root), {"action": "finish", "song": "amazing-grace", "take": "d-2"})
+
+    def test_a_take_without_codes_cant_be_finished(self):
+        from copyist import yue
+        folder = Path(tempfile.mkdtemp(prefix="copyist-nofinish-"))
+        (folder / "replay.json").write_text("{}")
+        with self.assertRaises(SongError):
+            yue.finish_take(folder)
 
     def test_the_page_asks_for_up_to_four_takes(self):
         from copyist.web.server import Project, job_args

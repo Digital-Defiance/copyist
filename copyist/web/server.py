@@ -29,6 +29,15 @@ AUDIO = (".wav", ".mp3", ".flac", ".m4a", ".ogg")
 SLUG = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.-]{0,99}")
 TAKE = re.compile(r"[A-Za-z0-9][A-Za-z0-9_-]{0,63}")
 MAX_PAGE_TAKES = 4             # takes from one press of "Make the take" (memory: one KV cache each)
+
+
+def is_draft(req: dict) -> bool:
+    """A take rendered with fewer render steps than a finished one (copyist/yue.py)."""
+    from ..yue import FULL_STEPS
+    try:
+        return int(req.get("steps") or FULL_STEPS) < FULL_STEPS
+    except (TypeError, ValueError):
+        return False
 UPLOAD_LIMIT = 400 * 1024 * 1024                 # a long lossless recording, with room to spare
 mimetypes.add_type("font/woff2", ".woff2")
 mimetypes.add_type("text/markdown", ".md")
@@ -148,7 +157,7 @@ class Project:
             if not audio:
                 continue
             req = read_json(folder / "yue-request.json") or {}
-            found.append({"kind": "take", "name": folder.name, "path": self.rel(audio),
+            found.append({"kind": "take", "name": folder.name, "path": self.rel(audio), "draft": is_draft(req),
                           "when": datetime.fromtimestamp(audio.stat().st_mtime).isoformat(timespec="minutes"),
                           "style": req.get("style"), "seed": req.get("seed"),
                           "voice": [a.get("name") for a in req.get("adapters") or []],
@@ -156,7 +165,7 @@ class Project:
         first = out / "production" / "production.wav"
         if first.is_file():
             req = read_json(out / "production" / "yue-request.json") or {}
-            found.append({"kind": "take", "name": "production", "path": self.rel(first),
+            found.append({"kind": "take", "name": "production", "path": self.rel(first), "draft": is_draft(req),
                           "when": datetime.fromtimestamp(first.stat().st_mtime).isoformat(timespec="minutes"),
                           "style": req.get("style"), "seed": req.get("seed"), "voice": [],
                           "follow": follow_summary(out / "production")})
@@ -780,11 +789,22 @@ def job_args(project: Project, body: dict) -> tuple[str, str | None, list[str]]:
         args += ["--verses", str(verses), "--seed", str(seed)]
         if takes > 1:
             args += ["--takes", str(takes)]
+        draft = bool(body.get("draft"))
+        if draft:
+            args += ["--draft"]
         style = (body.get("style") or "").strip()
         if style:
             args += ["--style", style[:1500]]
         args += voice_args(project, body)
-        return ("Making a take" if takes == 1 else f"Making {takes} takes"), slug, args
+        what = ("a draft" if takes == 1 else f"{takes} drafts") if draft else \
+            ("a take" if takes == 1 else f"{takes} takes")
+        return f"Making {what}", slug, args
+    if action == "finish":
+        take = body.get("take")
+        rec = next((r for r in project.recordings(slug) if r["kind"] == "take" and r["name"] == take), None)
+        if not rec or not TAKE.fullmatch(take) or not rec.get("draft"):
+            raise ValueError("No such draft take.")
+        return "Finishing the take", slug, ["finish", song, take]
     if action == "follow":
         take = body.get("take")
         rec = next((r for r in project.recordings(slug) if r["kind"] == "take" and r["name"] == take), None)

@@ -217,9 +217,9 @@ CPU, GPU and Neural Engine working at once on the owner's M4 Max; the GPU kept f
 
 - [x] Plan; band parts side by side; Demucs on CUDA where it can; several takes in one YuE2 run (`produce --takes`, the page's "Takes"); the benchmark script
 - [x] H1 Measured (21 October): the flow-matching render is 65% of a take and doesn't batch; 4 takes in one run save a fifth
-- [ ] H2 Draft takes at fewer render steps, then finish the chosen one from its codes (measure the steps first)
+- [x] H2 Draft takes at 12 render steps (same melody and words, 2.2× quicker), then finish the chosen one from its codes; Demucs offline
 - [ ] H3 The page's GPU and CPU lanes
-- [ ] H4 Demucs on the faster device and offline; band previews in parallel; `copyist doctor`
+- [ ] H4 Band previews in parallel; `copyist doctor`
 - [ ] H5 whisper.cpp with Core ML; HTDemucs on Core ML
 - [ ] H6 MLX against PyTorch MPS for one training step
 

@@ -31,7 +31,7 @@ The GPU needs a window and draws the most power. The CPU and the Neural Engine a
 | 4 takes in one run | GPU | 152.9 s (38.2 s a take): **0.8 of four separate runs**; 12.4 GB |
 | 4 variations of one take | GPU | 147.2 s: no saving over four takes; 4.5 GB |
 | A melody plan (`yue-plan`) | GPU | 2.9-4.2 s each, 13.6 s for four |
-| Separating the vocal (Demucs) | GPU (MPS) / CPU | 20.0 s on the GPU (run first, cold) / 10.5 s on the CPU (second): to measure warm |
+| Separating the vocal (Demucs) | GPU (MPS) / CPU | 4.5 s on the GPU with Metal warm, 10.9 s on the CPU (the first run's 20 s on the GPU was a cold start) |
 | Hearing the words (faster-whisper base.en) | CPU | 2.2 s |
 | Pitch tracking (pYIN, one core) | CPU | 2.2 s (0.05× real time) |
 | The band (sfizz, 3 parts) | CPU | 4.1 s one part at a time, 2.9 s side by side |
@@ -50,22 +50,33 @@ What that means:
 - **Loading is small.** Keeping YuE2 loaded (`yue-server --keep-loaded`) would save about half a second a take once the files are in the disk cache.
 - **The GPU slows as it heats.** A render step took 0.80 s at the start of the first take and 0.97 s by its end, and 0.95-1.02 s through the batches: about 20% slower under sustained load, with the Mac's energy settings already at their highest (owner, 21 October). That's the cost of heat on a laptop; long batches should expect it.
 - **Batched takes are the same takes.** Take 2 of a batch has exactly the performance (the same codes) as that take rendered alone; only the last bits of the audio differ.
-- **The CPU steps are already quick on this Mac.** Whisper, pYIN and the band take seconds. Demucs may even be faster on the CPU, which would keep the GPU free; that needs a warm measurement. Demucs also contacts the Hugging Face Hub on every run, even with its model downloaded.
+- **The CPU steps are already quick on this Mac.** Whisper, pYIN and the band take seconds. Demucs is 2.4× faster on the GPU once Metal is warm (second run), so it stays there. It also contacted the Hugging Face Hub on every run, even with its model downloaded (fixed: H4).
 
 ## The levers, in order (revised after H1)
 
 ### H1. Measure. Done 21 October
 
-### H2. Draft takes, then the final one
+### H2. Draft takes, then the final one. Built 21 October
 
 The render's 32 steps are two-thirds of every take, and yue2.cpp can re-render a take from its codes (its replay request) with any number of steps, without drawing the performance again.
-- **Draft takes:** draw several performances in one run (cheap: 9.3 s for four) and render each with fewer steps, to choose between by ear. Then **finish** the chosen one at 32 steps from its codes: the same performance at full quality. With 8 steps, four drafts would take about a minute instead of two and a half (estimated from the step times), and finishing one about 35 s.
-- **Measure first** (`bench.py --only steps`, about 5 minutes on the GPU). It renders one take's codes at 32, 16, 12 and 8 steps and checks each automatically:
-  - how far its sound is from the 32-step render;
-  - the notes on pitch, as `copyist follow` checks them;
-  - the words Whisper hears.
-  The draft step count is the fewest steps that keep the melody and the words; the ear judges the rest. The same run measures Demucs warm, on the GPU and the CPU.
-- Several takes in one run (`produce --takes`, built) stays: it's a fifth quicker, and drafts build on it.
+
+**Measured** (`bench.py --only steps`, `out/hardware/bench-20261021-1445.json`): one take's codes rendered again at each step count, each checked automatically.
+
+| Steps | Render | Sound against 32 steps | Notes on pitch | Words heard |
+|---|---|---|---|---|
+| 32 | 37.0 s | 0 (the floor: two 32-step renders differ by 0.02 dB) | 0.969 | 0.923 |
+| 16 | 20.9 s | 0.08 dB | 0.969 | 0.923 |
+| **12** | **16.9 s** | **0.11 dB** | **0.969** | **0.923** |
+| 8 | 13.3 s | 0.23 dB | 0.969 | 0.923 |
+
+A step costs 0.87-0.95 s whatever the count, and about 6 s of each render is fixed (the VAE and loading). Even 8 steps keep the melody and the words as far as the checks can tell. The checks can't hear the small differences in sound, though, and an earlier 8-step render sounded rougher by ear. So **drafts use 12 steps**: 2.2× quicker to render than a finished take, with half 8's distance from it.
+
+**Built:**
+- `copyist produce --draft` (with `--takes N` for several in one run), and `--steps N` to choose.
+- `copyist finish SONG TAKE` renders a draft again from its own codes at 32 steps: the same melody, words, phrasing and voice, at full quality. The draft is kept beside it as `draft.wav`.
+- The page: "Quality: Quick drafts, to choose from" on the take form, a Draft tag on draft takes, and "Finish this take".
+
+Expected for choosing between four on the Mac, from the step times: about 75 s for four drafts and about 37 s to finish one, against 153 s for four finished takes.
 
 ### H3. The page: a GPU lane and a CPU lane
 
@@ -74,7 +85,7 @@ Unchanged. A take holds the GPU for about the length of the song, so a band prev
 ### H4. The CPU
 
 - Band parts side by side: built (1.4× on a three-part waltz; more for fuller bands).
-- Demucs on the CPU if the warm measurement agrees, which keeps the GPU free for takes; and no network once its model is in place (`HF_HUB_OFFLINE`).
+- Demucs stays on the GPU (2.4× the CPU, warm). **Built:** it runs offline once its model is downloaded (`HF_HUB_OFFLINE=1`, falling back to the network only to download it).
 - pYIN in pieces: **dropped.** It's 0.05× real time on one performance core.
 
 ### H5. The Neural Engine
@@ -124,8 +135,8 @@ Unchanged: one LoRA training step in MLX against PyTorch MPS before any port, wi
    - `copyist produce --takes N` and the page's "Takes";
    - `scripts/hardware/bench.py`.
 2. H1, measured (above).
-3. H2: `bench.py --only steps` in one short window; then draft takes on the page and `copyist produce --draft`, with "Finish this take" re-rendering the chosen one from its codes at 32 steps.
+3. H2, measured and built: draft takes at 12 steps, `copyist finish`, the page's Quality choice and "Finish this take"; Demucs offline once downloaded.
 4. H3: the page's two lanes.
-5. H4: Demucs's device by the warm measurement, and offline once downloaded.
+5. H4: band previews of candidates and styles in parallel; `copyist doctor`.
 6. H5: whisper.cpp with Core ML for a better word check; HTDemucs on Core ML if the GPU stays busy.
 7. H6: an MLX training-step measurement, with Kiro.

@@ -365,6 +365,10 @@ function soundTab(song) {
         <div class="field"><label for="takes">Takes</label><select id="takes">
           ${[1, 2, 3, 4].map((n) => `<option value="${n}">${n}</option>`).join("")}</select>
           <p class="hint">Each take takes about as long as the song. Several in one go save about a fifth of the time.</p></div>
+        <div class="field"><label for="quality">Quality</label><select id="quality">
+          <option value="finished">Finished</option>
+          <option value="draft">Quick drafts, to choose from</option></select>
+          <p class="hint">Drafts have the same melody and words, in under half the time. Finish the one you like.</p></div>
         <div class="field"><label for="seed">Seed</label>
           <div class="row"><input id="seed" type="number" min="0" value="831001"><button type="button" class="small" id="reseed">Another</button></div></div>
         <div class="field wide"><label for="style">Style</label>
@@ -390,9 +394,12 @@ function soundTab(song) {
 function takeItem(r) {
   const voice = r.voice && r.voice.length ? voiceName(r.voice[0]) : "YuE2's choice";
   const title = r.name === "production" ? "First production" : `Take from ${when(r.when)}`;
-  return `<li><h3>${esc(title)}</h3>
+  const draft = r.draft ? ' <span class="tag">Draft</span>' : "";
+  return `<li><h3>${esc(title)}${draft}</h3>
     <p class="meta">Voice: ${esc(voice)}. Seed ${esc(r.seed ?? "?")}.</p>
     <audio controls preload="none" src="${fileUrl(r.path)}"></audio>
+    ${r.draft ? `<p><button class="small" data-job="finish" data-take="${esc(r.name)}">Finish this take</button>
+      <span class="hint">The same performance at full quality, in about the length of the song.</span></p>` : ""}
     ${r.follow ? `<p class="follow">Melody check: ${esc(r.follow)}</p>`
       : `<p class="follow"><button class="small" data-job="follow" data-take="${esc(r.name)}">Check the melody</button></p>`}
     ${r.style ? `<details><summary>Style</summary><p>${esc(r.style)}</p></details>` : ""}</li>`;
@@ -430,7 +437,7 @@ function wireSound(song) {
   $("#make").addEventListener("click", () => start({
     action: "produce", song: song.slug, voice: voice.value || null, strength: Number(strength.value),
     verses: Number($("#verses").value), seed: Number($("#seed").value), style: style.value,
-    takes: Number($("#takes").value),
+    takes: Number($("#takes").value), draft: $("#quality").value === "draft",
   }));
 }
 
@@ -873,7 +880,7 @@ function showJob(job) {
 }
 
 // The "Make a take" choices survive the page redrawing after a job.
-const FORM = ["voice", "strength", "verses", "takes", "seed", "style"];
+const FORM = ["voice", "strength", "verses", "takes", "quality", "seed", "style"];
 let saved = null;
 function saveForm() {
   if (!$("#make")) return;

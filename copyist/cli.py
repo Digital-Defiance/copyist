@@ -188,11 +188,30 @@ def cmd_produce(args) -> int:
     if args.lora:
         req["adapters"], folder = yue.lora_adapters(args.lora)
         extra = ["--adapters", folder]
-    audios = yue.render_takes(req, folders, device=args.device, extra=extra)
+    steps = args.steps or (yue.DRAFT_STEPS if args.draft else None)
+    audios = yue.render_takes(req, folders, device=args.device, extra=extra, steps=steps)
     offset = yue.vocal_offset(song, args.intro_bars)
     for audio in audios:
         print(f"Wrote {audio}")
+    if steps and steps < yue.FULL_STEPS:
+        print(f"{'These are drafts' if len(audios) > 1 else 'This is a draft'} ({steps} render steps). "
+              f"Finish the one you like: copyist finish {args.song} TAKE")
     print(f"Verse 1's first note is {offset:.2f} seconds into the recording.")
+    return 0
+
+
+def cmd_finish(args) -> int:
+    """Render a draft take again at full quality from its own codes (docs/production.md)."""
+    from . import yue
+    song = load_song(args.song)
+    if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_-]{0,63}", args.take):
+        raise SongError("A take name uses letters, digits, - and _ only.")
+    root = Path(args.out) / song.slug
+    folder = root / "production" if args.take == "production" else root / "takes" / args.take
+    if not folder.is_dir():
+        raise SongError(f"There's no take called {args.take} for {song.title}.")
+    audio = yue.finish_take(folder, device=args.device)
+    print(f"Wrote {audio} (the draft is beside it)")
     return 0
 
 
@@ -570,6 +589,10 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--style", help="style tags; default comes from the song")
     p.add_argument("--device", help="yue-synth device, e.g. MTL0 (or set COPYIST_YUE_DEVICE)")
     p.add_argument("--take", help="keep this render in out/<song>/takes/TAKE/ instead of production/")
+    p.add_argument("--draft", action="store_true",
+                   help="quick drafts: the same melody and words with fewer render steps (12), "
+                        "to choose between; then `copyist finish` the one you like")
+    p.add_argument("--steps", type=int, help="render steps (default 32; 12 with --draft)")
     p.add_argument("--takes", type=int, default=1,
                    help="how many takes to make, drawn side by side in one run (default 1, up to 9); "
                         "with several, they go in takes/TAKE-1, TAKE-2, ...")
@@ -580,6 +603,13 @@ def main(argv: list[str] | None = None) -> int:
                    "(default 1: YuE2 sings an octave below what it's given)")
     p.add_argument("--out", default="out")
     p.set_defaults(func=cmd_produce)
+
+    fn = sub.add_parser("finish", help="render a draft take again at full quality, from its own performance")
+    fn.add_argument("song", help="path to a song file (.yaml)")
+    fn.add_argument("take", help="the take's name (its folder in out/<song>/takes/)")
+    fn.add_argument("--device", help="yue-synth device, e.g. MTL0 (or set COPYIST_YUE_DEVICE)")
+    fn.add_argument("--out", default="out")
+    fn.set_defaults(func=cmd_finish)
 
     f = sub.add_parser("follow", help="check that a recording (e.g. a production's vocal) sings the melody")
     f.add_argument("song", help="path to a song file (.yaml)")

@@ -377,6 +377,9 @@ def song_production_style(song: Song) -> str | None:
 # ---------------------------------------------------------------- running YuE2
 
 MAX_TAKES = 9                  # takes in one batch (yue2.cpp's own bound on a batch is the memory)
+FULL_STEPS = 32                # yue2.cpp's flow-matching steps for a finished take (its default)
+DRAFT_STEPS = 12               # a draft: same melody and words, 2.2x quicker to render (docs/hardware.md, H2)
+TAKE_INFO = "take.json"        # what finishing a take needs that yue2.cpp's replay doesn't carry
 
 
 def _synth_setup(binary: str | None, model: str | None, vae: str | None, device: str | None):
@@ -438,8 +441,31 @@ def take_request(req: dict, k: int) -> dict:
     return one
 
 
+def _note_takes(folders: list[Path], steps: int, extra: list[str] | None) -> None:
+    """Beside each take: its render steps, and the LoRA folder, so it can be finished later."""
+    args = list(extra or [])
+    adapters = args[args.index("--adapters") + 1] if "--adapters" in args else None
+    for folder in folders:
+        (folder / TAKE_INFO).write_text(json.dumps({"steps": steps, "adapters_dir": adapters}, indent=1),
+                                        encoding="utf-8")
+
+
 def render_takes(req: dict, folders: list[Path], binary: str | None = None, model: str | None = None,
-                 vae: str | None = None, device: str | None = None, extra: list[str] | None = None) -> list[Path]:
+                 vae: str | None = None, device: str | None = None, extra: list[str] | None = None,
+                 steps: int | None = None) -> list[Path]:
+    """`render_takes_at` with `steps` render steps (None: a finished take's 32), noted beside each take."""
+    if steps is not None:
+        if not 1 <= steps <= 2 * FULL_STEPS:
+            raise SongError(f"Render steps go from 1 to {2 * FULL_STEPS}.")
+        if steps != FULL_STEPS:
+            req = dict(req, steps=steps)
+    out = render_takes_at(req, folders, binary, model, vae, device, extra)
+    _note_takes(folders, steps or FULL_STEPS, extra)
+    return out
+
+
+def render_takes_at(req: dict, folders: list[Path], binary: str | None = None, model: str | None = None,
+                    vae: str | None = None, device: str | None = None, extra: list[str] | None = None) -> list[Path]:
     """Several takes of one request, each in its own folder (production.<ext>, yue-request.json, and
     yue2.cpp's replay request as replay.json when it writes one).
 
@@ -488,3 +514,52 @@ def render_takes(req: dict, folders: list[Path], binary: str | None = None, mode
         out.append(audio)
     shutil.rmtree(work, ignore_errors=True)
     return out
+
+
+def is_draft(folder: Path) -> bool:
+    """A take rendered with fewer than a finished take's steps."""
+    try:
+        req = json.loads((folder / "yue-request.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return False
+    return int(req.get("steps") or FULL_STEPS) < FULL_STEPS
+
+
+def finish_take(folder: Path, binary: str | None = None, model: str | None = None, vae: str | None = None,
+                device: str | None = None) -> Path:
+    """Render a draft take again at full quality from its own codes: the same performance (melody,
+    words, phrasing, voice) with all 32 render steps. The draft stays beside it as draft.<ext>."""
+    folder = Path(folder)
+    replay_path = next((p for p in (folder / "replay.json", folder / "production.json") if p.is_file()), None)
+    if replay_path is None:
+        raise SongError(f"{folder.name} has no replay request from yue2.cpp, so it can't be finished; make it again.")
+    replay = json.loads(replay_path.read_text(encoding="utf-8"))
+    if not replay.get("semantic_tokens"):
+        raise SongError(f"{folder.name}'s replay request has no codes, so it can't be finished; make it again.")
+    try:
+        ours = json.loads((folder / "yue-request.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        ours = {}
+    try:
+        info = json.loads((folder / TAKE_INFO).read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        info = {}
+    req = {k: v for k, v in replay.items() if k not in ("lm_batch_size", "synth_batch_size")}
+    req["steps"] = FULL_STEPS
+    if ours.get("output_format"):
+        req["output_format"] = ours["output_format"]
+    extra = ["--adapters", info["adapters_dir"]] if info.get("adapters_dir") else None
+    work = folder.parent / f".finish-{folder.name}"
+    shutil.rmtree(work, ignore_errors=True)
+    audio = run_yue2cpp(req, work, binary, model, vae, device, extra)
+    final = folder / f"production{audio.suffix}"
+    if final.is_file():
+        final.replace(folder / f"draft{audio.suffix}")
+    shutil.move(str(audio), final)
+    if audio.with_suffix(".json").is_file():
+        shutil.move(str(audio.with_suffix(".json")), folder / "replay.json")
+    ours.pop("steps", None)
+    (folder / "yue-request.json").write_text(json.dumps(ours, ensure_ascii=False, indent=1), encoding="utf-8")
+    (folder / TAKE_INFO).write_text(json.dumps(dict(info, steps=FULL_STEPS), indent=1), encoding="utf-8")
+    shutil.rmtree(work, ignore_errors=True)
+    return final

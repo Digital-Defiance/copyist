@@ -25,6 +25,19 @@ def demucs_device(binary: str | None) -> str:
     return os.environ.get("COPYIST_DEMUCS_DEVICE") or torch_device(python_beside(binary))
 
 
+def run_demucs(cmd: list[str]) -> int:
+    """Run Demucs offline first: once its model is downloaded it needs no network, and it otherwise
+    contacts the Hugging Face Hub on every run. Only if that fails (the model isn't here yet) does it
+    run again with the network, to download it."""
+    offline = dict(os.environ, HF_HUB_OFFLINE="1")
+    code = subprocess.run(cmd, env=offline).returncode
+    if code != 0:
+        print("Demucs couldn't run offline (its model isn't downloaded yet?); trying with the network.",
+              file=sys.stderr, flush=True)
+        code = subprocess.run(cmd).returncode
+    return code
+
+
 def vocal_stem(recording: Path, binary: str | None = None, device: str | None = None) -> Path:
     """The vocal of `recording`, separated with Demucs into <folder>/htdemucs/<name>/vocals.wav (kept for reuse)."""
     recording = Path(recording)
@@ -36,10 +49,10 @@ def vocal_stem(recording: Path, binary: str | None = None, device: str | None = 
         raise SongError("Separating the vocal needs Demucs: run scripts/setup-demucs.sh, or set COPYIST_DEMUCS.")
     device = device or demucs_device(binary)
     print(f"Separating the vocal with Demucs on {device}...", file=sys.stderr)
-    r = subprocess.run([binary, "-d", device, "--two-stems", "vocals", "--other-method", "none",
-                        "-o", str(recording.parent), str(recording)])
-    if r.returncode != 0 or not out.is_file():
-        raise RuntimeError(f"Demucs didn't separate {recording.name} (exit {r.returncode}).")
+    code = run_demucs([binary, "-d", device, "--two-stems", "vocals", "--other-method", "none",
+                       "-o", str(recording.parent), str(recording)])
+    if code != 0 or not out.is_file():
+        raise RuntimeError(f"Demucs didn't separate {recording.name} (exit {code}).")
     return out
 
 
@@ -56,7 +69,7 @@ def split_vocals(recording: Path, out_dir: Path, binary: str | None = None, devi
         raise SongError("Separating the vocal needs Demucs: run scripts/setup-demucs.sh, or set COPYIST_DEMUCS.")
     device = device or demucs_device(binary)
     print(f"Separating the vocal from the band with Demucs on {device}...", file=sys.stderr, flush=True)
-    r = subprocess.run([binary, "-d", device, "--two-stems", "vocals", "-o", str(out_dir), str(recording)])
-    if r.returncode != 0 or not (vocals.is_file() and rest.is_file()):
-        raise RuntimeError(f"Demucs didn't separate {recording.name} (exit {r.returncode}).")
+    code = run_demucs([binary, "-d", device, "--two-stems", "vocals", "-o", str(out_dir), str(recording)])
+    if code != 0 or not (vocals.is_file() and rest.is_file()):
+        raise RuntimeError(f"Demucs didn't separate {recording.name} (exit {code}).")
     return vocals, rest
