@@ -103,6 +103,24 @@ class SyllableTests(unittest.TestCase):
         self.assertEqual(syllables.syllabify_word("feathers,"), [("fea", 2.0), ("thers,", 0.0)])
         self.assertEqual(syllables.syllabify_word("Hope"), [("Hope", 1.5)])
 
+    def test_typed_hyphens_are_the_singers_syllables(self):
+        # The dictionary says "theorem" has two syllables; Gilbert's patter sings three.
+        self.assertEqual([s for s, _ in syllables.syllabify_word("the-o-rem")], ["the", "o", "rem"])
+        self.assertEqual([s for s, _ in syllables.syllabify_word("theorem")], ["theo", "rem"])
+        # The whole word's stress still applies: "binomial" stresses "no".
+        self.assertEqual(syllables.syllabify_word("bi-no-mial"), [("bi", 0.0), ("no", 2.0), ("mial", 0.0)])
+        # A compound of real words splits inside each one.
+        self.assertEqual([s for s, _ in syllables.syllabify_word("well-known")], ["well", "known"])
+        self.assertEqual(len(syllables.syllabify_word("Major-General")), 4)
+        # Punctuation stays on the last syllable; a trailing hyphen isn't a split.
+        self.assertEqual([s for s, _ in syllables.syllabify_word("hy-pot-e-nuse.")], ["hy", "pot", "e", "nuse."])
+        self.assertEqual(len(syllables.syllabify_word("re-")), 1)
+
+    def test_a_dash_between_words_separates_them(self):
+        for text in ("wait -- no", "wait--no", "wait—no"):
+            sylls = syllables.all_syllables(syllables.parse_lyrics(text))
+            self.assertEqual([(s.text, s.word) for s in sylls], [("wait", 0), ("no", 1)], text)
+
     def test_unknown_word_counts_vowel_groups_and_stresses_the_first(self):
         got = syllables.syllabify_word("blorpentine")
         self.assertGreater(len(got), 1)

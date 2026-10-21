@@ -54,6 +54,13 @@ Carry me over the water home
         text = refit.plain_for_edit(["Hope is the thing with fea-thers\nThat per-ches in the soul"])
         self.assertEqual(text, "Hope is the thing with feathers\nThat perches in the soul")
 
+    def test_typed_syllables_survive_the_lyric_editor(self):
+        text = refit.plain_for_edit(["A-bout bi-no-mial the-o-rem I'm teem-ing with a lot o' news,\n"
+                                     "with mo-ther and child"])
+        # Hyphens stay where they change the count; a different printed split doesn't need them.
+        self.assertEqual(text, "About bi-no-mial the-o-rem I'm teeming with a lot o' news,\n"
+                               "with mother and child")
+
     def test_empty_refused(self):
         with self.assertRaises(write.WriteError):
             refit.refit(self.path, "   ")

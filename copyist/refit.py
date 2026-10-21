@@ -120,17 +120,27 @@ def refit(path: Path, lyrics: str) -> Path:
 
 
 def plain_for_edit(verses: list[str]) -> str:
-    """Hyphenated song verses → plain lines for a textarea (verses separated by a blank line)."""
-    import re
+    """Hyphenated song verses → plain lines for a textarea (verses separated by a blank line).
+
+    A word keeps its hyphens when Copyist would count its syllables differently by itself
+    ("the-o-rem", which the dictionary sings as two) or doesn't know it ("Ma-jor-Ge-ne-ral"), so
+    syllables someone typed survive the next edit. Where only the printed split differs
+    ("moth-er" for "mo-ther"), the plain word is shown."""
+    def word(token: str) -> str:
+        joined = token.replace("-", "")
+        if "-" not in token or not re.search(r"[A-Za-z]", joined):
+            return joined
+        typed = len(syllables.TYPED_HYPHEN.split(token))
+        own = len(syllables.syllabify_word(joined))
+        known = syllables.dictionary_stresses(joined) is not None
+        return joined if known and typed == own else token
 
     def plain(t: str) -> list[str]:
-        lines = str(t).strip().split("\n")
         out = []
-        for line in lines:
-            s = re.sub(r"\*", "", line)
-            s = re.sub(r"_", "", s)
-            s = re.sub(r"-\s*", "", s)
-            s = re.sub(r"\s+", " ", s).strip()
+        for line in str(t).strip().split("\n"):
+            s = line.replace("*", "").replace("_", "")
+            s = re.sub(r"-\s+", "-", s)          # "al-_ read-y" -> "al-read-y"
+            s = " ".join(word(w) for w in s.split())
             if s:
                 out.append(s)
         return out

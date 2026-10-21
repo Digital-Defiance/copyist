@@ -1,15 +1,17 @@
 """How well the lyric fitter places syllables, against songs placed by hand.
 
-Each song's own words, without its holds and hyphens (as the page's lyric editor shows them),
-are refitted to its melody with `copyist refit`, and the notes where a syllable starts are
-compared with the hand-placed file. Run from the repo root:
+Each song's own words, with its syllables (hyphens) but without its holds, are refitted to its
+melody with `copyist refit`, and the notes where a syllable starts are compared with the
+hand-placed file. So this measures placement only; `--plain` drops the hyphens too (as the page's
+lyric editor shows the words), which also tests Copyist's own syllable counts. Run from the repo root:
 
-    python scripts/fit/evaluate.py [-v] [songs/NAME.yaml ...]
+    python scripts/fit/evaluate.py [-v] [--plain] [songs/NAME.yaml ...]
 
 `-v` shows every miss in context. The default set is the public-domain songs placed by hand.
 """
 from __future__ import annotations
 
+import re
 import shutil
 import sys
 import tempfile
@@ -42,12 +44,21 @@ def label(note, verse: int) -> str:
     return texts[0] if texts else "_"
 
 
-def evaluate(path: Path, verbose: bool) -> tuple[int, int]:
+def words_of(verses: list[str], plain: bool) -> str:
+    """The song's verses as words to refit: holds removed, hyphens kept unless `plain`."""
+    if plain:
+        return refit.plain_for_edit(verses)
+    return "\n\n".join("\n".join(re.sub(r"-\s+", "-", line.replace("_", "").replace("*", "")).strip()
+                                  for line in str(v).splitlines() if line.strip())
+                        for v in verses)
+
+
+def evaluate(path: Path, verbose: bool, plain: bool = False) -> tuple[int, int]:
     hand = load_song(path)
     hand_notes = sung_notes(hand)
     tmp = Path(tempfile.mkdtemp(prefix="copyist-fit-eval-")) / path.name
     shutil.copy(path, tmp)
-    refit.refit(tmp, refit.plain_for_edit(hand.verses))
+    refit.refit(tmp, words_of(hand.verses, plain))
     fitted = load_song(tmp)
     fit_notes = sung_notes(fitted)
     if len(fit_notes) != len(hand_notes):
@@ -70,11 +81,11 @@ def evaluate(path: Path, verbose: bool) -> tuple[int, int]:
 
 
 def main(argv: list[str]) -> int:
-    verbose = "-v" in argv
-    paths = [Path(a) for a in argv if a != "-v"] or [ROOT / "songs" / f"{s}.yaml" for s in HAND_PLACED]
+    verbose, plain = "-v" in argv, "--plain" in argv
+    paths = [Path(a) for a in argv if not a.startswith("-")] or [ROOT / "songs" / f"{s}.yaml" for s in HAND_PLACED]
     missed = total = 0
     for path in paths:
-        m, t = evaluate(path, verbose)
+        m, t = evaluate(path, verbose, plain)
         missed += m
         total += t
     print(f"Missed {missed} of {total} hand-placed syllable starts ({100 * missed / max(total, 1):.1f}%).")

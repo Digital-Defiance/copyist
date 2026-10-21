@@ -6,6 +6,10 @@ rules (vowel groups, a silent final e, V-CV and VC-CV, digraphs kept
 together). The split only decides how the word is printed under the notes
 ("fea-thers"), so a rare odd split costs nothing but looks; the count and the
 stress are what matter.
+
+Hyphens the person types are theirs: "the-o-rem" is three syllables, however the dictionary
+counts it, because that's how they'll sing it. A hyphenated compound of real words
+("Major-General") still splits inside each word.
 """
 from __future__ import annotations
 
@@ -197,8 +201,43 @@ def _restore(word: str, parts: list[str]) -> list[str]:
     return out
 
 
+TYPED_HYPHEN = re.compile(r"(?<=[A-Za-z'])-+(?=[A-Za-z'])")
+WEIGHTS = {1: 2.0, 2: 1.0, 0: 0.0}
+
+
+def typed_syllables(word: str) -> list[tuple[str, float]]:
+    """A word with hyphens typed in it: each piece is a syllable, except a piece that is itself a
+    word of more than one syllable ("General" in "Major-General"), which splits as usual."""
+    texts: list[str] = []
+    own: list[float | None] = []
+    compound = False
+    for piece in TYPED_HYPHEN.split(word):
+        if len(vowel_groups(clean(piece))) >= 2 and dictionary_stresses(piece):
+            sub = syllabify_word(piece)
+            compound = compound or len(sub) > 1
+            texts += [t for t, _ in sub]
+            own += [w for _, w in sub]
+        else:
+            texts.append(piece)
+            own.append(None)
+    if len(texts) == 1:
+        return [(texts[0], 0.3 if clean(texts[0]) in FUNCTION_WORDS else 1.5)]
+    if compound:
+        return [(t, 0.0 if w is None else w) for t, w in zip(texts, own)]
+    # The whole word's stress, syllable by syllable from its start ("bi-no-mial" stresses "no",
+    # as "binomial" does); typed syllables the dictionary elides are unstressed.
+    whole = dictionary_stresses("".join(clean(t) for t in texts))
+    stresses = (whole or [1]) + [0] * len(texts)
+    stresses = stresses[:len(texts)]
+    if not any(stresses):
+        stresses[0] = 1
+    return [(t, WEIGHTS[st]) for t, st in zip(texts, stresses)]
+
+
 def syllabify_word(word: str) -> list[tuple[str, float]]:
     """[(syllable text, stress weight)] for one word."""
+    if TYPED_HYPHEN.search(word):
+        return typed_syllables(word)
     letters = clean(word)
     stresses = dictionary_stresses(word)
     if stresses is None:
@@ -209,13 +248,14 @@ def syllabify_word(word: str) -> list[tuple[str, float]]:
         stresses = [1] + [0] * (len(parts) - 1)
     if len(parts) == 1:
         return [(parts[0], 0.3 if letters in FUNCTION_WORDS else 1.5)]
-    weights = {1: 2.0, 2: 1.0, 0: 0.0}
-    return [(p, weights[s]) for p, s in zip(parts, stresses)]
+    return [(p, WEIGHTS[s]) for p, s in zip(parts, stresses)]
 
 
 def syllabify_line(text: str) -> Line:
     line = Line(text.strip())
-    words = [w for w in re.split(r"\s+", text.strip()) if re.search(r"[A-Za-z]", w)]
+    # A dash between words ("home -- away", "wait—no") separates them; a hyphen joins syllables.
+    spaced = re.sub(r"\s*(?:-{2,}|[–—])\s*", " ", text.strip())
+    words = [w for w in re.split(r"\s+", spaced) if re.search(r"[A-Za-z]", w)]
     for wi, w in enumerate(words):
         sylls = syllabify_word(w)
         for k, (s, weight) in enumerate(sylls):

@@ -156,6 +156,8 @@ Output: `out/<slug>/rewrite/<how>/candidate-*/` with song file, report and band 
   - one-syllable content words 1.5;
   - one-syllable function words 0.3. Keep a list: a, an, the, and, or, but, of, to, in, on, at, by, for, with, from, as, is, it, its, that, this, be, was, were, are, I, you, he, she, we, they, me, my, your, his, her, our, their, so, than, then, if, when.
 - Words not in the dictionary count spelling vowel groups and stress their first syllable.
+- **Hyphens you type are your syllables:** "the-o-rem" is sung in three, though the dictionary counts two. Each piece is one syllable, except a piece that is itself a word of more than one syllable, so a compound like "Major-General" still splits inside each word. Stress comes from the whole word where the dictionary knows it ("bi-no-mial" stresses "no"). The lyric editor on the page keeps a word's hyphens when they change its count or Copyist doesn't know the word, so they survive the next edit.
+- A dash between words (`--`, an en or em dash) separates them; a single hyphen joins syllables.
 - Punctuation stays on the last syllable.
 
 **Notes:**
@@ -178,9 +180,7 @@ Output: `out/<slug>/rewrite/<how>/candidate-*/` with song file, report and band 
 | The first syllable of a line not after a rest or a note at least a beat long | 0.5 |
 | A syllable starting in the middle of a beat whose first note only held the syllable before ("A-maz-_ ing grace", where the hymnal sings "A-maz-ing_ grace") | 0.5 |
 
-**Measured:** `scripts/fit/evaluate.py` refits each hand-placed public-domain song's own words to its melody and counts the syllables that start on a different note. It misses 11 of 420 (2.6%), down from 13 before the mid-beat rule. What's left:
-- Silent Night's "night": a stressed word on the eighth before the beat, slurred into it. A rule that let a held syllable count the stronger beat it reaches fixed it, but moved every long word in Amazing Grace onto the eighth before the bar, so it isn't used. This needs more hand-placed songs to settle.
-- Major-General's "binomial theorem": the syllables differ ("mi-al", "theo-rem"), not the placement. Typed hyphens aren't kept yet, so the fitter can't be told "the-o-rem".
+**Measured:** `scripts/fit/evaluate.py` refits each hand-placed public-domain song's own words (its syllables, without its holds) to its melody and counts the syllables that start on a different note. It misses 9 of 420 (2.1%); before the mid-beat rule and typed hyphens, 13. `--plain` gives the words as the page's lyric editor shows them, so Copyist's own syllable counts are tested too: also 9. What's left is Silent Night's "night": a stressed word on the eighth before the beat, slurred into it. A rule that let a held syllable count the stronger beat it reaches fixed it, but moved every long word in Amazing Grace onto the eighth before the bar, so it isn't used. This needs more hand-placed songs to settle.
 
 More syllables than notes: before aligning, split the longest notes (a beat or longer, not ending a line) into two equal notes of the same pitch, one per missing syllable. Each split costs 2.0 and is listed in the report. If it would take more than 10% splits, reject the candidate: it was written for different words.
 
