@@ -37,9 +37,12 @@ The work moved fast and may change hands at any moment. Here is where things sta
 - Instruments install with `scripts/setup-sfizz.sh --instruments` (band), `copyist models download keys` / `bells` / `folk` / `electric` / `winds` (organ, harp, tonewheel, celesta, music-box glock, guitars, fiddle, flute, oboe, sax).
 - Run YuE2 with `--device MTL0`.
 - GPU work (takes, planning, training) runs there. The Mac is the owner's laptop, so GPU time comes in windows she agrees to (owner, 2026-10-19).
-  - **Before any GPU job longer than about 15 minutes,** ask her, through the orchestrator if you're a workflow step. Say what the job is, roughly how many hours it needs, and the earliest it could start. For that window she keeps the Mac plugged in with the lid open.
-  - **Agents start and watch the jobs; she doesn't.** One GPU job at a time.
-  - **Every long job must:** resume from checkpoints, pause while the Mac is on battery (`pmset -g batt`) and resume on AC, and keep the Mac awake with `caffeinate -i` while it runs. She also uses Amphetamine to keep it awake.
+  - **One decision per window, then she walks away.** She wants to grant a window ("you've got the GPU for N hours" or "overnight"), leave the laptop plugged in with the lid open in another room, and come back to results. Do not design loops that need her approval every few minutes (owner, 2026-10-20). Batch GPU work so a whole research loop fits in as few windows as possible.
+  - **Ask once, at the start of a window.** Before GPU work longer than about 15 minutes, send one warning-severity request through the orchestrator: what the batch is, total hours, disk, and the earliest start. Bundle the whole batch into that one ask, not one ask per job.
+  - **Agents start and run the jobs unattended; she doesn't watch.** One GPU job at a time, chained in a single script so the batch proceeds without further prompts.
+  - **Do not interrupt mid-window except for a true blocker** that would waste the rest of the window. Routine progress goes to info messages she can read later, never as a question that halts the run.
+  - **Every long job must:** resume from checkpoints, pause while the Mac is on battery (`pmset -g batt`) and resume on AC, keep the Mac awake with `caffeinate -i`, and cap itself to the granted window, checkpointing cleanly if it hits the limit. She also uses Amphetamine to keep it awake.
+  - **The orchestrator manages the LM Studio models:** unload them (`lms unload --all`) before a window to free ~36 GB, and reload on request when she wants to code with a local model.
 - An agent in a cloud container can't use the Mac's GPU. Write the scripts, say how long they take, and leave the run to an agent on the Mac, not to the owner.
 
 **Never commit:** `voices/`, `.cache/` (weights, LoRAs, instruments), `out/`, or anything from the owner's musical *I Left the Lights On* (`lights-on*` folders). The `lightson` LoRA is private and never ships.
