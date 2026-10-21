@@ -6,6 +6,7 @@
 copyist produce songs/amazing-grace.yaml                 # verse 1, 4-bar intro
 copyist produce songs/amazing-grace.yaml --verses 4
 copyist produce songs/amazing-grace.yaml --seed 831001 --device MTL0
+copyist produce songs/amazing-grace.yaml --takes 4 --take try   # four takes in one run: takes/try-1 ... try-4
 ```
 
 Output goes to `out/<song>/production/`:

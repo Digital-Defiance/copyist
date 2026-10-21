@@ -174,16 +174,24 @@ def cmd_produce(args) -> int:
     req = yue.request(song, verses=args.verses, style=args.style, seed=args.seed, intro_bars=args.intro_bars,
                       octave=octave)
     req["output_format"] = "wav16"
-    if args.take and not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_-]{0,63}", args.take):
+    if args.take and not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_-]{0,60}", args.take):
         raise SongError("A take name uses letters, digits, - and _ only.")
-    out = Path(args.out) / song.slug / (f"takes/{args.take}" if args.take else "production")
+    if not 1 <= args.takes <= yue.MAX_TAKES:
+        raise SongError(f"Make 1 to {yue.MAX_TAKES} takes at a time.")
+    root = Path(args.out) / song.slug
+    if args.takes == 1:
+        folders = [root / (f"takes/{args.take}" if args.take else "production")]
+    else:
+        base = args.take or f"seed-{args.seed}"
+        folders = [root / "takes" / f"{base}-{k}" for k in range(1, args.takes + 1)]
     extra = []
     if args.lora:
         req["adapters"], folder = yue.lora_adapters(args.lora)
         extra = ["--adapters", folder]
-    audio = yue.run_yue2cpp(req, out, device=args.device, extra=extra)
+    audios = yue.render_takes(req, folders, device=args.device, extra=extra)
     offset = yue.vocal_offset(song, args.intro_bars)
-    print(f"Wrote {audio}")
+    for audio in audios:
+        print(f"Wrote {audio}")
     print(f"Verse 1's first note is {offset:.2f} seconds into the recording.")
     return 0
 
@@ -562,6 +570,9 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--style", help="style tags; default comes from the song")
     p.add_argument("--device", help="yue-synth device, e.g. MTL0 (or set COPYIST_YUE_DEVICE)")
     p.add_argument("--take", help="keep this render in out/<song>/takes/TAKE/ instead of production/")
+    p.add_argument("--takes", type=int, default=1,
+                   help="how many takes to make, drawn side by side in one run (default 1, up to 9); "
+                        "with several, they go in takes/TAKE-1, TAKE-2, ...")
     p.add_argument("--lora", action="append", metavar="FILE[:SCALE]",
                    help="a YuE2 LoRA (.safetensors) to render with, e.g. a voice trained with scripts/yue-lora; "
                         "repeat for more. Put its trigger word in --style")

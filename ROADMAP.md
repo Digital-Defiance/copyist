@@ -211,6 +211,18 @@ A singer anyone may use commercially that follows the score: HeartMuLa-oss-3B pl
 - [ ] B3 Following: 90% of notes on the three test songs
 - [ ] B4 In Copyist: `produce --singer open`, the page, the download
 
+## HW: Using the whole computer (docs/hardware.md)
+
+CPU, GPU and Neural Engine working at once on the owner's M4 Max; the GPU kept for what only it can do. Still runs on Linux and Windows (CUDA, Vulkan, CPU).
+
+- [x] Plan; band parts side by side; Demucs on CUDA where it can; several takes in one YuE2 run (`produce --takes`, the page's "Takes"); the benchmark script
+- [ ] H1 Measure in one GPU window (`scripts/hardware/bench.py`)
+- [ ] H3 The page's GPU and CPU lanes
+- [ ] H4 pYIN in pieces; band previews in parallel; `copyist doctor`
+- [ ] H2 Batched plans (`yue-plan --batch`), a resident `yue-server`, smaller weights if measured worth it
+- [ ] H5 whisper.cpp with Core ML; HTDemucs on Core ML
+- [ ] H6 MLX against PyTorch MPS for one training step
+
 ## M4 and later
 
 See SPEC.md section 11.

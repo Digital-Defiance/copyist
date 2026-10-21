@@ -362,6 +362,9 @@ function soundTab(song) {
         <div class="field"><label for="strength">Voice strength <span id="strength-out">1.0</span></label>
           <input id="strength" type="range" min="0.4" max="1.4" step="0.1" value="1"></div>
         <div class="field"><label for="verses">Verses</label><select id="verses">${verseOptions}</select></div>
+        <div class="field"><label for="takes">Takes</label><select id="takes">
+          ${[1, 2, 3, 4].map((n) => `<option value="${n}">${n}</option>`).join("")}</select>
+          <p class="hint">Several takes are sung side by side in one run, for not much longer than one.</p></div>
         <div class="field"><label for="seed">Seed</label>
           <div class="row"><input id="seed" type="number" min="0" value="831001"><button type="button" class="small" id="reseed">Another</button></div></div>
         <div class="field wide"><label for="style">Style</label>
@@ -427,6 +430,7 @@ function wireSound(song) {
   $("#make").addEventListener("click", () => start({
     action: "produce", song: song.slug, voice: voice.value || null, strength: Number(strength.value),
     verses: Number($("#verses").value), seed: Number($("#seed").value), style: style.value,
+    takes: Number($("#takes").value),
   }));
 }
 
@@ -869,7 +873,7 @@ function showJob(job) {
 }
 
 // The "Make a take" choices survive the page redrawing after a job.
-const FORM = ["voice", "strength", "verses", "seed", "style"];
+const FORM = ["voice", "strength", "verses", "takes", "seed", "style"];
 let saved = null;
 function saveForm() {
   if (!$("#make")) return;

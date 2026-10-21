@@ -18,6 +18,13 @@ def demucs_binary() -> str | None:
     return str(local) if local.is_file() else None
 
 
+def demucs_device(binary: str | None) -> str:
+    """COPYIST_DEMUCS_DEVICE, else the GPU Demucs's own PyTorch can use (Apple's on a Mac, an NVIDIA
+    one with CUDA elsewhere), else the CPU."""
+    from .compute import python_beside, torch_device
+    return os.environ.get("COPYIST_DEMUCS_DEVICE") or torch_device(python_beside(binary))
+
+
 def vocal_stem(recording: Path, binary: str | None = None, device: str | None = None) -> Path:
     """The vocal of `recording`, separated with Demucs into <folder>/htdemucs/<name>/vocals.wav (kept for reuse)."""
     recording = Path(recording)
@@ -27,7 +34,7 @@ def vocal_stem(recording: Path, binary: str | None = None, device: str | None = 
     binary = binary or demucs_binary()
     if not binary:
         raise SongError("Separating the vocal needs Demucs: run scripts/setup-demucs.sh, or set COPYIST_DEMUCS.")
-    device = device or os.environ.get("COPYIST_DEMUCS_DEVICE") or ("mps" if sys.platform == "darwin" else "cpu")
+    device = device or demucs_device(binary)
     print(f"Separating the vocal with Demucs on {device}...", file=sys.stderr)
     r = subprocess.run([binary, "-d", device, "--two-stems", "vocals", "--other-method", "none",
                         "-o", str(recording.parent), str(recording)])
@@ -47,7 +54,7 @@ def split_vocals(recording: Path, out_dir: Path, binary: str | None = None, devi
     binary = binary or demucs_binary()
     if not binary:
         raise SongError("Separating the vocal needs Demucs: run scripts/setup-demucs.sh, or set COPYIST_DEMUCS.")
-    device = device or os.environ.get("COPYIST_DEMUCS_DEVICE") or ("mps" if sys.platform == "darwin" else "cpu")
+    device = device or demucs_device(binary)
     print(f"Separating the vocal from the band with Demucs on {device}...", file=sys.stderr, flush=True)
     r = subprocess.run([binary, "-d", device, "--two-stems", "vocals", "-o", str(out_dir), str(recording)])
     if r.returncode != 0 or not (vocals.is_file() and rest.is_file()):

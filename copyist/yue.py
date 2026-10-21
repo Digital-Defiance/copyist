@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import json
 import os
+import shutil
 import subprocess
 import sys
 from dataclasses import dataclass
@@ -375,14 +376,10 @@ def song_production_style(song: Song) -> str | None:
 
 # ---------------------------------------------------------------- running YuE2
 
-def run_yue2cpp(req: dict, out_dir: Path, binary: str | None = None, model: str | None = None,
-                vae: str | None = None, device: str | None = None, extra: list[str] | None = None) -> Path:
-    """Render a request with yue2.cpp (`yue-synth`).
+MAX_TAKES = 9                  # takes in one batch (yue2.cpp's own bound on a batch is the memory)
 
-    Paths come from the arguments, then the COPYIST_YUE_* variables, then the
-    desktop app's programs and downloaded models, then the developer copies in
-    .cache/ (copyist/paths.py).
-    """
+
+def _synth_setup(binary: str | None, model: str | None, vae: str | None, device: str | None):
     from . import models, paths
     binary = binary or (str(p) if (p := paths.find_program("yue-synth", "COPYIST_YUE_SYNTH")) else None)
     model = model or (str(p) if (p := models.path_of("yue2")) else None)
@@ -394,6 +391,25 @@ def run_yue2cpp(req: dict, out_dir: Path, binary: str | None = None, model: str 
     if not (model and vae):
         raise SongError("The singer isn't downloaded yet: run `copyist models download singer` (or use the page), "
                         "or set COPYIST_YUE_MODEL and COPYIST_YUE_VAE (see docs/production.md).")
+    return binary, model, vae, device
+
+
+def _run_synth(cmd: list[str], binary: str) -> int:
+    try:
+        return subprocess.run(cmd).returncode
+    except FileNotFoundError:
+        raise SongError(f"Can't run {binary}. See docs/production.md.") from None
+
+
+def run_yue2cpp(req: dict, out_dir: Path, binary: str | None = None, model: str | None = None,
+                vae: str | None = None, device: str | None = None, extra: list[str] | None = None) -> Path:
+    """Render a request with yue2.cpp (`yue-synth`).
+
+    Paths come from the arguments, then the COPYIST_YUE_* variables, then the
+    desktop app's programs and downloaded models, then the developer copies in
+    .cache/ (copyist/paths.py).
+    """
+    binary, model, vae, device = _synth_setup(binary, model, vae, device)
     out_dir.mkdir(parents=True, exist_ok=True)
     req_path = out_dir / "yue-request.json"
     req_path.write_text(json.dumps(req, ensure_ascii=False, indent=1), encoding="utf-8")
@@ -405,12 +421,70 @@ def run_yue2cpp(req: dict, out_dir: Path, binary: str | None = None, model: str 
     cmd += extra or []
     where = f" on {device}" if device else ""
     print(f"Rendering with YuE2 (yue2.cpp){where}...", file=sys.stderr)
-    try:
-        r = subprocess.run(cmd)
-    except FileNotFoundError:
-        raise SongError(f"Can't run {binary}. See docs/production.md.") from None
-    if r.returncode != 0:
-        raise RuntimeError(f"yue-synth failed (exit {r.returncode}).")
+    code = _run_synth(cmd, binary)
+    if code != 0:
+        raise RuntimeError(f"yue-synth failed (exit {code}).")
     if not audio.is_file():
         raise RuntimeError(f"yue-synth finished without writing {audio.name}.")
     return audio
+
+
+def take_request(req: dict, k: int) -> dict:
+    """The request for take k of a set (k from 0): the performance drawn with `lm_seed + k`, the same
+    noise seed. Rendered alone, it gives the same take the batch gave (yue2.cpp's song i of a batch
+    draws with lm_seed + i)."""
+    one = {key: v for key, v in req.items() if key not in ("lm_batch_size", "synth_batch_size")}
+    one["lm_seed"] = int(req["lm_seed"]) + k
+    return one
+
+
+def render_takes(req: dict, folders: list[Path], binary: str | None = None, model: str | None = None,
+                 vae: str | None = None, device: str | None = None, extra: list[str] | None = None) -> list[Path]:
+    """Several takes of one request, each in its own folder (production.<ext>, yue-request.json, and
+    yue2.cpp's replay request as replay.json when it writes one).
+
+    The takes are drawn side by side in one run (`lm_batch_size`): generating a take is limited by
+    memory bandwidth, so a batch costs much less than one run per take (docs/hardware.md). If the
+    batch fails (an older yue2.cpp, or not enough memory), each take is rendered on its own instead,
+    with the same seeds, so the takes are the same either way.
+    """
+    if not 1 <= len(folders) <= MAX_TAKES:
+        raise SongError(f"Make 1 to {MAX_TAKES} takes at a time.")
+    if len(folders) == 1:
+        return [run_yue2cpp(take_request(req, 0), folders[0], binary, model, vae, device, extra)]
+    binary, model, vae, device = _synth_setup(binary, model, vae, device)
+    n = len(folders)
+    work = folders[0].parent / f".batch-{folders[0].name}"
+    work.mkdir(parents=True, exist_ok=True)
+    batch = dict(take_request(req, 0), lm_batch_size=n, synth_batch_size=1)
+    req_path = work / "yue-request.json"
+    req_path.write_text(json.dumps(batch, ensure_ascii=False, indent=1), encoding="utf-8")
+    ext = ".wav" if str(req.get("output_format", "")).startswith("wav") else ".mp3"
+    target = work / f"production{ext}"
+    cmd = [binary, "--model", model, "--vae", vae, "--request", str(req_path), "--out", str(target)]
+    if device:
+        cmd += ["--device", device]
+    cmd += extra or []
+    where = f" on {device}" if device else ""
+    print(f"Rendering {n} takes in one YuE2 run (yue2.cpp){where}...", file=sys.stderr)
+    code = _run_synth(cmd, binary)
+    # yue-synth numbers a batch's tracks song then variation: production00, production10, ...
+    tracks = [work / f"production{k}0{ext}" for k in range(n)]
+    if code != 0 or not all(t.is_file() for t in tracks):
+        print(f"The batch didn't finish (exit {code}); rendering the {n} takes one at a time.", file=sys.stderr)
+        shutil.rmtree(work, ignore_errors=True)
+        return [run_yue2cpp(take_request(req, k), folder, binary, model, vae, device, extra)
+                for k, folder in enumerate(folders)]
+    out = []
+    for k, (track, folder) in enumerate(zip(tracks, folders)):
+        folder.mkdir(parents=True, exist_ok=True)
+        audio = folder / f"production{ext}"
+        shutil.move(str(track), audio)
+        replay = track.with_suffix(".json")
+        if replay.is_file():
+            shutil.move(str(replay), folder / "replay.json")
+        (folder / "yue-request.json").write_text(json.dumps(take_request(req, k), ensure_ascii=False, indent=1),
+                                                encoding="utf-8")
+        out.append(audio)
+    shutil.rmtree(work, ignore_errors=True)
+    return out

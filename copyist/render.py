@@ -13,6 +13,7 @@ import subprocess
 import tempfile
 import urllib.request
 import wave
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -171,7 +172,7 @@ def sampled_plan(parts, style: str | None) -> tuple[dict[str, str], str]:
 def render_band(midi_path: Path, wav_path: Path, style: str | None = None, cache_dir: Path = Path(".cache"),
                 stems_dir: Path | None = None) -> BandAudio:
     """The arrangement as audio: sampled instruments when they're installed, else the SoundFont."""
-    from . import instruments, mixdown
+    from . import compute, instruments, mixdown
     with tempfile.TemporaryDirectory(prefix="copyist-parts-") as tmp:
         work = Path(tmp)
         parts = split_parts(midi_path, (stems_dir or work) / "midi")
@@ -181,12 +182,20 @@ def render_band(midi_path: Path, wav_path: Path, style: str | None = None, cache
         if not why_not:
             try:
                 program = sfizz_program()
-                audio = {}
-                for part, midi in parts.items():
+
+                def play(part: str) -> Path:
                     shift = instruments.play_shift(plan[part])
-                    play = transpose_midi(midi, shift, work / f"{part}-play.mid") if shift else midi
-                    raw = play_part(program, instruments.sfz_path(plan[part]), play, work / f"{part}.wav")
-                    audio[part], sr = mixdown.read(raw)
+                    midi = parts[part]
+                    if shift:
+                        midi = transpose_midi(midi, shift, work / f"{part}-play.mid")
+                    return play_part(program, instruments.sfz_path(plan[part]), midi, work / f"{part}.wav")
+
+                # Each part is its own sfizz process, so they play side by side on the CPU's cores.
+                with ThreadPoolExecutor(max_workers=compute.cpu_workers(len(parts))) as pool:
+                    played = dict(zip(parts, pool.map(play, parts)))
+                audio = {}
+                for part in parts:
+                    audio[part], sr = mixdown.read(played[part])
                     if sr != SAMPLE_RATE:
                         raise AudioUnavailable(f"sfizz played the {part} part at {sr} Hz, not {SAMPLE_RATE}")
                 balance, reverb = mix_levels(plan)

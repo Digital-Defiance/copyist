@@ -72,5 +72,6 @@ Downloaded pieces have their own terms (YuE2 CC BY-NC 4.0 with creator sell-thro
 
 - [docs/desktop-app.md](docs/desktop-app.md) — Homebrew, packaging, first run
 - [docs/web.md](docs/web.md) — the page inside the app
+- [docs/hardware.md](docs/hardware.md) — using the CPU, GPU and Neural Engine together; Linux and Windows
 - [docs/melody-writing.md](docs/melody-writing.md) — write / rewrite / refit
 - [SPEC.md](SPEC.md) · [ROADMAP.md](ROADMAP.md) · [AGENTS.md](AGENTS.md) · [DECISIONS.md](DECISIONS.md)

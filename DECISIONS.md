@@ -2,6 +2,13 @@
 
 Newest first. One entry per decision: what, why, and what we gave up.
 
+## 2026-10-21 (using the whole computer, docs/hardware.md)
+
+- **Several takes come from one YuE2 run.** yue2.cpp draws song *i* of a batch (`lm_batch_size`) with `lm_seed + i`, and writing a take is limited by memory bandwidth, so a batch should cost far less than one run a take (H1 measures it). `copyist produce --takes N` and the page's "Takes" (1-4; the command line allows 9) use it. Each take gets its own folder, its own request (the batch's seeds, so it renders alone the same) and yue2.cpp's replay request. If the batch fails, each take is rendered alone with the same seeds. Gave up: nothing; one take is unchanged.
+- **CPU work runs side by side, up to the performance cores.** `copyist/compute.py` decides (`COPYIST_JOBS` overrides). The band's parts were played one after another; each is its own sfizz process, so they now play at once. Gave up: peak memory, several instruments' samples loaded at once.
+- **Demucs uses an NVIDIA GPU off the Mac.** It always chose the CPU off a Mac. Copyist now asks Demucs's own PyTorch whether CUDA works, since a PyTorch installed without CUDA can't use the GPU even when one is there. Gave up: a second or two to ask, off a Mac.
+- **The plan's order: measure, then the levers yue2.cpp already has, the page's lanes, the CPU, the Neural Engine, training.** Rejected: YuE2 on the Neural Engine (a 3B language model belongs on the GPU) and porting yue2.cpp to MLX (ggml already covers Metal, CUDA and Vulkan). Cross-platform rule: runtimes with every backend (ggml, ONNX Runtime, PyTorch), a CPU fallback with CPU tests, and an environment override for every choice.
+
 ## 2026-10-20 (fixes from Claude's review)
 
 - **`copyist import` keeps each verse's words on their notes.** It wrote every verse as plain hyphenated words, without the holds, so no imported song with a melisma passed `lyrics-fit` (all five tried from music21's corpus failed, and Amazing Grace didn't survive export and import). Each verse is now written note by note: a syllable, a `_` hold (a note the verse doesn't sing, after a syllable in the same phrase) or a `*` skip (after a rest, or before the verse's first word). Where a verse is silent for 4 notes or more while another sings, it shares that verse's words: a refrain printed once. A choir score's tune is its top soprano: parts with about as many words as the most are candidates, then a part named like a voice, then the highest soprano, then the highest part. This refines the earlier entry today (the part with the most words), which picked the bass of "Lift Every Voice and Sing". Gave up: repeats and endings are still played in a row (a TASKS item).

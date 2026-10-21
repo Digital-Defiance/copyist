@@ -180,6 +180,22 @@ For transcribed and written songs. Both modes ship; neither is a consolation pri
 - [ ] MusicXML edit round-trip (import edits without losing Copyist fields)
 - [ ] "Try another version of this bar" uses the melody writer on one section
 
+## 3j. Using the whole computer (ROADMAP milestone HW, plan: docs/hardware.md)
+
+CPU, GPU and Neural Engine at once on the M4 Max; Linux and Windows keep working (CUDA, Vulkan, CPU). GPU steps are run in a window by an agent on the Mac.
+
+- [x] `copyist/compute.py`: CPU jobs at once (`COPYIST_JOBS`, default the performance cores) and the PyTorch device a tool's own environment can use (2026-10-21)
+- [x] The band's parts play side by side, one sfizz process each (2026-10-21)
+- [x] Demucs uses CUDA off a Mac when its own PyTorch can; it always chose the CPU there (2026-10-21)
+- [x] Several takes in one YuE2 run: `copyist produce --takes N` (`lm_batch_size`), the page's "Takes" (1-4); each take in its own folder with its request and yue2.cpp's replay; a failed batch renders the takes one at a time with the same seeds (2026-10-21)
+- [x] `scripts/hardware/bench.py`: one unattended run (about 10-15 min on the Mac; keeps it awake, waits on battery) timing takes alone and batched, variations, plans, Demucs GPU/CPU, Whisper, pYIN, the band one part at a time and side by side (2026-10-21)
+- [ ] H1: run the benchmark in a GPU window; put the numbers in docs/hardware.md. Check that take 2 of a batch matches it rendered alone
+- [ ] H3: the page's GPU lane (one job) and CPU lane (several)
+- [ ] H4: pYIN in overlapping pieces on all performance cores (`copyist follow`, the voice prompt; the open transcriber is Kiro's call); band previews of write candidates and gallery styles in parallel; `copyist doctor`
+- [ ] H2: `yue-plan --batch N` (upstream patch to yue2.cpp) for `copyist write`; `yue-server --keep-loaded` behind the GPU lane if loading shows in H1; Q5_K/Q4_K weights only if H1 shows the GPU is the bottleneck, judged by `follow` and `hear` on the same seeds
+- [ ] H5: whisper.cpp (Core ML encoder on the Neural Engine; CUDA/Vulkan elsewhere) with large-v3-turbo for hearing words; then HTDemucs on Core ML (schism-audio, MIT), checked against its test vectors
+- [ ] H6: one LoRA training step in MLX against PyTorch MPS, before any port
+
 ## 3h. The open singer, plan B (ROADMAP milestone OS, spec: docs/open-singer.md)
 
 A singer anyone may use commercially that follows Copyist's score: HeartMuLa-oss-3B (Apache-2.0) plus MuLaCover's lead-sheet conditioning (Apache-2.0 code), trained by us on data with clean rights.

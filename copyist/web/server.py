@@ -28,6 +28,7 @@ STATIC = Path(__file__).parent / "static"
 AUDIO = (".wav", ".mp3", ".flac", ".m4a", ".ogg")
 SLUG = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.-]{0,99}")
 TAKE = re.compile(r"[A-Za-z0-9][A-Za-z0-9_-]{0,63}")
+MAX_PAGE_TAKES = 4             # takes from one press of "Make the take" (memory: one KV cache each)
 UPLOAD_LIMIT = 400 * 1024 * 1024                 # a long lossless recording, with room to spare
 mimetypes.add_type("font/woff2", ".woff2")
 mimetypes.add_type("text/markdown", ".md")
@@ -773,12 +774,17 @@ def job_args(project: Project, body: dict) -> tuple[str, str | None, list[str]]:
         seed = int(body.get("seed") or 831001)
         if not (1 <= verses <= 20 and 0 <= seed < 2**31):
             raise ValueError("Verses or seed out of range.")
+        takes = int(body.get("takes") or 1)
+        if not 1 <= takes <= MAX_PAGE_TAKES:
+            raise ValueError(f"Make 1 to {MAX_PAGE_TAKES} takes at a time.")
         args += ["--verses", str(verses), "--seed", str(seed)]
+        if takes > 1:
+            args += ["--takes", str(takes)]
         style = (body.get("style") or "").strip()
         if style:
             args += ["--style", style[:1500]]
         args += voice_args(project, body)
-        return "Making a take", slug, args
+        return ("Making a take" if takes == 1 else f"Making {takes} takes"), slug, args
     if action == "follow":
         take = body.get("take")
         rec = next((r for r in project.recordings(slug) if r["kind"] == "take" and r["name"] == take), None)

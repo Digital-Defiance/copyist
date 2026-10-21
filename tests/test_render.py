@@ -16,8 +16,10 @@ from copyist import instruments, mixdown, render
 FAKE_SFIZZ = textwrap.dedent('''\
     #!{python}
     """Stands in for sfizz_render: a second of a tone per note in the MIDI, and a log of what it was asked."""
-    import json, sys, wave
+    import json, os, sys, time, wave
     import numpy as np
+    start = time.time()
+    time.sleep(float(os.environ.get("FAKE_SFIZZ_SLEEP", "0")))
     args = dict(zip(sys.argv[1::2], sys.argv[2::2]))
     with open(args["--wav"] + ".args.json", "w") as f:
         json.dump(args, f)
@@ -27,6 +29,9 @@ FAKE_SFIZZ = textwrap.dedent('''\
     with wave.open(args["--wav"], "wb") as w:
         w.setnchannels(2); w.setsampwidth(2); w.setframerate(sr)
         w.writeframes(np.repeat(tone, 2).tobytes())
+    if os.environ.get("FAKE_SFIZZ_LOG"):
+        with open(os.environ["FAKE_SFIZZ_LOG"], "a") as f:
+            f.write(f"{{start}} {{time.time()}}\\n")
 ''')
 
 
@@ -105,6 +110,23 @@ class RenderTests(unittest.TestCase):
         summary = json.loads(json.dumps(audio.summary()))
         self.assertEqual([p["part"] for p in summary["parts"]], ["melody", "piano", "bass", "drums"])
         self.assertTrue(any("Salamander" in line for line in audio.report_lines()))
+
+    def test_parts_play_side_by_side(self):
+        def spans(jobs: str) -> list[tuple[float, float]]:
+            log = self.tmp / f"sfizz-{jobs}.log"
+            with mock.patch.dict(os.environ, {"FAKE_SFIZZ_SLEEP": "0.4", "FAKE_SFIZZ_LOG": str(log),
+                                              "COPYIST_JOBS": jobs}):
+                audio = render.render_band(self.midi, self.tmp / f"band-{jobs}.wav", "waltz")
+            self.assertEqual(audio.engine, "sampled")
+            return [tuple(map(float, line.split())) for line in log.read_text().splitlines()]
+
+        def overlapping(s: list) -> bool:
+            return any(a0 < b1 and b0 < a1 for i, (a0, a1) in enumerate(s) for b0, b1 in s[i + 1:])
+
+        together, one_by_one = spans("4"), spans("1")
+        self.assertEqual((len(together), len(one_by_one)), (4, 4))
+        self.assertTrue(overlapping(together))
+        self.assertFalse(overlapping(one_by_one))
 
     def test_without_sfizz_the_soundfont_plays_and_says_why(self):
         with mock.patch.dict(os.environ, {"COPYIST_SFIZZ": ""}), \

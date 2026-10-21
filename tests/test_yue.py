@@ -171,6 +171,82 @@ class RuntimeTests(unittest.TestCase):
         self.assertEqual(request["adapters"], [{"name": "voice.safetensors", "scale": 0.8}])
         self.assertEqual(request["style"], "lightson, a waltz")
 
+    BATCH_SYNTH = (
+        "#!/usr/bin/env python3\n"
+        "# Stands in for yue-synth: one track per song of the batch, numbered as yue2.cpp numbers them.\n"
+        "import json, os, sys\n"
+        "from pathlib import Path\n"
+        "args = sys.argv[1:]\n"
+        "req = json.loads(Path(args[args.index('--request') + 1]).read_text())\n"
+        "with open(Path(sys.argv[0]).with_name('calls.txt'), 'a') as f:\n"
+        "    f.write(json.dumps({'lm_batch_size': req.get('lm_batch_size', 1), 'lm_seed': req['lm_seed']}) + '\\n')\n"
+        "out = Path(args[args.index('--out') + 1])\n"
+        "n = req.get('lm_batch_size', 1)\n"
+        "if n > 1 and os.environ.get('FAKE_BATCH_FAILS'):\n"
+        "    sys.exit(3)\n"
+        "for i in range(n):\n"
+        "    track = out.with_name(out.stem + f'{i}0' + out.suffix) if n > 1 else out\n"
+        "    track.write_bytes(b'RIFF' + str(req['lm_seed'] + i).encode())\n"
+        "    track.with_suffix('.json').write_text(json.dumps({'lm_seed': req['lm_seed'] + i, 'seed': req['seed']}))\n"
+    )
+
+    def batch_env(self) -> tuple[Path, dict]:
+        tmp = Path(tempfile.mkdtemp(prefix="copyist-yue-batch-"))
+        binary = tmp / "yue-synth"
+        binary.write_text(self.BATCH_SYNTH, encoding="utf-8")
+        binary.chmod(binary.stat().st_mode | stat.S_IEXEC)
+        (tmp / "model.gguf").write_bytes(b"m")
+        (tmp / "vae.gguf").write_bytes(b"v")
+        return tmp, {"COPYIST_YUE_SYNTH": str(binary), "COPYIST_YUE_MODEL": str(tmp / "model.gguf"),
+                     "COPYIST_YUE_VAE": str(tmp / "vae.gguf")}
+
+    def calls(self, tmp: Path) -> list[dict]:
+        return [json.loads(line) for line in (tmp / "calls.txt").read_text().splitlines()]
+
+    def test_several_takes_are_drawn_in_one_run(self):
+        tmp, env = self.batch_env()
+        out = tmp / "out"
+        with mock.patch.dict(os.environ, env):
+            code = main(["produce", str(ROOT / "songs" / "amazing-grace.yaml"), "--takes", "3", "--take", "t",
+                         "--seed", "100", "--out", str(out)])
+        self.assertEqual(code, 0)
+        self.assertEqual(self.calls(tmp), [{"lm_batch_size": 3, "lm_seed": 100}])
+        takes = out / "amazing-grace" / "takes"
+        self.assertEqual(sorted(p.name for p in takes.iterdir()), ["t-1", "t-2", "t-3"])
+        for k in (1, 2, 3):
+            folder = takes / f"t-{k}"
+            self.assertEqual((folder / "production.wav").read_bytes(), b"RIFF" + str(99 + k).encode())
+            req = json.loads((folder / "yue-request.json").read_text())
+            self.assertEqual((req["lm_seed"], req["seed"]), (99 + k, 100))   # rendered alone, the same take
+            self.assertNotIn("lm_batch_size", req)
+            self.assertTrue((folder / "replay.json").is_file())
+
+    def test_a_batch_that_fails_renders_each_take_alone_with_the_same_seeds(self):
+        tmp, env = self.batch_env()
+        out = tmp / "out"
+        with mock.patch.dict(os.environ, dict(env, FAKE_BATCH_FAILS="1")):
+            code = main(["produce", str(ROOT / "songs" / "amazing-grace.yaml"), "--takes", "2", "--seed", "7",
+                         "--out", str(out)])
+        self.assertEqual(code, 0)
+        self.assertEqual(self.calls(tmp), [{"lm_batch_size": 2, "lm_seed": 7}, {"lm_batch_size": 1, "lm_seed": 7},
+                                           {"lm_batch_size": 1, "lm_seed": 8}])
+        takes = out / "amazing-grace" / "takes"
+        self.assertEqual(sorted(p.name for p in takes.iterdir()), ["seed-7-1", "seed-7-2"])
+        self.assertEqual((takes / "seed-7-2" / "production.wav").read_bytes(), b"RIFF8")
+
+    def test_the_page_asks_for_up_to_four_takes(self):
+        from copyist.web.server import Project, job_args
+        root = Path(tempfile.mkdtemp(prefix="copyist-takes-web-"))
+        (root / "songs").mkdir()
+        (root / "songs" / "amazing-grace.yaml").write_text((ROOT / "songs" / "amazing-grace.yaml").read_text())
+        project = Project(root)
+        label, _, args = job_args(project, {"action": "produce", "song": "amazing-grace", "takes": 3})
+        self.assertEqual(label, "Making 3 takes")
+        self.assertEqual(args[args.index("--takes") + 1], "3")
+        self.assertNotIn("--takes", job_args(project, {"action": "produce", "song": "amazing-grace"})[2])
+        with self.assertRaises(ValueError):
+            job_args(project, {"action": "produce", "song": "amazing-grace", "takes": 5})
+
     def test_a_missing_lora_is_refused(self):
         with self.assertRaises(SongError):
             yue.lora_adapters(["/nowhere/voice.safetensors"])
