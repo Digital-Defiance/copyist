@@ -21,7 +21,33 @@ Newest first. One entry per decision: what, why, and what we gave up.
 - **A song file holds a key change as one key signature, with an accidental on every note the change alters; the report says in which bar the key changes.** This is the song's `key:` (the key at the first sung note), and the format stays `copyist-song/0`, since SPEC §4's ABC subset never had fields. Inline `[K:…]` in the melody was the preferred form, but it fails at the first stage. music21 10.5.0 ignores it, so the notes after it sound in the old key (F and C where F♯ and C♯ were meant), the `key` check passes, and the YuE2 export writes the same wrong notes. A `K:` line in the melody plays the right pitches, but the `bars` check counts it as a note, and music21 keeps a single key signature either way, so the page never shows the change. `copyist write` and `copyist transcribe` both write the change this way; SheetSage's joined short bars keep a `K:` line at the change, so the report can name the bar. Gave up: a change of key signature on the page.
 - **evaluate.py leaves a draft that already lines up where it is, and looks past ±14 s where same-pitch onsets agree.** `best_alignment` searched every shift within ±14 s and kept the first best. SheetSage2 keeps intro bars, and its best shifts on the five takes were already −8.4 to −11.5 s, so a longer intro would have been mis-scored. Identical inputs scored chords 0.93, not 1.00, because the first tie sat at +0.15 s and ratio 0.98, the edge of the onset tolerance. Now, in order: a draft that matches every true note at 0 s and ratio 1 stays there. Then comes the same grid as before. Then, for each ratio, every pair of a true and a drafted note on the same pitch votes for the shift that would line them up, and the three best-voted places outside the window are tried. One wins only by matching more notes. Then the same refine. Widening the window was rejected: its cost grows with the length of the take, and new ties could land elsewhere and move chord rows. Seeding from the first note was rejected too, because a stray intro note would mislead it. It's deterministic and cheap: on the ten saved neural and SheetSage2 drafts it makes 1.7–3.4% more match calls and takes at most 5% longer, with the same result as the old search on all ten. Every benchmark row is unchanged. Gave up: ties still go to the first shift found, at the edge of the tolerance, because centring them would move every chord row (a TASKS follow-up).
 
+## 2026-10-20 (stage 0a closed under option B; the reset; how the work is run)
+
+- **Stage 0a is closed under its pre-registered option B. This supersedes the "30-second chunks" entry below.** Owner's call.
+  - **Why:** gate G0 failed. On SheetSage2's own published pop test (RWC-Pop), its official model on this Mac scored 21.70 vocal / 18.79 full on whole songs, and 75.72 [72.94, 78.34] / 62.79 [60.17, 65.31] in 30-second chunks, against a published 82.51 / 75.29. The two-song probe that suggested chunks recover the published level was not representative.
+  - **What follows:** SheetSage2 is not validated locally, so no Copyist-vs-SheetSage2 claim is made. Its published 82.51 / 75.29 are external bars to beat. No contact with its authors, no shorter-chunk tests, no more SheetSage runs.
+  - **Kept as provenance:** parent branch `stage0-scoreboard` (2dfeb55); in open-transcriber, branch `archive/stage0a` and tag `stage0a-closed-option-b` (aa88f5a), and the pre-registration tag `judge-prereg-0a` (8f14013).
+  - **What it taught:** on real recordings with strict scoring, the current engines are far behind. Provisional Copyist-only diagnostics on RWC-Pop, pitch-class note F1 at 50 ms: raw Basic Pitch 28.2, `open` 17.8, `neural` 14.0. Today's clean-up and snap rules lose accuracy on real music, and the five YuE2 takes hid it.
+  - **Gave up:** a local head-to-head with SheetSage2 for now.
+- **The transcriber is rebuilt as OT2, a new engine beside `open`, behind a small typed interface.** `open` stays unchanged as the fallback until OT2 beats it on frozen real recordings. The plan comes from the 2026-10-20 process reset (local report `.agents/tasks/open-transcriber-process-reset-2026-10-20/report.md`):
+  - one canonical transcription document, with heard time and written time kept apart;
+  - product, engine, training, test and private-reconstruction code kept separate;
+  - a short contest to pick the listening model before generating big training sets;
+  - the transcribe → render → measure → refine loop, built and proven on public-domain songs;
+  - `copyist-song/1` designed before it's built.
+
+  Lights On starts after a readiness gate: OT2 beats `open` on real dev recordings, and the loop improves known songs. It doesn't wait until Copyist beats SheetSage2 everywhere. Gave up: patching the current pipeline further.
+- **SheetSage2 stays in Copyist as an optional engine for other people until Copyist's own engine beats it.** Owner's call. It's never used on her songs, and never as labels, a teacher or a tuning signal.
+- **The owner is the only person on the project, and her AI credits are limited.** Owner's call.
+  - Every decision has to be makeable by AI or software, and reviews are done by AI agents, never by people.
+  - Credits go to a few focused agent tasks with tests as the judge, not to many parallel reviewers. One AI review is enough except for the riskiest designs.
+  - Long work runs as unattended scripts on the Mac, which cost no credits, and an agent reads the results afterwards.
+  - Routine, well-specified coding can move to local models (LM Studio on the Mac, through an open-source command-line agent), behind the same tests.
+  - Gave up: belt-and-braces multi-reviewer gates.
+
 ## 2026-10-20 (SheetSage2 is run in 30-second chunks for the judge)
+
+_Superseded the same day by the option-B entry above: the full 100-song chunk run missed G0._
 
 - **SheetSage2, the yardstick, is run on 30-second excerpts, not whole songs.** Owner's call, on the orchestrator's recommendation.
   - **Why:** on its own published pop test (RWC-Pop), the whole-song official model scored only 21.7% vocal note F1 against a published 82.5%. The cause, found during stage 0a, is that SheetSage2's beat track is about 98% right for the first 30 s of an input and then drifts, so its notes slide off the audio. Feeding it 30-second excerpts and stitching the labels restores the published level (two songs scored 81.6 and 84.0, against 33.0 and 27.7 whole-song).

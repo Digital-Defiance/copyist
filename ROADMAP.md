@@ -58,7 +58,8 @@ Take the first unchecked item in the current milestone. Tick items when they're 
   - **The song format:** `copyist-song/1` (tuplets, key, meter and tempo changes, repeats, a second vocal line).
   - **Budget:** $0.
   - **The owner's time:** nothing waits on it.
-- [ ] Stage 0, the judge: 0a, the first honest scoreboard against SheetSage2 on RWC and Creative Commons karaoke songs (under way), then 0b, the frozen public-domain set COTB-v1 and strict notation metrics
+- [x] Stage 0a closed under option B (2026-10-20): SheetSage2 not reproducible locally; its published numbers are external bars
+- [ ] The reset (TASKS §7): OT2 design record and guard tests, the canonical transcription document and engine interface, the listening-model contest, the reconstruction loop on public-domain songs, then OT2's first heads and decoder; COTB-v1 and the strict notation metrics grow alongside
 - [ ] Stage 1, rhythm and notation: global tempo and meter, a tuplet-aware note grid, key changes, and `copyist-song/1` with a converter
 - [ ] Stages 2–4: the encoder bake-off and trained heads; real data, a symbolic prior and the repeats vote; then the one-time test. About 2.5–4 months to the test, depending on the GPU windows the owner's laptop can give (200–350 GPU hours)
 - [ ] Repeats vote, per-doubt A/B by ear (SPEC 12.2a)
