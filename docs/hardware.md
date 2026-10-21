@@ -48,7 +48,7 @@ The GPU needs a window and draws the most power. The CPU and the Neural Engine a
 What that means:
 - **The render is the cost, and it doesn't batch.** In a batch, the performances are drawn together: 9.3 s for four, against 6.9 s for one, as expected of a stage limited by memory bandwidth. But each take's 32 render steps still run one take at a time, and the GPU is already full during them: 4 variations in one graph took 3.7 s a step, exactly four times one. So 4 takes in one run save only a fifth.
 - **Loading is small.** Keeping YuE2 loaded (`yue-server --keep-loaded`) would save about half a second a take once the files are in the disk cache.
-- **The GPU slows as it heats.** A render step took 0.80 s at the start of the first take and 0.97 s by its end, and 0.95-1.02 s through the batches: about 20% slower under sustained load. High Power Mode (System Settings → Battery → Energy Mode, on AC) may hold the speed; the step times in the log show it.
+- **The GPU slows as it heats.** A render step took 0.80 s at the start of the first take and 0.97 s by its end, and 0.95-1.02 s through the batches: about 20% slower under sustained load, with the Mac's energy settings already at their highest (owner, 21 October). That's the cost of heat on a laptop; long batches should expect it.
 - **Batched takes are the same takes.** Take 2 of a batch has exactly the performance (the same codes) as that take rendered alone; only the last bits of the audio differ.
 - **The CPU steps are already quick on this Mac.** Whisper, pYIN and the band take seconds. Demucs may even be faster on the CPU, which would keep the GPU free; that needs a warm measurement. Demucs also contacts the Hugging Face Hub on every run, even with its model downloaded.
 
