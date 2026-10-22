@@ -285,6 +285,8 @@ Many songs already exist as recordings (for example, songs made with Suno or Moz
 
 **The simplest readable score that sounds like the recording.** Not every vibrato wobble written as 32nd notes: what a professional chart would contain. Lead sheet (melody, lyrics, chords), a written bass line, a drum groove with fills, and comping written as chord symbols with rhythm slashes, plus written lines only where a part is distinctive.
 
+**The bar (owner, 22 October 2026): the best in the field for copyists.** Better than anything a copyist can use, shown with numbers on public test sets next to the strongest systems' published numbers, and under licences that let people sell what they make. The plan is in docs/transcriber-plan.md; §12.6 and §12.7 summarise how it's measured and trained.
+
 ### 12.2 Pipeline
 
 1. **Separate** the mix into stems with Demucs (vocals, drums, bass, piano, guitar, other).
@@ -325,6 +327,26 @@ Demucs (separation), Basic Pitch (notes), torchcrepe or pYIN (vocal pitch), Beat
 ### 12.5 Rights
 
 Only transcribe recordings the user owns or has rights to. The fitted score of someone else's song is still their song.
+
+### 12.6 How it's measured
+
+One scoreboard, per part and per test set (docs/transcriber-plan.md, "How we measure"):
+
+- **Sets:** real songs for development (RWC-other dev, karaoke dev; non-commercial, testing only); YuE2 takes of public-domain songs, the domain closest to AI-made demos; Copyist's own renders with every part known; the Slakh2100 test split for the band's parts; later COTB, public-domain recordings with checked truth, used once per candidate.
+- **Measures:**
+  - the melody, strict (note start within 50 ms, heard time) and at lead-sheet level (the right note in the right place in the bar);
+  - chords by duration-weighted root and quality;
+  - every other part by note-start F1 per instrument;
+  - the score itself: meter, key, bar lines, quantised notes, and syllables on the right notes.
+- **Yardsticks, testing only:** MuScriptor, YourMT3+, SheetSage2 and GAME, on public sets, never on the owner's songs.
+
+### 12.7 The trained transcriber
+
+Copyist's own model, MIT code and MIT weights, trained on the M4 Max in GPU windows:
+
+- **Data:** Copyist's songs played part by part with sampled instruments in many styles and mixes, with YuE2 singing the melody. A take is kept only where it follows its score, and its notes are moved to where they were sung. Plus VocalSet. Every label is exact because the score came first.
+- **Teacher:** play the transcription back with Copyist, compare it with the recording, and reward getting closer. This needs no hand-made answers, and the same check shows a copyist which bars to look at.
+- **Never trained on:** `songs/`, the round-trip cases, the owner's songs, non-commercial test sets, or any yardstick's output.
 
 ## 13. In a browser
 

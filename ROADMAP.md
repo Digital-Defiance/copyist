@@ -36,6 +36,19 @@ Take the first unchecked item in the current milestone. Tick items when they're 
 
 ## MT: Transcription from recordings (SPEC section 12)
 
+**Direction from 22 October 2026 (owner): the best song-to-score transcriber for copyists** (plan: [docs/transcriber-plan.md](docs/transcriber-plan.md)). The lead sheet and every part of the band, judged as a score, commercially usable, with the numbers next to the field's on public test sets. Three bets: song to score, Copyist as the training-data factory, and play-back-and-compare as the teacher. The encoder bake-off is parked.
+
+- [ ] Run jobs on the Mac itself from the cloud agent (with the GPU, in granted windows)
+- [ ] Scoreboard v1: the vocal line on real dev, karaoke dev and the YuE2 takes, today's engines plus the measured timing correction
+- [ ] GAME measured on the scoreboard (testing only until its weights' licence is settled)
+- [ ] Yardsticks on public sets: MuScriptor, YourMT3+ (testing only); chords, bass and other parts scored on Copyist renders and the Slakh test split
+- [ ] Data engine v1: about 1,000 Copyist songs, every part played with sampled instruments, YuE2 singing kept where it follows its score
+- [ ] Our first trained model: the voice, then every part (MIT weights)
+- [ ] Play-back-and-compare post-training
+- [ ] The claim: public-set numbers next to MuScriptor, YourMT3+ and SheetSage2, and the data-engine recipe written up
+
+Earlier work on this milestone:
+
 - [x] Stem separation with Demucs (on the Mac, `-d mps --two-stems vocals`): 141 songs separated into `out/separated/htdemucs/<song>/vocals.wav` on 2026-10-16; `copyist follow --separate` caches the vocal beside each take
 - [x] Beat, meter (3/4, 4/4, 6/8, 12/8), key and chord detection (`copyist/transcribe.py`, docs/transcribing.md)
 - [x] Vocal melody: pitch contour → notes on the beat grid, tidied and settled by musical context; lyrics fitted with the recording's own syllable starts; Whisper hears the words when none are given
@@ -61,11 +74,11 @@ Take the first unchecked item in the current milestone. Tick items when they're 
 - [x] Stage 0a closed under option B (2026-10-20): SheetSage2 not reproducible locally; its published numbers are external bars
 - [ ] The reset (TASKS §7): OT2 design record and guard tests, the canonical transcription document and engine interface, the listening-model contest, the reconstruction loop on public-domain songs, then OT2's first heads and decoder; COTB-v1 and the strict notation metrics grow alongside
 - [ ] Stage 1, rhythm and notation: global tempo and meter, a tuplet-aware note grid, key changes, and `copyist-song/1` with a converter
-- [ ] Stages 2–4: the encoder bake-off and trained heads; real data, a symbolic prior and the repeats vote; then the one-time test. About 2.5–4 months to the test, depending on the GPU windows the owner's laptop can give (200–350 GPU hours)
+- [ ] ~~Stages 2–4: the encoder bake-off and trained heads~~ Parked 22 October (docs/transcriber-plan.md, "Parked"): three GPU windows gave no answer, and the run as built couldn't give a valid one. Real data, a symbolic prior, the repeats vote and the one-time test carry over to the new plan
 - [ ] Repeats vote, per-doubt A/B by ear (SPEC 12.2a)
 - [ ] The Lights On loop (the owner's goal, part 1; AGENTS.md):
   - **Steps:** transcribe each demo with Copyist's own engine; reproduce it with YuE2; measure how close the take is, automatically; refine; then make lead sheets and arrangements.
-  - **When:** it waits for our engine. Never SheetSage. Build and test the loop on public-domain music first.
+  - **When:** it can start now with today's engines and Edit by ear (SPEC §14); each better engine replaces the first draft. Never SheetSage. Build and test the loop on public-domain music first.
 
 ## M2: Song planning and following directions
 

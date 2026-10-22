@@ -1,5 +1,7 @@
 # Open lead-sheet transcriber (a better SheetSage we can ship)
 
+> **22 October 2026:** the goal and plan moved to [docs/transcriber-plan.md](transcriber-plan.md): the best song-to-score transcriber for copyists, every part of the band, judged as a score. The ear bake-off is parked. This page keeps the history and the licence and data rules, which still apply.
+
 **Goal (owner, 2026-10-19):** the best open transcriber available. It must beat SheetSage2 objectively — on SheetSage2's own benchmarks and metric, and on full lead-sheet measures — for songs, musicals and beyond, with MIT code and MIT weights and no CC BY-NC anything, trained on the owner's M4 Max only. A design audit is under way before anything is trained (local report: `.agents/tasks/open-transcriber-audit-2026-10-19/`). First milestone, unchanged: beat Copyist's open engine on `scripts/transcribe/roundtrip.py`.
 
 **Code:** first-party repo [Digital-Defiance/open-transcriber](https://github.com/Digital-Defiance/open-transcriber) (MIT), vendored here as the git submodule `open-transcriber/`.

@@ -254,6 +254,19 @@ A singer anyone may use commercially that follows Copyist's score: HeartMuLa-oss
 
 Spec: docs/transcribing.md. The owner asked for this on 18 October 2026; her musical is built from songs that exist only as recordings.
 
+**Direction from 22 October 2026 (owner): the best song-to-score transcriber for copyists.** Plan: [docs/transcriber-plan.md](docs/transcriber-plan.md); SPEC §12.1, §12.6, §12.7; DECISIONS 22 October. One owner (the cloud agent) runs it end to end. Every GPU window carries a passing CPU run of the same code, an estimate within the window, and the number it should move. In order:
+
+- [ ] Run jobs on the Mac itself: a job runner the owner starts once, so the cloud agent can run CPU jobs and, in windows she grants, GPU jobs, in the Mac's own environments
+- [ ] Scoreboard v1, the vocal line: real dev (RWC-other dev, karaoke dev), the YuE2 takes, today's `open` and `neural`, strict and at lead-sheet level. Add the measured timing correction to the heard-time output (Basic Pitch about −40 ms, `open` about +20 ms; fitted on dev, never on a test set)
+- [ ] GAME on the scoreboard (testing only; find out its weights' licence and training data)
+- [ ] Yardsticks on public sets: MuScriptor (the owner accepts its download terms) and YourMT3+ (check its licence), testing only
+- [ ] The band's parts on the scoreboard: chords, bass and other parts on Copyist renders and the Slakh2100 test split
+- [ ] Data engine v1: about 1,000 Copyist songs, every part played with sampled instruments in many styles and mixes, YuE2 singing kept where `follow` says it follows its score, labels moved to where notes were sung. Find out first whether yue2.cpp can write the vocal track alone
+- [ ] Train the first model: the voice, then every part; MIT weights; one window at a time
+- [ ] Play-back-and-compare post-training
+- [ ] The claim: public-set numbers next to the field's; the data-engine recipe written up
+- [x] Parked (22 October): the ear bake-off (open-transcriber branch `ear-bakeoff`, 08ad5ce). Three GPU windows gave no answer, and the run as built couldn't give a valid one: it trained on the 80 sampler clips the pre-registration keeps unseen for scoring, never scored synthetic material (so the rule's synthetic test reused the real-dev number), and stopped training by checking its own training data. Kiro's last window fixed the environment and found that SoulX can't pronounce the sampler's letter-sliced syllables. Kept for reuse: the strict scorer, frozen splits, guards, job runner, the 1,200 sampler clips, and the MusicFM, Dasheng and Whisper extractors. Local notes: `.agents/tasks/ear-bakeoff-2026-10-20/`, `.agents/tasks/open-transcriber-audit-2026-10-22/`
+
 - [x] Measured SheetSage2 (`yue-transcribe`): the most accurate (on the five YuE2 takes, 2026-10-19: note F1 mean 0.97 against neural 0.87 and open 0.83; chords 0.88 against 0.79 and 0.82; lenient metric), but its weights are CC BY-NC 4.0 with no permission for creators to sell, so it's an optional engine and the open one is the default
 - [x] The open engine (`copyist/transcribe.py`): Demucs stems (`stems.split_vocals`), beats on band and voice with a steady tempo, meter by testing groupings of eighths (beat first, then bar: 3/4, 4/4, 6/8, 12/8), key, chords (chroma above the bass, Viterbi, the bass naming roots on downbeats), pYIN notes tidied (`clean_notes`: bleed, outliers, scoops, slides that wander, splits, syllable attacks kept, the lyric count), rhythm snapped to the plainest pattern per beat, pitches settled by context, syllable-start hints for the lyric fit
 - [x] `copyist transcribe RECORDING --title [--lyrics] [--engine open|sheetsage] [--voice] [--vocals --accompaniment]` and `--keep [--replace] [--build]`; out/<slug>/transcribe/ with source, stems, draft.abc, song file, report with doubts, band playback, transcription.json
@@ -284,7 +297,7 @@ Spec: docs/transcribing.md. The owner asked for this on 18 October 2026; her mus
 - [x] `copyist transcribe --engine neural` wired (BP melody + open harmony); default stays `open`
 - [x] Close note gaps on truth takes: adaptive candidate selection tuned; Saints 0.85 (tied), AG 0.89 (+0.01), SN 0.85 (+0.05), Tyger 0.97 (+0.19), MG 0.83; mean 0.88 vs 0.83
 - [x] Full `roundtrip.py --engine neural` lead-sheet draft benchmark: mean 0.87 vs 0.83 (Saints 0.91 vs 0.85, Tyger 0.93 vs 0.78, AG 0.89 vs 0.88, MG 0.84 tied)
-- [ ] **NEXT:** Silent Night draft 6/8 compound rhythm snapping (0.78 vs 0.80) to make neural an across-the-board win; T1 domain training on synthetic stems
+- [ ] Silent Night draft 6/8 compound rhythm snapping (0.78 vs 0.80) to make neural an across-the-board win. (The next steps for the transcriber are now the direction list at the top of this section.)
 - [ ] Two big public-domain songs for the round-trip set (owner, 2026-10-19), so the benchmark stops being five short major-key songs that the rules were tuned on. Between them: a minor key or a minor/major switch, a key change, real syncopation, harmony past I/IV/V, a compound meter other than slow 6/8 (12/8 or a brisk 6/8), a range of about a 12th with leaps, held notes and melismas, and a repeated chorus (each take about 150+ sung notes, 2.5+ minutes, two or more verse/chorus cycles). Words and music published before 1929, transcribed from a named, dated edition, every verse screened. Then YuE2 truth takes (`follow` at 90% or more), both engines on all seven songs, and the Silent Night and Major-General gaps judged on all seven
   - Blocked so far: five open-ended research runs stopped with the API error "Improperly formed request". Probes ruled out any single tool, phrase or effort setting. Next try: pick the two songs directly, then give each song its own small steps (a script, not the agent, tabulates the benchmark songs; words are downloaded to files and cited by verse and URL, never quoted in reports)
 - [ ] T1: train the neural transcriber. The owner wants this soon, as soon as the non-training passes run out (two attempts in a row that don't move either benchmark table). Plan written 2026-10-19 (local report on the Mac: `.agents/tasks/t1-training-plan-2026-10-19/report.md`):
@@ -344,7 +357,7 @@ Spec: docs/transcribing.md. The owner asked for this on 18 October 2026; her mus
     2. Automatic guard tests that any agent's change must pass: `open` output byte-identical, import boundaries, no SheetSage or NC code reachable from product or owner-song paths, no owner data in training manifests, licence checks.
     3. The canonical document and engine interface, with `open` and `neural` wrapped unchanged.
     4. Port the useful stage-0 pieces (the strict scorer, job runner, manifests) behind that interface.
-    5. The listening-model contest: four candidate ears, small probes, 10–20 GPU hours in two or three windows, and a fixed go/no-go rule.
+    5. ~~The listening-model contest: four candidate ears, small probes, 10–20 GPU hours in two or three windows, and a fixed go/no-go rule.~~ Parked 22 October (the direction at the top of this section).
     6. The reconstruction loop on public-domain songs.
     7. OT2's first heads and decoder.
 
