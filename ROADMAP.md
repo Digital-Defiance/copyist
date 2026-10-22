@@ -194,7 +194,7 @@ Lyrics and a style in; several finished songs out to choose between by ear, each
 
 Edit transcribed and written songs. By ear and by note, both first-class.
 
-- [ ] By ear: nudge, chord list, try another bar, A/B
+- [ ] By ear: nudge, chord list, try another bar, A/B. Nudging, splitting and joining, the chord list and undo are built (2026-10-22, the page's "Edit by ear"); trying another bar and A/B are next
 - [ ] By note: select on the score, change pitch/duration/chord/lyrics
 - [ ] Persist to the song file; re-validate; re-engrave; refresh the exact preview
 - [x] MusicXML → song file (`copyist import`: lead sheet / vocal line)

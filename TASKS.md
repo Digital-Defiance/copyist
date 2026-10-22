@@ -173,7 +173,9 @@ The owner's goal is "really good melodies and solid themes", for people who can'
 For transcribed and written songs. Both modes ship; neither is a consolation prize.
 
 - [ ] Spec and page sketch: by-ear controls (nudge pitch/length, chord list, "try this bar again") and by-note controls (select on the score, change pitch/duration/chord/lyrics)
-- [ ] Write edits back into the song file; re-validate; refresh the engraving and the exact preview
+- [x] Editing by ear (2026-10-22): `copyist/edit.py` (pitch by scale step or half step, longer/shorter, split/join with the verses kept on their notes, chord options ranked by fit, undo/redo), `GET /api/edit/<song>` and `POST /api/edit`, the page's "Edit by ear" tab with Web Audio playback; tests in `tests/test_edit.py` (every edit on every song in `songs/`) and `tests/test_web.py`
+- [ ] Write edits back into the song file; re-validate; refresh the engraving and the exact preview. Edits by ear write only the changed bars and verse lines and re-run the bars and lyrics-fit checks; the score is rebuilt by "Write the score again", not yet automatically
+- [ ] By ear, next: "try another version of this bar", words beside their notes, A/B of two versions, and a check by the owner on *Lights On* transcriptions
 - [x] MusicXML → song file (`copyist import`, `copyist/musicxml_in.py`): lead sheet or vocal line → melody ABC, chords, lyrics, key/meter/tempo. First slice of import; edit round-trip that keeps every Copyist field still open
 - [x] Imported lyrics stay on their notes (2026-10-20): each verse is written with `_` holds and `*` skips as the score placed it, and a refrain printed once under verse 1 is shared by every verse; Amazing Grace exports and imports back verse for verse. A choir score's melody is its top soprano, not the part with the most words
 - [ ] MusicXML repeats and 1st/2nd endings: the import plays every ending in a row (Foster's "Jeanie" in music21's corpus), and the song format has no repeats yet

@@ -332,11 +332,17 @@ Only transcribe recordings the user owns or has rights to. The fitted score of s
 
 The plan is for this page to become a free desktop app (Tauri, with the engine and yue2.cpp bundled, models downloaded on first run), so anyone can make songs on their own computer: docs/desktop-app.md.
 
-## 14. Score editing (planned)
+## 14. Score editing (by ear: built; by note: planned)
 
 Two ways to change the notes, both first-class, for transcribed songs and written ones:
 
 1. **By ear.** Hear a bar, move the melody up or down, lengthen or shorten, pick another chord from a list, try another version of the bar, keep or undo. No reading required.
+
+   Built (2026-10-22, `copyist/edit.py`, the page's "Edit by ear" tab, docs/web.md): every note and rest of the song drawn bar by bar at its pitch and length, with the chords above and a verse's words below. Click a note to hear it. **Higher** and **Lower** move it a step along the key's scale, **Half step up** and **down** by a semitone; a tied note moves with its tie. **Longer** and **Shorter** move where the next note starts, by an eighth (a sixteenth when an eighth would leave nothing): the sound ends later or sooner, the bar keeps its length, and over a bar line the note is held with a tie. **Split in two** makes two notes of one; the second holds the same syllable in every verse. **Join with the next** makes one held note of two, only when the second has no syllable of its own in any verse. **Try other chords here** lists chords by how much of the tune from that note to the next chord change they hold, each playable over the tune before choosing; **No chord change here** removes one. Undo and redo go back through every edit. The page plays notes and chords itself (Web Audio), so hearing a change is instant; the band and the takes come from the score, which "Write the score again" rebuilds.
+
+   What an edit does to the song file: it rewrites only the bars it changed, in place, keeping their spacing (which beams short notes), and for a split or join only the verse lines whose syllables move, quoted as they were. Everything else in the file stays as it was. The result must read back as intended, load, add up bar by bar and fit every verse; an edit that would add a failing check is refused and nothing is written (a song that already failed a check can still be edited). Pitches are read as the loader reads them (an accidental belongs to its own note); a changed bar is written so the ABC rule (an accidental lasts the bar) reads it the same, adding a natural where needed. The version before each edit is kept in `out/<song>/edits/` (200 deep). While a job is running on the same song, edits are refused until it finishes.
+
+   Not yet: "try another version of this bar" (the melody writer on one bar or section), changing words beside their notes, and an A/B of two versions.
 2. **By note.** Click a note on the engraved score to select it; change pitch, duration and ties; edit chord symbols and lyrics under the notes; paste or import MusicXML (e.g. from MuseScore). For people who read music or want that control.
 
 `copyist import FILE.musicxml` already turns a MusicXML lead sheet (or the vocal line of a piano-vocal score) into a song file. Import that keeps every Copyist field through an edit round-trip is still planned.

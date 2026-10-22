@@ -91,6 +91,44 @@ class WebTests(unittest.TestCase):
         r, data = self.request("GET", "/api/songs")
         self.assertEqual([s["title"] for s in json.loads(data)], ["Amazing Grace"])
 
+    def test_editing_by_ear(self):
+        song = self.root / "songs" / "amazing-grace.yaml"
+        original = song.read_text(encoding="utf-8")
+        edit_post = lambda body, **h: self.request("POST", "/api/edit", body,
+                                                   {"Content-Type": "application/json", "X-Copyist": "1", **h})
+        try:
+            r, data = self.request("GET", "/api/edit/amazing-grace")
+            view = json.loads(data)
+            self.assertEqual((r.status, view["slug"], view["can_undo"]), (200, "amazing-grace", False))
+            first = view["bars"][1]["events"][0]
+            self.assertEqual((first["id"], first["name"], first["sounding"]), ("b2.0", "G4", "G"))
+            r, data = self.request("GET", "/api/edit/amazing-grace/chords?at=b2.0")
+            self.assertEqual(json.loads(data)["options"][0]["symbol"], "G")
+
+            r, data = edit_post({"song": "amazing-grace", "op": "up", "at": "b2.0"})
+            reply = json.loads(data)
+            self.assertEqual((r.status, reply["changed"]), (200, "G4 → A4"))
+            self.assertEqual(reply["view"]["bars"][1]["events"][0]["midi"], 69)
+            self.assertTrue(reply["view"]["can_undo"])
+            self.assertIn('"G"A2 B/G/', song.read_text(encoding="utf-8"))
+
+            r, data = edit_post({"song": "amazing-grace", "op": "join", "at": "b2.0"})
+            self.assertEqual(r.status, 400)
+            self.assertIn("own syllable", json.loads(data)["error"])
+            self.assertEqual(edit_post({"song": "nope", "op": "up", "at": "b1.0"})[0].status, 404)
+            self.assertEqual(self.request("POST", "/api/edit", {"song": "amazing-grace", "op": "up", "at": "b2.0"},
+                                          {"Content-Type": "application/json"})[0].status, 403)
+
+            r, data = edit_post({"song": "amazing-grace", "op": "undo"})
+            self.assertEqual(json.loads(data)["changed"], "undone")
+            self.assertEqual(song.read_text(encoding="utf-8"), original)
+            with mock.patch.object(type(self.server.RequestHandlerClass.jobs), "running",
+                                   return_value={"song": "amazing-grace", "label": "Writing the score"}):
+                self.assertEqual(edit_post({"song": "amazing-grace", "op": "redo"})[0].status, 409)
+        finally:
+            song.write_text(original, encoding="utf-8")
+            shutil.rmtree(self.root / "out" / "amazing-grace" / "edits", ignore_errors=True)
+
     def test_song_detail(self):
         r, data = self.request("GET", "/api/songs/amazing-grace")
         song = json.loads(data)

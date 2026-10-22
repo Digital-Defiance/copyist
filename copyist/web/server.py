@@ -971,6 +971,9 @@ class Handler(BaseHTTPRequestHandler):
             return self._json(w) if w else self._error(404, "No such rewrite.")
         if path == "/api/training":
             return self._json(p.training())
+        m = re.fullmatch(r"/api/edit/([^/]+)(/chords)?", path)
+        if m:
+            return self._edit_get(unquote(m.group(1)), bool(m.group(2)))
         if path == "/api/jobs":
             return self._json([self.jobs.view(j) for j in self.jobs.jobs[:10]])
         m = re.fullmatch(r"/api/jobs/([\w-]+)", path)
@@ -984,6 +987,8 @@ class Handler(BaseHTTPRequestHandler):
             return self._error(403, "Requests come from the Copyist page only.")
         if urlparse(self.path).path == "/api/upload":
             return self._upload()
+        if urlparse(self.path).path == "/api/edit":
+            return self._edit_post()
         if urlparse(self.path).path != "/api/jobs":
             return self._error(404, "Not found.")
         try:
@@ -998,6 +1003,48 @@ class Handler(BaseHTTPRequestHandler):
             return self._error(400, str(e))
         return self._json(self.jobs.view(job), 202)
 
+    # -- editing by ear (copyist/edit.py)
+    def _edit_get(self, slug: str, chords: bool):
+        from .. import edit
+        path = self.project.song_path(slug)
+        if not path:
+            return self._error(404, "No such song.")
+        try:
+            if chords:
+                at = parse_qs(urlparse(self.path).query).get("at", [""])[0]
+                return self._json({"options": edit.chord_options(path, at)})
+            return self._json(edit.view(path, self.project.out / slug / "edits") | {"slug": slug})
+        except edit.EditError as e:
+            return self._error(400, str(e))
+
+    def _edit_post(self):
+        """One edit to a song file: {song, op, at, value}, or {song, op: "undo" | "redo"}."""
+        from .. import edit
+        try:
+            length = int(self.headers.get("Content-Length") or 0)
+            body = json.loads(self.rfile.read(min(length, 65536)) or b"{}")
+        except (ValueError, TypeError):
+            return self._error(400, "That edit didn't arrive in a form Copyist reads.")
+        slug = str(body.get("song", ""))
+        path = self.project.song_path(slug)
+        if not path:
+            return self._error(404, "No such song.")
+        busy = self.jobs.running()
+        if busy and busy.get("song") == slug:
+            return self._error(409, f"Copyist is working on this song ({busy['label']}). "
+                                    "Edit it when that finishes.")
+        history = self.project.out / slug / "edits"
+        op = str(body.get("op", ""))
+        try:
+            if op in ("undo", "redo"):
+                result = edit.step_back(path, history, redo=op == "redo")
+            else:
+                value = body.get("value")
+                result = edit.apply(path, op, str(body.get("at", "")),
+                                    None if value is None else str(value), history)
+            return self._json(result | {"view": edit.view(path, history) | {"slug": slug}})
+        except edit.EditError as e:
+            return self._error(400, str(e))
 
     def _upload(self):
         """A recording from the page, streamed into out/uploads/ (the page can't hand over a path)."""

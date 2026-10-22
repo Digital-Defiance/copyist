@@ -1,4 +1,5 @@
 // Copyist in a browser. Plain modules, no build step; the server is copyist/web/server.py.
+import { editTab, wireEdit } from "./editor.js";
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const page = $("#page");
@@ -13,7 +14,7 @@ let writings = [];           // /api/writing: songs being written
 let rewrites = [];           // /api/rewrites: section rewrites in progress
 let allStyles = null;        // /api/styles, loaded when the "Write a song" form first opens
 let transcriptions = { items: [], sheetsage: false };   // /api/transcriptions
-const TABS = [["song", "The song"], ["score", "The score"], ["sound", "The sound"]];
+const TABS = [["song", "The song"], ["score", "The score"], ["sound", "The sound"], ["edit", "Edit by ear"]];
 const REWRITE_HOW = [
   ["again", "Try again", "Swap this section for another melody with the same feel."],
   ["higher", "Higher", "Move this section up a few notes, with its chords."],
@@ -114,7 +115,7 @@ async function route() {
   const t = location.hash.match(/^#\/transcribe(?:\/([^/]+))?$/);
   if (t) return t[1] ? routeTranscription(decodeURIComponent(t[1])) : routeTranscribeForm();
   if (location.hash === "#/setup" || location.hash === "#/install") return routeSetup();
-  const m = location.hash.match(/^#\/song\/([^/]+)\/(song|score|sound)$/);
+  const m = location.hash.match(/^#\/song\/([^/]+)\/(song|score|sound|edit)$/);
   if (!m) {
     if (songs.length) location.replace(`#/song/${encodeURIComponent(songs[0].slug)}/song`);
     else page.innerHTML = `<div class="empty"><h1>Copyist</h1>
@@ -132,9 +133,11 @@ async function route() {
     page.innerHTML = `<div class="empty"><p>Couldn't open that song: ${esc(e.message)}</p></div>`;
     return;
   }
-  const body = tab === "song" ? songTab(current) : tab === "score" ? scoreTab(current) : soundTab(current);
+  const body = tab === "song" ? songTab(current) : tab === "score" ? scoreTab(current)
+    : tab === "edit" ? editTab(current) : soundTab(current);
   page.innerHTML = header(current, tab) + body;
   if (tab === "score") wireScore(current);
+  if (tab === "edit") wireEdit(current);
   if (tab === "sound") wireSound(current);
   if (tab === "song") wireRewrite(current);
   wireJobButtons(current);

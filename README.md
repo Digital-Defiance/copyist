@@ -47,7 +47,7 @@ In the app (or after `copyist serve`):
 
 1. **Write a song** — paste lyrics, pick a style and writer, listen to each band preview, keep one.
 2. **Install extras** — optional band / singer / voice tools.
-3. **Try another melody** or **edit the lyrics** on a kept song; **transcribe** a recording you own.
+3. **Try another melody**, **edit by ear** (click a note to hear it, nudge it, pick another chord) or **edit the lyrics** on a kept song; **transcribe** a recording you own.
 4. **Sound** — make a YuE2 take when the singer is installed.
 
 From the terminal (same engine):
