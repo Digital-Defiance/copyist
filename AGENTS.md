@@ -43,7 +43,10 @@ The work moved fast and may change hands at any moment. Here is where things sta
   - **Do not interrupt mid-window except for a true blocker** that would waste the rest of the window. Routine progress goes to info messages she can read later, never as a question that halts the run.
   - **Every long job must:** resume from checkpoints, pause while the Mac is on battery (`pmset -g batt`) and resume on AC, keep the Mac awake with `caffeinate -i`, and cap itself to the granted window, checkpointing cleanly if it hits the limit. She also uses Amphetamine to keep it awake.
   - **The orchestrator manages the LM Studio models:** unload them (`lms unload --all`) before a window to free ~36 GB, and reload on request when she wants to code with a local model.
-- An agent in a cloud container can't use the Mac's GPU. Write the scripts, say how long they take, and leave the run to an agent on the Mac, not to the owner.
+- An agent in a cloud container can't use the Mac's GPU or its environments directly. It runs jobs through **the Mac runner** (`scripts/mac/runner.py`; the owner starts it once by double-clicking `scripts/mac/start-runner.command`):
+  - drop a bash script into `out/runner/queue/NNN-name.sh` (it runs in the checkout, in name order, one at a time, under `caffeinate -i`); read `out/runner/logs/NNN-name.log` and `out/runner/done/NNN-name.json` for the result, and `out/runner/heartbeat.json` to see whether the runner is alive;
+  - a first line `# runner: gpu hours=N` marks a GPU job: it waits for a window the owner has granted in chat (record it as `out/runner/window.json` with `{"until": ISO time, "note": what she said}`), runs only on mains power, and is stopped when the window ends;
+  - `out/runner/STOP` stops the runner after the current job. Say in the chat what each batch will run.
 
 **Never commit:** `voices/`, `.cache/` (weights, LoRAs, instruments), `out/`, or anything from the owner's musical *I Left the Lights On* (`lights-on*` folders). The `lightson` LoRA is private and never ships.
 

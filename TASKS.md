@@ -256,7 +256,7 @@ Spec: docs/transcribing.md. The owner asked for this on 18 October 2026; her mus
 
 **Direction from 22 October 2026 (owner): the best song-to-score transcriber for copyists.** Plan: [docs/transcriber-plan.md](docs/transcriber-plan.md); SPEC §12.1, §12.6, §12.7; DECISIONS 22 October. One owner (the cloud agent) runs it end to end. Every GPU window carries a passing CPU run of the same code, an estimate within the window, and the number it should move. In order:
 
-- [ ] Run jobs on the Mac itself: a job runner the owner starts once, so the cloud agent can run CPU jobs and, in windows she grants, GPU jobs, in the Mac's own environments
+- [ ] Run jobs on the Mac itself: the Mac runner is built (`scripts/mac/runner.py`, `tests/test_mac_runner.py`; AGENTS.md "The owner's machine"); the owner starts it once with `scripts/mac/start-runner.command`
 - [ ] Scoreboard v1, the vocal line: real dev (RWC-other dev, karaoke dev), the YuE2 takes, today's `open` and `neural`, strict and at lead-sheet level. Add the measured timing correction to the heard-time output (Basic Pitch about −40 ms, `open` about +20 ms; fitted on dev, never on a test set)
 - [ ] GAME on the scoreboard (testing only; find out its weights' licence and training data)
 - [ ] Yardsticks on public sets: MuScriptor (the owner accepts its download terms) and YourMT3+ (check its licence), testing only
