@@ -41,7 +41,9 @@ Start with **inference of existing Apache/MIT models** on our truth takes (T0). 
 
 **Held out, always:** every song in `songs/` and every case in `scripts/transcribe/roundtrip.py`, in any key, tempo, meter or rendition, with their lyrics — including the two long songs added later. The dataset builder refuses them by title and by melodic fingerprint (`open_transcriber/data/heldout.py`, tested). None of them is ever a training input; they exist only to be scored against.
 
-**Training data (exact labels):** lead sheets from Copyist's sampler, sung by SoulX-Singer with CC BY voices (VocalSet) over the sfizz band, mixed and separated with Demucs — every note's label is exact because the score is the source. Real CC BY singing (Annotated-VocalSet, Choral Singing Dataset, ESMUC, Cantoría) for fine-tuning and checks.
+**Training data (exact labels):** lead sheets from Copyist's sampler, sung by SoulX-Singer with CC BY voices (VocalSet) over the sfizz band, mixed and separated with Demucs — every note's label is exact because the score is the source. Annotated-VocalSet (CC BY 4.0, Zenodo 10200775) is the one real CC BY singing source we may train and fine-tune on; it is the pilot's only supervised vocal source.
+
+**Evaluation only, never trained on:** the Choral Singing Dataset, ESMUC and Cantoría are CC BY-NC 4.0, so they are removed from the training allowlist (like RWC and the karaoke sets) and used only for checks and scoring.
 
 **Second round:**
 - YuE2 renders of sampler lead sheets (owner approved, 2026-10-19). Each phrase is aligned and gated note by note, and the labels are melody only, since YuE2's band doesn't always play the written chords. They're kept as a separate tagged slice of the manifest.

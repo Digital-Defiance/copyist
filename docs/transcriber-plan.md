@@ -28,6 +28,7 @@ One scoreboard, updated every loop (`out/judge/scoreboard.md` on the Mac, number
 
 **Sets:**
 - **Real songs, dev:** RWC-other dev (30) and karaoke dev (12), frozen in open-transcriber. Non-commercial: testing only, never trained on.
+- **Choir singing, evaluation only:** the Choral Singing Dataset, ESMUC and Cantoría are CC BY-NC 4.0, so they are removed from the training allowlist (like RWC and karaoke) and used only for checks and scoring.
 - **AI-made songs like the owner's demos:** YuE2 takes of public-domain songs with known scores (5 now; grow to about 20). The closest domain to *Lights On*.
 - **Copyist's own renders:** held-out seeds, every part known. Practice, not proof.
 - **Public multi-instrument sets:** the Slakh2100 test split (CC BY 4.0) for the band's parts; MulTTiPop if its audio can be had lawfully (evaluation only).
@@ -47,7 +48,7 @@ One scoreboard, updated every loop (`out/judge/scoreboard.md` on the Mac, number
   - songs from Copyist's sampler, with the held-out guard;
   - each arranged and played part by part with sampled instruments in many styles, with mix variants (levels, EQ, reverb);
   - YuE2 sings the melody at draft quality, and a take is kept only if it follows its score (`copyist follow`, 90% or better), its notes moved to where they were actually sung;
-  - plus VocalSet (CC BY 4.0) for clean singing.
+  - plus VocalSet (CC BY 4.0) for clean singing — the only real CC BY singing we train on. The Choral Singing Dataset, ESMUC and Cantoría are CC BY-NC 4.0, evaluation-only, and never trained on.
   
   A first batch of about 1,000 songs; then about 10,000. A GPU hour of YuE2 drafts gives an estimated 2–2.5 hours of singing; the band renders on the CPU.
 - **The model:** from open code with an MIT or Apache licence (GAME's for the voice; MuScriptor's code, which is MIT, or YourMT3+'s if its licence allows, for the band), sized to train on the M4 Max. The trained weights are ours, MIT.
